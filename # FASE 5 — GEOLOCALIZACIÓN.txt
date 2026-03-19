@@ -1,0 +1,39 @@
+# FASE 5 — GEOLOCALIZACIÓN
+
+## 🎯 Objetivo
+Registrar ubicación en tiempo real del mensajero.
+
+## 📚 Fuente de verdad
+SRS:
+- RF-05 Geolocalización
+- RN-08, RN-09
+
+## 🧩 Alcance
+
+### Funcionalidades
+- Registro de ubicación
+- Consulta de ubicación
+
+## 🗃️ Entidades
+- ubicacion_mensajero
+- mensajero
+
+## 🔌 Endpoints
+
+- POST /tracking/location
+
+## ⚙️ Reglas clave
+
+- Solo registrar si está EN_SERVICIO
+- Frecuencia aproximada: 15 segundos
+
+## ✅ Definition of Done
+
+- Ubicación se guarda correctamente
+- Se valida estado del mensajero
+- Datos asociados a empresa
+
+## 🧠 Estado final del sistema
+
+- Sistema puede rastrear mensajeros
+- Base para monitoreo en tiempo real

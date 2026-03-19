@@ -1,0 +1,271 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  ADMIN
+  AUX
+  COURIER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum CourierStatus {
+  AVAILABLE
+  UNAVAILABLE
+  IN_SERVICE
+}
+
+enum ServiceStatus {
+  PENDING
+  ASSIGNED
+  ACCEPTED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum SettlementStatus {
+  UNSETTLED
+  SETTLED
+}
+
+enum SettlementRuleType {
+  PERCENTAGE
+  FIXED
+}
+
+enum TokenType {
+  ACCESS
+  REFRESH
+}
+
+model Company {
+  id         String   @id @default(uuid())
+  name       String   @db.VarChar(150)
+  status     Boolean  @default(true)
+  created_at DateTime @default(now())
+
+  users               User[]
+  couriers            Courier[]
+  customers           Customer[]
+  services            Service[]
+  serviceStatusHistory ServiceStatusHistory[]
+  evidences           Evidence[]
+  courierLocations    CourierLocation[]
+  settlementRules     SettlementRule[]
+  courierSettlements  CourierSettlement[]
+  customerSettlements CustomerSettlement[]
+  tokens              Token[]
+
+  @@map("company")
+}
+
+model User {
+  id            String     @id @default(uuid())
+  company_id    String
+  name          String     @db.VarChar(100)
+  email         String     @db.VarChar(150)
+  password_hash String
+  role          UserRole
+  status        UserStatus @default(ACTIVE)
+  created_at    DateTime   @default(now())
+
+  company              Company                @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  courier              Courier?
+  serviceStatusHistory ServiceStatusHistory[]
+  tokens               Token[]
+
+  @@unique([company_id, email])
+  @@index([company_id])
+  @@map("user")
+}
+
+model Courier {
+  id                 String        @id @default(uuid())
+  company_id         String
+  user_id            String        @unique
+  document_id        String?       @db.VarChar(50)
+  phone              String?       @db.VarChar(20)
+  operational_status CourierStatus @default(UNAVAILABLE)
+  created_at         DateTime      @default(now())
+
+  company            Company            @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  user               User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  services           Service[]
+  locations          CourierLocation[]
+  settlements        CourierSettlement[]
+
+  @@index([company_id])
+  @@map("courier")
+}
+
+model Customer {
+  id         String   @id @default(uuid())
+  company_id String
+  name       String   @db.VarChar(150)
+  phone      String?  @db.VarChar(20)
+  email      String?  @db.VarChar(150)
+  address    String
+  status     Boolean  @default(true)
+  created_at DateTime @default(now())
+
+  company  Company   @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  services Service[]
+
+  @@index([company_id])
+  @@map("customer")
+}
+
+model Service {
+  id                          String        @id @default(uuid())
+  company_id                  String
+  customer_id                 String
+  courier_id                  String?
+  payment_method              String        @db.VarChar(50)
+  origin_address              String
+  origin_apartment_office     String?
+  origin_contact_phone        String        @db.VarChar(20)
+  destination_address         String
+  destination_apartment_office String?
+  destination_contact_number  String        @db.VarChar(20)
+  destination_name            String        @db.VarChar(100)
+  package_details             String
+  delivery_price              Decimal       @db.Decimal(10, 2)
+  product_price               Decimal       @db.Decimal(10, 2)
+  total_price                 Decimal       @default(0) @db.Decimal(10, 2)
+  notes_observations          String?
+  status                      ServiceStatus @default(PENDING)
+  assignment_date             DateTime?
+  delivery_date               DateTime?
+  created_at                  DateTime      @default(now())
+
+  company              Company                @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  customer             Customer               @relation(fields: [customer_id], references: [id])
+  courier              Courier?               @relation(fields: [courier_id], references: [id])
+  statusHistory        ServiceStatusHistory[]
+  evidence             Evidence?
+
+  @@index([company_id, status])
+  @@index([company_id, courier_id])
+  @@map("service")
+}
+
+model ServiceStatusHistory {
+  id              String        @id @default(uuid())
+  company_id      String
+  service_id      String
+  previous_status ServiceStatus?
+  new_status      ServiceStatus
+  user_id         String
+  change_date     DateTime      @default(now())
+
+  company Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [service_id], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [id])
+
+  @@index([company_id, service_id])
+  @@map("service_status_history")
+}
+
+model Evidence {
+  id                String   @id @default(uuid())
+  company_id        String
+  service_id        String   @unique
+  image_url         String
+  registration_date DateTime @default(now())
+
+  company Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [service_id], references: [id], onDelete: Cascade)
+
+  @@map("evidence")
+}
+
+model CourierLocation {
+  id                String   @id @default(uuid())
+  company_id        String
+  courier_id        String
+  latitude          Decimal  @db.Decimal(9, 6)
+  longitude         Decimal  @db.Decimal(9, 6)
+  accuracy          Decimal? @db.Decimal(6, 2)
+  registration_date DateTime @default(now())
+
+  company Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  courier Courier @relation(fields: [courier_id], references: [id])
+
+  @@index([company_id, courier_id, registration_date(sort: Desc)])
+  @@map("courier_location")
+}
+
+model SettlementRule {
+  id         String             @id @default(uuid())
+  company_id String
+  type       SettlementRuleType
+  value      Decimal            @db.Decimal(10, 2)
+  active     Boolean            @default(true)
+  created_at DateTime           @default(now())
+
+  company Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
+
+  @@index([company_id])
+  @@map("settlement_rule")
+}
+
+model CourierSettlement {
+  id              String           @id @default(uuid())
+  company_id      String
+  courier_id      String
+  start_date      DateTime         @db.Date
+  end_date        DateTime         @db.Date
+  total_services  Int
+  total_earned    Decimal          @db.Decimal(12, 2)
+  status          SettlementStatus @default(UNSETTLED)
+  generation_date DateTime         @default(now())
+
+  company Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  courier Courier @relation(fields: [courier_id], references: [id])
+
+  @@index([company_id, courier_id])
+  @@map("courier_settlement")
+}
+
+model CustomerSettlement {
+  id              String   @id @default(uuid())
+  company_id      String
+  start_date      DateTime @db.Date
+  end_date        DateTime @db.Date
+  total_services  Int
+  total_invoiced  Decimal  @db.Decimal(12, 2)
+  generation_date DateTime @default(now())
+
+  company Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
+
+  @@index([company_id])
+  @@map("customer_settlement")
+}
+
+model Token {
+  id         String    @id @default(uuid())
+  company_id String
+  user_id    String
+  type       TokenType
+  token_hash String
+  used       Boolean   @default(false)
+  expiration DateTime
+  created_at DateTime  @default(now())
+
+  company Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, company_id])
+  @@map("token")
+}

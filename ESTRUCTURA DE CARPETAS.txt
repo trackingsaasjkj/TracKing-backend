@@ -1,0 +1,118 @@
+ESTRUCTURA DE CARPETAS
+
+** Esta documento tendrá el ejemplo de la estructura de carpetas para la guía de creación de archivos y carpetas relacionado con el proyecto de mensajeria.
+	Seguir los pasaos para asegurar una buena practica al momento de desarrollar
+
+
+src/
+│
+├── main.ts
+├── app.module.ts
+│
+├── config/
+│   ├── env.ts
+│   ├── database.ts
+│   ├── auth.ts
+│
+├── core/                          
+│   ├── guards/
+│   ├── decorators/
+│   ├── middleware/
+│   ├── errors/
+│   ├── utils/
+│   ├── types/
+│   └── constants/
+│
+├── infrastructure/                
+│   ├── database/
+│   │   ├── prisma.service.ts
+│   │   ├── schema.prisma
+│   │
+│   ├── cache/
+│   ├── queue/
+│   ├── storage/
+│   │   ├── s3.service.ts
+│   │   ├── cloudinary.service.ts
+│   │
+│   ├── realtime/                  
+│   │   ├── websocket.gateway.ts
+│
+├── modules/                       
+│
+│   ├── auth/
+│   │   ├── application/
+│   │   ├── domain/
+│   │   ├── infrastructure/
+│   │   ├── auth.controller.ts
+│   │   └── auth.module.ts
+│
+│   ├── users/
+│   ├── clientes/
+│   ├── mensajeros/
+│
+│   ├── servicios/                 
+│   │   ├── application/
+│   │   │   ├── use-cases/
+│   │   │   ├── commands/          
+│   │   │   ├── queries/
+│   │   │
+│   │   ├── domain/
+│   │   │   ├── entities/
+│   │   │   ├── value-objects/
+│   │   │   ├── services/
+│   │   │   ├── state-machine/
+│   │   │   │   ├── servicio.machine.ts   
+│   │   │
+│   │   ├── infrastructure/
+│   │   │   ├── repositories/
+│   │   │
+│   │   ├── servicios.controller.ts
+│   │   └── servicios.module.ts
+│
+│   ├── evidencias/
+│   ├── tracking/
+│   ├── liquidaciones/
+│   ├── reportes/
+│
+├── interfaces/                   
+│
+│   ├── http/
+│   │   ├── controllers/          
+│   │
+│   ├── trpc/                     
+│   │   ├── routers/
+│   │   │   ├── servicios.router.ts
+│   │   │   ├── users.router.ts
+│   │   │
+│   │   ├── context.ts
+│   │   └── trpc.ts
+│
+│   ├── graphql/                  
+│
+├── ui/                           
+│   ├── emails/
+│   │   ├── templates/
+│   │   │   ├── servicio-creado.tsx
+│   │   │   ├── servicio-entregado.tsx
+│   │
+│   ├── admin/                    
+│   │   ├── dashboard.tsx
+│   │   ├── servicios/
+│   │
+│   ├── components/
+│
+├── jobs/
+│   ├── liquidaciones.job.ts
+│   ├── tracking.job.ts
+│
+├── specs/                        # 🔥 tu SRS vive aquí
+│   ├── fases/
+│   │   ├── fase-1.md
+│   │   ├── fase-2.md
+│   │
+│   ├── servicios.spec.ts         # 🔥 spec como código
+│
+├── tests/
+│   ├── unit/
+│   ├── e2e/
+└──

@@ -1,0 +1,259 @@
+-- =========================================
+-- DATABASE SETUP
+-- =========================================
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- =========================================
+-- ENUMS
+-- =========================================
+
+CREATE TYPE user_role AS ENUM ('ADMIN', 'AUX', 'COURIER');
+CREATE TYPE user_status AS ENUM ('ACTIVE', 'SUSPENDED');
+CREATE TYPE courier_status AS ENUM ('AVAILABLE', 'UNAVAILABLE', 'IN_SERVICE');
+CREATE TYPE service_status AS ENUM ('PENDING', 'ASSIGNED', 'ACCEPTED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED');
+CREATE TYPE settlement_status AS ENUM ('UNSETTLED', 'SETTLED');
+CREATE TYPE settlement_rule_type AS ENUM ('PERCENTAGE', 'FIXED');
+CREATE TYPE token_type AS ENUM ('ACCESS', 'REFRESH');
+
+-- =========================================
+-- COMPANY (TENANT)
+-- =========================================
+
+CREATE TABLE company (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(150) NOT NULL,
+    status BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================================
+-- USERS
+-- =========================================
+
+CREATE TABLE "user" (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    password_hash TEXT NOT NULL,
+    role user_role NOT NULL,
+    status user_status DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_user_company
+        FOREIGN KEY (company_id) REFERENCES company(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT unique_email_company UNIQUE (company_id, email)
+);
+
+CREATE INDEX idx_user_company ON "user"(company_id);
+
+-- =========================================
+-- COURIERS
+-- =========================================
+
+CREATE TABLE courier (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL,
+    user_id UUID UNIQUE NOT NULL,
+    document_id VARCHAR(50),
+    phone VARCHAR(20),
+    operational_status courier_status DEFAULT 'UNAVAILABLE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_courier_company ON courier(company_id);
+
+-- =========================================
+-- CUSTOMERS
+-- =========================================
+
+CREATE TABLE customer (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    phone VARCHAR(20),
+    email VARCHAR(150),
+    address TEXT NOT NULL,
+    status BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_customer_company ON customer(company_id);
+
+-- =========================================
+-- SERVICES
+-- =========================================
+
+CREATE TABLE service (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL,
+    customer_id UUID NOT NULL,
+    courier_id UUID,
+    payment_method VARCHAR(50) NOT NULL,
+    origin_address TEXT NOT NULL,
+    origin_apartment_office TEXT,
+    origin_contact_phone VARCHAR(20) NOT NULL,
+    destination_address TEXT NOT NULL,
+    destination_apartment_office TEXT,
+    destination_contact_number VARCHAR(20) NOT NULL,
+    destination_name VARCHAR(100) NOT NULL,
+    package_details TEXT NOT NULL,
+    delivery_price NUMERIC(10,2) NOT NULL,
+    product_price NUMERIC(10,2) NOT NULL,
+    total_price NUMERIC(10,2) NOT NULL DEFAULT 0,
+    notes_observations TEXT,
+    status service_status DEFAULT 'PENDING',
+    assignment_date TIMESTAMP,
+    delivery_date TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES customer(id),
+    FOREIGN KEY (courier_id) REFERENCES courier(id)
+);
+
+CREATE INDEX idx_service_company_status ON service(company_id, status);
+CREATE INDEX idx_service_company_courier ON service(company_id, courier_id);
+
+-- =========================================
+-- SERVICE STATUS HISTORY
+-- =========================================
+
+CREATE TABLE service_status_history (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL,
+    service_id UUID NOT NULL,
+    previous_status service_status,
+    new_status service_status NOT NULL,
+    user_id UUID NOT NULL,
+    change_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE,
+    FOREIGN KEY (service_id) REFERENCES service(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES "user"(id)
+);
+
+CREATE INDEX idx_history_company_service 
+    ON service_status_history(company_id, service_id);
+
+-- =========================================
+-- EVIDENCE
+-- =========================================
+
+CREATE TABLE evidence (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL,
+    service_id UUID UNIQUE NOT NULL,
+    image_url TEXT NOT NULL,
+    registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE,
+    FOREIGN KEY (service_id) REFERENCES service(id) ON DELETE CASCADE
+);
+
+-- =========================================
+-- COURIER LOCATION
+-- =========================================
+
+CREATE TABLE courier_location (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL,
+    courier_id UUID NOT NULL,
+    latitude DECIMAL(9,6) NOT NULL,
+    longitude DECIMAL(9,6) NOT NULL,
+    accuracy DECIMAL(6,2),
+    registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE,
+    FOREIGN KEY (courier_id) REFERENCES courier(id)
+);
+
+CREATE INDEX idx_location_company_courier_date
+    ON courier_location(company_id, courier_id, registration_date DESC);
+
+-- =========================================
+-- SETTLEMENT RULES
+-- =========================================
+
+CREATE TABLE settlement_rule (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL,
+    type settlement_rule_type NOT NULL,
+    value NUMERIC(10,2) NOT NULL,
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_rule_company ON settlement_rule(company_id);
+
+-- =========================================
+-- COURIER SETTLEMENT
+-- =========================================
+
+CREATE TABLE courier_settlement (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL,
+    courier_id UUID NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    total_services INT NOT NULL,
+    total_earned NUMERIC(12,2) NOT NULL,
+    status settlement_status DEFAULT 'UNSETTLED',
+    generation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE,
+    FOREIGN KEY (courier_id) REFERENCES courier(id)
+);
+
+CREATE INDEX idx_settlement_courier_company 
+    ON courier_settlement(company_id, courier_id);
+
+-- =========================================
+-- CUSTOMER SETTLEMENT
+-- =========================================
+
+CREATE TABLE customer_settlement (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    total_services INT NOT NULL,
+    total_invoiced NUMERIC(12,2) NOT NULL,
+    generation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_settlement_customer_company 
+    ON customer_settlement(company_id);
+
+-- =========================================
+-- TOKENS
+-- =========================================
+
+CREATE TABLE token (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL,
+    user_id UUID NOT NULL,
+    type token_type NOT NULL,
+    token_hash TEXT NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    expiration TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_token_user_company 
+    ON token(user_id, company_id);

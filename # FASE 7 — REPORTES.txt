@@ -1,0 +1,42 @@
+# FASE 7 — REPORTES
+
+## 🎯 Objetivo
+Generar métricas operativas y financieras.
+
+## 📚 Fuente de verdad
+SRS:
+- RF-07 Reportes
+- HU-17
+
+## 🧩 Alcance
+
+### Funcionalidades
+- Reportes operativos
+- Reportes financieros
+
+## 🔌 Endpoints
+
+- GET /reports/services
+- GET /reports/financial
+
+## 📊 Métricas
+
+- Servicios por estado
+- Servicios por mensajero
+- Ingresos por periodo
+- Tiempo promedio de entrega
+
+## ⚙️ Reglas clave
+
+- Filtrado por empresa obligatorio
+
+## ✅ Definition of Done
+
+- Reportes generan datos correctos
+- Filtros funcionales
+- Performance aceptable
+
+## 🧠 Estado final del sistema
+
+- Sistema completamente operativo
+- Capacidad de análisis y toma de decisiones
