@@ -9,6 +9,7 @@ datasource db {
 }
 
 enum UserRole {
+  SUPER_ADMIN
   ADMIN
   AUX
   COURIER
@@ -72,7 +73,7 @@ model Company {
 
 model User {
   id            String     @id @default(uuid())
-  company_id    String
+  company_id    String?
   name          String     @db.VarChar(100)
   email         String     @db.VarChar(150)
   password_hash String
@@ -80,10 +81,11 @@ model User {
   status        UserStatus @default(ACTIVE)
   created_at    DateTime   @default(now())
 
-  company              Company                @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  company              Company?               @relation(fields: [company_id], references: [id], onDelete: Cascade)
   courier              Courier?
   serviceStatusHistory ServiceStatusHistory[]
   tokens               Token[]
+  auditLogs            AuditLog[]             @relation("SuperAdminAuditLogs")
 
   @@unique([company_id, email])
   @@index([company_id])
@@ -255,7 +257,7 @@ model CustomerSettlement {
 
 model Token {
   id         String    @id @default(uuid())
-  company_id String
+  company_id String?
   user_id    String
   type       TokenType
   token_hash String
@@ -263,9 +265,37 @@ model Token {
   expiration DateTime
   created_at DateTime  @default(now())
 
-  company Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company Company? @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id, company_id])
   @@map("token")
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  super_admin_id String
+  action         String   @db.VarChar(100)
+  entity_type    String   @db.VarChar(50)
+  entity_id      String
+  payload        Json?
+  ip_address     String?  @db.VarChar(45)
+  created_at     DateTime @default(now())
+
+  super_admin User @relation("SuperAdminAuditLogs", fields: [super_admin_id], references: [id])
+
+  @@index([super_admin_id])
+  @@index([entity_type, entity_id])
+  @@index([created_at(sort: Desc)])
+  @@map("audit_log")
+}
+
+model GlobalConfig {
+  id          String   @id @default(uuid())
+  key         String   @unique @db.VarChar(100)
+  value       String
+  description String?
+  updated_at  DateTime @updatedAt
+
+  @@map("global_config")
 }

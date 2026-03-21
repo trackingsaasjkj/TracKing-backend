@@ -8,5 +8,5 @@ export class SubirEvidenciaDto {
   })
   @IsString()
   @IsUrl()
-  image_url: string;
+  image_url!: string;
 }

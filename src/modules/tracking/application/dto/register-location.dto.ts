@@ -6,13 +6,13 @@ export class RegisterLocationDto {
   @IsNumber()
   @Min(-90)
   @Max(90)
-  latitude: number;
+  latitude!: number;
 
   @ApiProperty({ example: -74.072092, description: 'Longitud decimal (-180 a 180)' })
   @IsNumber()
   @Min(-180)
   @Max(180)
-  longitude: number;
+  longitude!: number;
 
   @ApiPropertyOptional({ example: 10.5, description: 'Precisión en metros' })
   @IsOptional()

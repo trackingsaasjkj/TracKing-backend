@@ -33,11 +33,19 @@ export class ServicioRepository {
     });
   }
 
-  async findAllByCompany(company_id: string, filters?: { status?: ServiceStatus; courier_id?: string }) {
+  async findAllByCompany(
+    company_id: string,
+    filters?: { status?: ServiceStatus; courier_id?: string },
+    pagination?: { limit?: number; offset?: number },
+  ) {
+    const take = pagination?.limit ?? 50;
+    const skip = pagination?.offset ?? 0;
     return this.prisma.service.findMany({
       where: { company_id, ...filters },
       include: { customer: true, courier: true },
       orderBy: { created_at: 'desc' },
+      take,
+      skip,
     });
   }
 

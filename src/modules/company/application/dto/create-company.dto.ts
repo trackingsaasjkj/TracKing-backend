@@ -6,5 +6,5 @@ export class CreateCompanyDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(150)
-  name: string;
+  name!: string;
 }

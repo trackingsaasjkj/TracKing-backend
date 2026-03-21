@@ -1,5 +1,6 @@
 import { Body, Controller, Post, Req, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { LoginUseCase } from './application/use-cases/login.use-case';
 import { RegisterUseCase } from './application/use-cases/register.use-case';
@@ -15,7 +16,7 @@ import { ok } from '../../core/utils/response.util';
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  sameSite: 'strict' as const,
   maxAge: 15 * 60 * 1000,
 };
 
@@ -31,6 +32,7 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @Throttle({ auth: { ttl: 60_000, limit: 5 } })
   @ApiOperation({ summary: 'Iniciar sesión', description: 'Retorna datos del usuario y establece cookies httpOnly con access_token y refresh_token.' })
   @ApiResponse({ status: 200, description: 'Login exitoso' })
   @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
@@ -58,7 +60,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Cerrar sesión', description: 'Revoca todos los tokens activos y limpia las cookies.' })
   @ApiResponse({ status: 200, description: 'Sesión cerrada' })
   async logout(@CurrentUser() user: JwtPayload, @Res({ passthrough: true }) res: Response) {
-    await this.logoutUseCase.execute(user.sub, user.company_id);
+    await this.logoutUseCase.execute(user.sub, user.company_id!);
     res.clearCookie('access_token');
     res.clearCookie('refresh_token');
     return ok(null);
@@ -66,6 +68,7 @@ export class AuthController {
 
   @Public()
   @Post('refresh')
+  @Throttle({ auth: { ttl: 60_000, limit: 10 } })
   @ApiCookieAuth('access_token')
   @ApiOperation({ summary: 'Renovar tokens', description: 'Usa el refresh_token de la cookie para emitir nuevos tokens. El refresh token es de un solo uso.' })
   @ApiResponse({ status: 200, description: 'Tokens renovados' })

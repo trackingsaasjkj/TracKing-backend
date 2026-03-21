@@ -31,7 +31,7 @@ export class MensajerosController {
   @ApiResponse({ status: 201, description: 'Mensajero creado' })
   @ApiResponse({ status: 409, description: 'El usuario ya tiene perfil de mensajero' })
   async crear(@Body() dto: CreateMensajeroDto, @CurrentUser() user: JwtPayload) {
-    return ok(await this.crearUseCase.execute(dto, user.company_id));
+    return ok(await this.crearUseCase.execute(dto, user.company_id!));
   }
 
   @Get()
@@ -39,7 +39,7 @@ export class MensajerosController {
   @ApiOperation({ summary: 'Listar todos los mensajeros' })
   @ApiResponse({ status: 200, description: 'Lista de mensajeros' })
   async findAll(@CurrentUser() user: JwtPayload) {
-    return ok(await this.consultarUseCase.findAll(user.company_id));
+    return ok(await this.consultarUseCase.findAll(user.company_id!));
   }
 
   @Get('activos')
@@ -47,7 +47,7 @@ export class MensajerosController {
   @ApiOperation({ summary: 'Listar mensajeros AVAILABLE', description: 'Solo mensajeros con estado operacional AVAILABLE.' })
   @ApiResponse({ status: 200, description: 'Mensajeros disponibles' })
   async findActivos(@CurrentUser() user: JwtPayload) {
-    return ok(await this.consultarUseCase.findActivos(user.company_id));
+    return ok(await this.consultarUseCase.findActivos(user.company_id!));
   }
 
   @Get('me/services')
@@ -55,8 +55,8 @@ export class MensajerosController {
   @ApiOperation({ summary: 'Mis servicios (COURIER)', description: 'El mensajero autenticado consulta sus propios servicios.' })
   @ApiResponse({ status: 200, description: 'Servicios del mensajero' })
   async misServicios(@CurrentUser() user: JwtPayload) {
-    const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id);
-    return ok(await this.consultarUseCase.findMyServices(courier.id, user.company_id));
+    const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id!);
+    return ok(await this.consultarUseCase.findMyServices(courier.id, user.company_id!));
   }
 
   @Post('start')
@@ -65,8 +65,8 @@ export class MensajerosController {
   @ApiResponse({ status: 200, description: 'Jornada iniciada' })
   @ApiResponse({ status: 400, description: 'No se puede iniciar jornada desde el estado actual' })
   async iniciarJornada(@CurrentUser() user: JwtPayload) {
-    const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id);
-    return ok(await this.jornadaUseCase.iniciar(courier.id, user.company_id));
+    const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id!);
+    return ok(await this.jornadaUseCase.iniciar(courier.id, user.company_id!));
   }
 
   @Post('end')
@@ -75,8 +75,8 @@ export class MensajerosController {
   @ApiResponse({ status: 200, description: 'Jornada finalizada' })
   @ApiResponse({ status: 400, description: 'Servicios activos pendientes o estado inválido' })
   async finalizarJornada(@CurrentUser() user: JwtPayload) {
-    const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id);
-    return ok(await this.jornadaUseCase.finalizar(courier.id, user.company_id));
+    const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id!);
+    return ok(await this.jornadaUseCase.finalizar(courier.id, user.company_id!));
   }
 
   @Get(':id')
@@ -86,7 +86,7 @@ export class MensajerosController {
   @ApiResponse({ status: 200, description: 'Mensajero encontrado' })
   @ApiResponse({ status: 404, description: 'No encontrado' })
   async findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
-    return ok(await this.consultarUseCase.findOne(id, user.company_id));
+    return ok(await this.consultarUseCase.findOne(id, user.company_id!));
   }
 
   @Put(':id')
@@ -95,6 +95,6 @@ export class MensajerosController {
   @ApiParam({ name: 'id', description: 'UUID del mensajero' })
   @ApiResponse({ status: 200, description: 'Mensajero actualizado' })
   async update(@Param('id') id: string, @Body() dto: UpdateMensajeroDto, @CurrentUser() user: JwtPayload) {
-    return ok(await this.updateUseCase.execute(id, dto, user.company_id));
+    return ok(await this.updateUseCase.execute(id, dto, user.company_id!));
   }
 }

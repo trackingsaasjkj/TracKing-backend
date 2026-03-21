@@ -6,6 +6,7 @@ import { Role } from '../constants/roles.enum';
 
 // Role → permissions mapping
 const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
+  [Role.SUPER_ADMIN]: Object.values(Permission),
   [Role.ADMIN]: Object.values(Permission),
   [Role.AUX]: [Permission.USERS_READ],
   [Role.COURIER]: [],

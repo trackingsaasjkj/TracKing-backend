@@ -28,7 +28,7 @@ export class ReportesController {
   @ApiQuery({ name: 'courier_id', required: false })
   @ApiResponse({ status: 200, description: 'Métricas operativas' })
   async services(@Query() query: ReporteServiciosQueryDto, @CurrentUser() user: JwtPayload) {
-    return ok(await this.serviciosReport.execute(query, user.company_id));
+    return ok(await this.serviciosReport.execute(query, user.company_id!));
   }
 
   @Get('financial')
@@ -39,7 +39,7 @@ export class ReportesController {
   @ApiResponse({ status: 200, description: 'Métricas financieras' })
   @ApiResponse({ status: 400, description: 'Rango de fechas inválido o faltante' })
   async financial(@Query() query: ReporteFinancieroQueryDto, @CurrentUser() user: JwtPayload) {
-    return ok(await this.financieroReport.execute(query, user.company_id));
+    return ok(await this.financieroReport.execute(query, user.company_id!));
   }
 
   @Get('couriers')
@@ -49,7 +49,7 @@ export class ReportesController {
   @ApiQuery({ name: 'to', required: false })
   @ApiResponse({ status: 200, description: 'Servicios agrupados por mensajero' })
   async couriers(@Query() query: ReporteServiciosQueryDto, @CurrentUser() user: JwtPayload) {
-    const result = await this.serviciosReport.execute(query, user.company_id);
+    const result = await this.serviciosReport.execute(query, user.company_id!);
     return ok({ period: result.period, by_courier: result.by_courier });
   }
 }

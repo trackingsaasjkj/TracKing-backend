@@ -35,7 +35,7 @@ export class ServiciosController {
   @ApiResponse({ status: 201, description: 'Servicio creado' })
   @ApiResponse({ status: 400, description: 'Error de validación de precios o cliente no encontrado' })
   async crear(@Body() dto: CrearServicioDto, @CurrentUser() user: JwtPayload) {
-    return ok(await this.crearUseCase.execute(dto, user.company_id, user.sub));
+    return ok(await this.crearUseCase.execute(dto, user.company_id!, user.sub));
   }
 
   @Post(':id/assign')
@@ -45,7 +45,7 @@ export class ServiciosController {
   @ApiResponse({ status: 200, description: 'Servicio asignado' })
   @ApiResponse({ status: 400, description: 'Mensajero no disponible o transición inválida' })
   async asignar(@Param('id') id: string, @Body() dto: AsignarServicioDto, @CurrentUser() user: JwtPayload) {
-    return ok(await this.asignarUseCase.execute(id, dto, user.company_id, user.sub));
+    return ok(await this.asignarUseCase.execute(id, dto, user.company_id!, user.sub));
   }
 
   @Post(':id/status')
@@ -58,7 +58,7 @@ export class ServiciosController {
   @ApiResponse({ status: 200, description: 'Estado actualizado' })
   @ApiResponse({ status: 400, description: 'Transición inválida o falta evidencia para DELIVERED' })
   async cambiarEstado(@Param('id') id: string, @Body() dto: CambiarEstadoDto, @CurrentUser() user: JwtPayload) {
-    return ok(await this.cambiarEstadoUseCase.execute(id, dto, user.company_id, user.sub));
+    return ok(await this.cambiarEstadoUseCase.execute(id, dto, user.company_id!, user.sub));
   }
 
   @Post(':id/cancel')
@@ -68,7 +68,7 @@ export class ServiciosController {
   @ApiResponse({ status: 200, description: 'Servicio cancelado' })
   @ApiResponse({ status: 400, description: 'No se puede cancelar en el estado actual' })
   async cancelar(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
-    return ok(await this.cancelarUseCase.execute(id, user.company_id, user.sub));
+    return ok(await this.cancelarUseCase.execute(id, user.company_id!, user.sub));
   }
 
   @Get()
@@ -81,7 +81,7 @@ export class ServiciosController {
     @Query('status') status?: ServiceStatus,
     @Query('courier_id') courier_id?: string,
   ) {
-    return ok(await this.consultarUseCase.findAll(user.company_id, { status, courier_id }));
+    return ok(await this.consultarUseCase.findAll(user.company_id!, { status, courier_id }));
   }
 
   @Get(':id')
@@ -90,7 +90,7 @@ export class ServiciosController {
   @ApiResponse({ status: 200, description: 'Servicio encontrado' })
   @ApiResponse({ status: 404, description: 'No encontrado' })
   async findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
-    return ok(await this.consultarUseCase.findOne(id, user.company_id));
+    return ok(await this.consultarUseCase.findOne(id, user.company_id!));
   }
 
   @Get(':id/history')
@@ -98,6 +98,6 @@ export class ServiciosController {
   @ApiParam({ name: 'id', description: 'UUID del servicio' })
   @ApiResponse({ status: 200, description: 'Historial de transiciones' })
   async historial(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
-    return ok(await this.consultarUseCase.findHistorial(id, user.company_id));
+    return ok(await this.consultarUseCase.findHistorial(id, user.company_id!));
   }
 }

@@ -28,7 +28,7 @@ describe('JornadaUseCase', () => {
         .mockResolvedValueOnce(makeCourier('AVAILABLE'));
       const result = await useCase.iniciar('c-1', 'co-1');
       expect(mockRepo.updateStatus).toHaveBeenCalledWith('c-1', 'co-1', 'AVAILABLE');
-      expect(result.operational_status).toBe('AVAILABLE');
+      expect(result!.operational_status).toBe('AVAILABLE');
     });
 
     it('throws when courier not found', async () => {

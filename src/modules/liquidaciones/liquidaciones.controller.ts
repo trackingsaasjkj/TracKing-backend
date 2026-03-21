@@ -33,21 +33,21 @@ export class LiquidacionesController {
   @ApiOperation({ summary: 'Crear regla de liquidación', description: 'Desactiva la regla anterior y crea una nueva activa. Solo ADMIN.' })
   @ApiResponse({ status: 201, description: 'Regla creada' })
   async createRule(@Body() dto: CreateRuleDto, @CurrentUser() user: JwtPayload) {
-    return ok(await this.reglasUseCase.create(dto, user.company_id));
+    return ok(await this.reglasUseCase.create(dto, user.company_id!));
   }
 
   @Get('rules')
   @ApiOperation({ summary: 'Listar reglas de liquidación' })
   @ApiResponse({ status: 200, description: 'Lista de reglas' })
   async findRules(@CurrentUser() user: JwtPayload) {
-    return ok(await this.reglasUseCase.findAll(user.company_id));
+    return ok(await this.reglasUseCase.findAll(user.company_id!));
   }
 
   @Get('rules/active')
   @ApiOperation({ summary: 'Regla activa actual' })
   @ApiResponse({ status: 200, description: 'Regla activa' })
   async findActiveRule(@CurrentUser() user: JwtPayload) {
-    return ok(await this.reglasUseCase.findActive(user.company_id));
+    return ok(await this.reglasUseCase.findActive(user.company_id!));
   }
 
   // ── Generate Settlements ────────────────────────────────────
@@ -61,7 +61,7 @@ export class LiquidacionesController {
   @ApiResponse({ status: 400, description: 'Sin servicios en el rango, total inválido o sin regla activa' })
   @ApiResponse({ status: 404, description: 'Mensajero no encontrado' })
   async generateCourier(@Body() dto: GenerarLiquidacionCourierDto, @CurrentUser() user: JwtPayload) {
-    return ok(await this.generarCourierUseCase.execute(dto, user.company_id));
+    return ok(await this.generarCourierUseCase.execute(dto, user.company_id!));
   }
 
   @Post('generate/customer')
@@ -72,7 +72,7 @@ export class LiquidacionesController {
   @ApiResponse({ status: 201, description: 'Liquidación generada' })
   @ApiResponse({ status: 400, description: 'Sin servicios en el rango o total inválido' })
   async generateCustomer(@Body() dto: GenerarLiquidacionClienteDto, @CurrentUser() user: JwtPayload) {
-    return ok(await this.generarClienteUseCase.execute(dto, user.company_id));
+    return ok(await this.generarClienteUseCase.execute(dto, user.company_id!));
   }
 
   // ── Query Settlements ───────────────────────────────────────
@@ -82,14 +82,14 @@ export class LiquidacionesController {
   @ApiQuery({ name: 'courier_id', required: false, description: 'Filtrar por mensajero' })
   @ApiResponse({ status: 200, description: 'Lista de liquidaciones' })
   async findAll(@CurrentUser() user: JwtPayload, @Query('courier_id') courier_id?: string) {
-    return ok(await this.consultarUseCase.findCourierSettlements(user.company_id, courier_id));
+    return ok(await this.consultarUseCase.findCourierSettlements(user.company_id!, courier_id));
   }
 
   @Get('customer')
   @ApiOperation({ summary: 'Listar liquidaciones de clientes (facturación)' })
   @ApiResponse({ status: 200, description: 'Lista de liquidaciones de clientes' })
   async findCustomer(@CurrentUser() user: JwtPayload) {
-    return ok(await this.consultarUseCase.findCustomerSettlements(user.company_id));
+    return ok(await this.consultarUseCase.findCustomerSettlements(user.company_id!));
   }
 
   @Get('earnings')
@@ -97,7 +97,7 @@ export class LiquidacionesController {
   @ApiQuery({ name: 'courier_id', required: false })
   @ApiResponse({ status: 200, description: 'Resumen de ganancias' })
   async earnings(@CurrentUser() user: JwtPayload, @Query('courier_id') courier_id?: string) {
-    return ok(await this.consultarUseCase.getEarnings(user.company_id, courier_id));
+    return ok(await this.consultarUseCase.getEarnings(user.company_id!, courier_id));
   }
 
   @Get(':id')
@@ -106,6 +106,6 @@ export class LiquidacionesController {
   @ApiResponse({ status: 200, description: 'Liquidación encontrada' })
   @ApiResponse({ status: 404, description: 'No encontrada' })
   async findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
-    return ok(await this.consultarUseCase.findCourierSettlementById(id, user.company_id));
+    return ok(await this.consultarUseCase.findCourierSettlementById(id, user.company_id!));
   }
 }

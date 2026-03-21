@@ -25,7 +25,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Listar usuarios de la empresa' })
   @ApiResponse({ status: 200, description: 'Lista de usuarios' })
   async findAll(@CurrentUser() user: JwtPayload) {
-    return ok(await this.usersUseCases.findAll(user.company_id));
+    return ok(await this.usersUseCases.findAll(user.company_id!));
   }
 
   @Get('email/:email')
@@ -36,7 +36,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Usuario encontrado' })
   @ApiResponse({ status: 404, description: 'No encontrado' })
   async findByEmail(@Param('email') email: string, @CurrentUser() user: JwtPayload) {
-    return ok(await this.usersUseCases.findByEmail(email, user.company_id));
+    return ok(await this.usersUseCases.findByEmail(email, user.company_id!));
   }
 
   @Get(':uuid')
@@ -46,7 +46,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Usuario encontrado' })
   @ApiResponse({ status: 404, description: 'No encontrado' })
   async findOne(@Param('uuid') uuid: string, @CurrentUser() user: JwtPayload) {
-    return ok(await this.usersUseCases.findById(uuid, user.company_id));
+    return ok(await this.usersUseCases.findById(uuid, user.company_id!));
   }
 
   @Post()
@@ -56,7 +56,7 @@ export class UsersController {
   @ApiResponse({ status: 201, description: 'Usuario creado' })
   @ApiResponse({ status: 409, description: 'Email ya registrado' })
   async create(@Body() dto: CreateUserDto, @CurrentUser() user: JwtPayload) {
-    return ok(await this.usersUseCases.create(dto, user.company_id));
+    return ok(await this.usersUseCases.create(dto, user.company_id!));
   }
 
   @Put(':uuid')
@@ -66,7 +66,7 @@ export class UsersController {
   @ApiParam({ name: 'uuid', description: 'UUID del usuario' })
   @ApiResponse({ status: 200, description: 'Usuario actualizado' })
   async update(@Param('uuid') uuid: string, @Body() dto: UpdateUserDto, @CurrentUser() user: JwtPayload) {
-    return ok(await this.usersUseCases.update(uuid, dto, user.company_id));
+    return ok(await this.usersUseCases.update(uuid, dto, user.company_id!));
   }
 
   @Delete(':uuid')
@@ -76,7 +76,7 @@ export class UsersController {
   @ApiParam({ name: 'uuid', description: 'UUID del usuario' })
   @ApiResponse({ status: 200, description: 'Usuario eliminado' })
   async remove(@Param('uuid') uuid: string, @CurrentUser() user: JwtPayload) {
-    await this.usersUseCases.remove(uuid, user.company_id);
+    await this.usersUseCases.remove(uuid, user.company_id!);
     return ok(null);
   }
 }

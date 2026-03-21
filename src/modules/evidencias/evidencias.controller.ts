@@ -31,7 +31,7 @@ export class EvidenciasController {
   @ApiResponse({ status: 400, description: 'Servicio no está IN_TRANSIT' })
   @ApiResponse({ status: 404, description: 'Servicio no encontrado' })
   async subir(@Param('id') id: string, @Body() dto: SubirEvidenciaDto, @CurrentUser() user: JwtPayload) {
-    return ok(await this.subirUseCase.execute(id, dto, user.company_id));
+    return ok(await this.subirUseCase.execute(id, dto, user.company_id!));
   }
 
   @Get()
@@ -40,6 +40,6 @@ export class EvidenciasController {
   @ApiResponse({ status: 200, description: 'Evidencia encontrada' })
   @ApiResponse({ status: 404, description: 'Sin evidencia registrada o servicio no encontrado' })
   async consultar(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
-    return ok(await this.consultarUseCase.execute(id, user.company_id));
+    return ok(await this.consultarUseCase.execute(id, user.company_id!));
   }
 }

@@ -1,0 +1,350 @@
+# Implementation Plan: super-admin-control
+
+## Overview
+
+Implementación incremental del rol `SUPER_ADMIN` sobre la arquitectura NestJS DDD existente. Cada tarea construye sobre la anterior, comenzando por los cambios de base de datos y tipos, luego la infraestructura de seguridad, el módulo completo con sus casos de uso, y finalmente los tests.
+
+## Tasks
+
+- [x] 1. Cambios al schema Prisma y migración
+  - [x] 1.1 Agregar `SUPER_ADMIN` al enum `UserRole` en `prisma/schema.prisma`
+    - Insertar `SUPER_ADMIN` como primer valor del enum `UserRole`
+    - _Requirements: 1.1, 7.4_
+  - [x] 1.2 Hacer `company_id` nullable en el modelo `User`
+    - Cambiar `company_id String` a `company_id String?`
+    - Cambiar la relación `company Company` a `company Company?`
+    - _Requirements: 1.5, 7.4_
+  - [x] 1.3 Hacer `company_id` nullable en el modelo `Token`
+    - Cambiar `company_id String` a `company_id String?`
+    - Cambiar la relación `company Company` a `company Company?`
+    - _Requirements: 1.2_
+  - [x] 1.4 Agregar modelo `AuditLog` al schema
+    - Campos: `id`, `super_admin_id`, `action`, `entity_type`, `entity_id`, `payload Json?`, `ip_address String?`, `created_at`
+    - Relación con `User` via `super_admin_id` con nombre `"SuperAdminAuditLogs"`
+    - Índices en `super_admin_id`, `(entity_type, entity_id)`, `created_at(sort: Desc)`
+    - _Requirements: 6.1_
+  - [x] 1.5 Agregar modelo `GlobalConfig` al schema
+    - Campos: `id`, `key String @unique`, `value String`, `description String?`, `updated_at DateTime @updatedAt`
+    - _Requirements: 4.1_
+  - [x] 1.6 Agregar relación `auditLogs` en el modelo `User`
+    - `auditLogs AuditLog[] @relation("SuperAdminAuditLogs")`
+    - _Requirements: 6.1_
+  - [x] 1.7 Ejecutar migración Prisma
+    - Correr `npx prisma migrate dev --name super-admin-control` para generar y aplicar la migración
+    - Correr `npx prisma generate` para regenerar el cliente
+    - _Requirements: 1.1, 1.5, 4.1, 6.1_
+
+- [x] 2. Actualizar tipos y enums en el código TypeScript
+  - [x] 2.1 Agregar `SUPER_ADMIN` al enum `Role` en `src/core/constants/roles.enum.ts`
+    - Insertar `SUPER_ADMIN = 'SUPER_ADMIN'` como primer valor
+    - _Requirements: 1.1_
+  - [x] 2.2 Actualizar `JwtPayload` en `src/core/types/jwt-payload.type.ts`
+    - Cambiar `company_id: string` a `company_id: string | null`
+    - _Requirements: 1.2_
+  - [x] 2.3 Agregar variables de entorno Swagger a `src/config/env.ts`
+    - Agregar `SWAGGER_ENABLED: string = 'true'` con `@IsString()`
+    - Agregar `SWAGGER_USER: string = 'admin'` con `@IsString()`
+    - Agregar `SWAGGER_PASSWORD: string = 'secret'` con `@IsString()`
+    - _Requirements: 8.4, 8.5_
+  - [x] 2.4 Agregar las nuevas variables al archivo `.env.example`
+    - Agregar `SWAGGER_ENABLED=true`, `SWAGGER_USER=admin`, `SWAGGER_PASSWORD=secret`
+    - _Requirements: 8.4_
+
+- [x] 3. Crear `SuperAdminGuard`
+  - [x] 3.1 Crear `src/core/guards/super-admin.guard.ts`
+    - Implementar `CanActivate` que lee `request.user` (ya validado por `JwtAuthGuard` global)
+    - Lanzar `ForbiddenException` si `user.role !== Role.SUPER_ADMIN`
+    - Retornar `true` si el rol es `SUPER_ADMIN` sin verificar `company_id`
+    - _Requirements: 1.3, 1.6, 7.1, 7.2_
+  - [ ]* 3.2 Escribir property test para `SuperAdminGuard` — Property 2
+    - **Property 2: Guard rechaza roles no-SUPER_ADMIN**
+    - Usar `fc.constantFrom(Role.ADMIN, Role.AUX, Role.COURIER)` para generar roles
+    - Verificar que el guard lanza `ForbiddenException` para cualquier rol distinto de `SUPER_ADMIN`
+    - **Validates: Requirements 1.3, 7.2**
+  - [ ]* 3.3 Escribir property test para `SuperAdminGuard` — Property 3
+    - **Property 3: Guard permite SUPER_ADMIN sin verificar company_id**
+    - Usar `fc.option(fc.uuid())` para generar `company_id` aleatorio (incluyendo `null`)
+    - Verificar que el guard retorna `true` para cualquier valor de `company_id`
+    - **Validates: Requirements 1.6**
+
+- [x] 4. Implementar middleware HTTP Basic Auth para Swagger en `main.ts`
+  - [x] 4.1 Agregar middleware Express de Basic Auth en `main.ts` antes del setup de Swagger
+    - Leer `SWAGGER_ENABLED`, `SWAGGER_USER`, `SWAGGER_PASSWORD` desde `process.env`
+    - Si `SWAGGER_ENABLED === 'false'`, registrar middleware que retorna 404 en `/api/docs`
+    - Si habilitado, registrar middleware que valida credenciales Basic Auth en `/api/docs`
+    - Si credenciales inválidas o ausentes, responder 401 con header `WWW-Authenticate: Basic realm="Swagger"`
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6_
+  - [ ]* 4.2 Escribir property test para Swagger middleware — Property 18
+    - **Property 18: Swagger con credenciales válidas concede acceso**
+    - Generar pares usuario/contraseña que coincidan con las variables de entorno
+    - Verificar que el middleware llama `next()` (acceso concedido)
+    - **Validates: Requirements 8.2**
+  - [ ]* 4.3 Escribir property test para Swagger middleware — Property 19
+    - **Property 19: Swagger con credenciales inválidas retorna 401**
+    - Usar `fc.string()` para generar credenciales que no coincidan con las del entorno
+    - Verificar que el middleware responde 401 con header `WWW-Authenticate: Basic`
+    - **Validates: Requirements 8.3**
+  - [ ]* 4.4 Escribir property test para Swagger middleware — Property 20
+    - **Property 20: SWAGGER_ENABLED=false deshabilita el endpoint**
+    - Configurar `SWAGGER_ENABLED=false` y verificar que cualquier solicitud retorna 404
+    - **Validates: Requirements 8.5, 8.6**
+
+- [x] 5. Crear estructura base del `SuperAdminModule`
+  - [x] 5.1 Crear DTOs en `src/modules/super-admin/application/dto/`
+    - `create-tenant.dto.ts`: campo `name: string` con `@IsString() @IsNotEmpty()`
+    - `update-tenant-status.dto.ts`: campo `status: boolean` con `@IsBoolean()`
+    - `update-user-role.dto.ts`: campo `role: Role` con `@IsEnum(Role)`
+    - `update-user-status.dto.ts`: campo `status: UserStatus` con `@IsEnum(UserStatus)`
+    - `create-global-config.dto.ts`: campos `key`, `value`, `description?` con validaciones
+    - `update-global-config.dto.ts`: campo `value: string` con `@IsString() @IsNotEmpty()`
+    - `audit-log-filter.dto.ts`: campos opcionales `super_admin_id?`, `entity_type?`, `action?`, `from?`, `to?`, `page?`, `limit?`
+    - `pagination.dto.ts`: campos `page?: number`, `limit?: number` con valores por defecto
+    - _Requirements: 2.1, 3.1, 4.2, 6.3_
+  - [x] 5.2 Crear `src/modules/super-admin/infrastructure/super-admin.repository.ts`
+    - Inyectar `PrismaService`
+    - Métodos para tenants: `findAllTenants`, `findTenantById`, `createTenant`, `updateTenantStatus`, `deleteTenant`, `getTenantDetail`
+    - Métodos para usuarios: `findUsersByTenant`, `findUserById`, `updateUserStatus`, `updateUserRole`, `deleteUser`
+    - Métodos para config: `findAllConfig`, `findConfigByKey`, `createConfig`, `updateConfig`
+    - Métodos para métricas: `getDashboardMetrics`, `getTenantMetrics`, `getTenantsByVolume`
+    - Métodos para audit: `createAuditLog`, `findAuditLogs`
+    - Capturar errores Prisma `P2002` → `AppException` 409, `P2025` → `AppException` 404
+    - _Requirements: 2.1, 2.2, 2.3, 3.1, 4.1, 5.1, 6.1_
+  - [x] 5.3 Crear `src/modules/super-admin/domain/audit-log.service.ts`
+    - Inyectar `SuperAdminRepository`
+    - Método `log(entry: AuditLogEntry): Promise<void>` con manejo best-effort (try/catch, Logger.error sin re-throw)
+    - _Requirements: 6.2, 6.4_
+  - [x] 5.4 Crear `src/modules/super-admin/super-admin.module.ts`
+    - Importar `PrismaModule`
+    - Proveer `SuperAdminRepository`, `AuditLogService` y todos los use cases
+    - _Requirements: 7.1, 7.3_
+  - [x] 5.5 Crear `src/modules/super-admin/super-admin.controller.ts` con estructura base
+    - Decorar con `@Controller('super-admin')`, `@UseGuards(SuperAdminGuard)`, `@ApiBearerAuth('access-token')`
+    - Decorar con `@Throttle({ 'super-admin': { limit: 30, ttl: 60000 } })`
+    - Agregar tag Swagger `@ApiTags('Super Admin')`
+    - Declarar todos los endpoints como stubs que retornan `{ todo: true }` (se implementarán en tareas siguientes)
+    - _Requirements: 7.1, 7.3, 7.5_
+
+- [x] 6. Implementar casos de uso de gestión de tenants
+  - [x] 6.1 Crear `list-tenants.use-case.ts`
+    - Recibir `PaginationDto`, llamar `repository.findAllTenants(page, limit)`
+    - Retornar lista paginada con tenants activos e inactivos
+    - _Requirements: 2.1_
+  - [x] 6.2 Crear `get-tenant-detail.use-case.ts`
+    - Recibir `id: string`, llamar `repository.getTenantDetail(id)`
+    - Retornar detalle con conteo de usuarios, servicios activos y mensajeros
+    - Lanzar `AppException` 404 si no existe
+    - _Requirements: 2.8_
+  - [x] 6.3 Crear `create-tenant.use-case.ts`
+    - Recibir `CreateTenantDto`, llamar `repository.createTenant(name)`
+    - Retornar tenant creado con `id`
+    - El repositorio captura `P2002` y lanza `AppException` 409
+    - _Requirements: 2.2, 2.3_
+  - [x] 6.4 Crear `suspend-tenant.use-case.ts`
+    - Recibir `id: string`, llamar `repository.updateTenantStatus(id, false)`
+    - Retornar HTTP 200 con tenant actualizado
+    - _Requirements: 2.4_
+  - [x] 6.5 Crear `reactivate-tenant.use-case.ts`
+    - Recibir `id: string`, llamar `repository.updateTenantStatus(id, true)`
+    - _Requirements: 2.6_
+  - [x] 6.6 Crear `delete-tenant.use-case.ts`
+    - Recibir `id: string` y `superAdminId: string`
+    - Llamar `repository.deleteTenant(id)` y luego `auditLogService.log(...)` con `action: 'DELETE_TENANT'`
+    - _Requirements: 2.7_
+  - [x] 6.7 Conectar use cases de tenants en el controlador
+    - Implementar los endpoints reales: `GET /tenants`, `POST /tenants`, `GET /tenants/:id`, `PATCH /tenants/:id/suspend`, `PATCH /tenants/:id/reactivate`, `DELETE /tenants/:id`
+    - Extraer `superAdminId` del `@CurrentUser()` decorator
+    - _Requirements: 2.1, 2.2, 2.4, 2.6, 2.7, 2.8_
+  - [ ]* 6.8 Escribir property test para creación de tenant — Property 4
+    - **Property 4: Creación de tenant con nombre válido retorna tenant con id**
+    - Usar `fc.string({ minLength: 1, maxLength: 100 })` para generar nombres
+    - Verificar que la respuesta contiene `id` no nulo y el nombre enviado
+    - **Validates: Requirements 2.2**
+  - [ ]* 6.9 Escribir property test para nombre duplicado — Property 5
+    - **Property 5: Nombre de tenant duplicado retorna 409**
+    - Crear tenant, intentar crear con mismo nombre, verificar `AppException` 409
+    - **Validates: Requirements 2.3**
+  - [ ]* 6.10 Escribir property test para round-trip suspend/reactivate — Property 6
+    - **Property 6: Round-trip suspend/reactivate de tenant**
+    - Suspender y luego reactivar un tenant, verificar que `status = true`
+    - **Validates: Requirements 2.4, 2.6**
+
+- [x] 7. Implementar casos de uso de gestión de usuarios cross-tenant
+  - [x] 7.1 Crear `list-tenant-users.use-case.ts`
+    - Recibir `tenantId`, filtros opcionales `role?` y `status?`, paginación
+    - Llamar `repository.findUsersByTenant(tenantId, filters, page, limit)`
+    - _Requirements: 3.1_
+  - [x] 7.2 Crear `suspend-user.use-case.ts`
+    - Recibir `userId: string`, llamar `repository.updateUserStatus(userId, UserStatus.SUSPENDED)`
+    - _Requirements: 3.2_
+  - [x] 7.3 Crear `reactivate-user.use-case.ts`
+    - Recibir `userId: string`, llamar `repository.updateUserStatus(userId, UserStatus.ACTIVE)`
+    - _Requirements: 3.4_
+  - [x] 7.4 Crear `change-user-role.use-case.ts`
+    - Recibir `userId: string`, `role: Role`
+    - Obtener usuario con `repository.findUserById(userId)`
+    - Si `role === Role.SUPER_ADMIN && user.company_id !== null`, lanzar `AppException` 422
+    - Llamar `repository.updateUserRole(userId, role)`
+    - _Requirements: 3.5, 3.6_
+  - [x] 7.5 Crear `delete-user.use-case.ts`
+    - Recibir `userId: string` y `superAdminId: string`
+    - Llamar `repository.deleteUser(userId)` y luego `auditLogService.log(...)` con `action: 'DELETE_USER'`
+    - _Requirements: 3.7_
+  - [x] 7.6 Conectar use cases de usuarios en el controlador
+    - Implementar: `GET /tenants/:id/users`, `PATCH /users/:id/suspend`, `PATCH /users/:id/reactivate`, `PATCH /users/:id/role`, `DELETE /users/:id`
+    - _Requirements: 3.1, 3.2, 3.4, 3.5, 3.7_
+  - [ ]* 7.7 Escribir property test para round-trip suspend/reactivate usuario — Property 9
+    - **Property 9: Round-trip suspend/reactivate de usuario**
+    - Suspender y reactivar un usuario, verificar que `status = ACTIVE`
+    - **Validates: Requirements 3.2, 3.4**
+  - [ ]* 7.8 Escribir property test para cambio de rol — Property 10
+    - **Property 10: Cambio de rol persiste el nuevo valor**
+    - Usar `fc.constantFrom(Role.ADMIN, Role.AUX, Role.COURIER)` para usuarios con `company_id`
+    - Verificar que el campo `role` en BD es igual al valor enviado
+    - **Validates: Requirements 3.5**
+  - [ ]* 7.9 Escribir property test para SUPER_ADMIN con tenant — Property 11
+    - **Property 11: Asignar SUPER_ADMIN a usuario con tenant retorna 422**
+    - Usar `fc.uuid()` para generar `company_id` no nulo
+    - Verificar que `change-user-role.use-case` lanza `AppException` con status 422
+    - **Validates: Requirements 3.6**
+
+- [x] 8. Implementar casos de uso de configuración global
+  - [x] 8.1 Crear `list-global-config.use-case.ts`
+    - Llamar `repository.findAllConfig()` y retornar lista completa
+    - _Requirements: 4.2_
+  - [x] 8.2 Crear `create-global-config.use-case.ts`
+    - Recibir `CreateGlobalConfigDto` con `key`, `value`, `description?`
+    - Llamar `repository.createConfig(dto)`
+    - El repositorio captura `P2002` y lanza `AppException` 409
+    - _Requirements: 4.5, 4.6_
+  - [x] 8.3 Crear `update-global-config.use-case.ts`
+    - Recibir `key: string`, `UpdateGlobalConfigDto`
+    - Llamar `repository.findConfigByKey(key)`, lanzar `AppException` 404 si no existe
+    - Llamar `repository.updateConfig(key, value)`
+    - _Requirements: 4.3, 4.4_
+  - [x] 8.4 Conectar use cases de config en el controlador
+    - Implementar: `GET /config`, `POST /config`, `PATCH /config/:key`
+    - _Requirements: 4.2, 4.3, 4.4, 4.5, 4.6_
+  - [ ]* 8.5 Escribir property test para update GlobalConfig — Property 12
+    - **Property 12: Actualización de GlobalConfig persiste valor y updated_at**
+    - Usar `fc.string()` para generar valores, verificar persistencia y que `updated_at >= previo`
+    - **Validates: Requirements 4.3**
+  - [ ]* 8.6 Escribir property test para key inexistente — Property 13
+    - **Property 13: Actualizar clave inexistente retorna 404**
+    - Usar `fc.string()` para generar keys que no existen en BD
+    - Verificar que el use case lanza `AppException` con status 404
+    - **Validates: Requirements 4.4**
+  - [ ]* 8.7 Escribir property test para key duplicada — Property 14
+    - **Property 14: Crear GlobalConfig con key duplicada retorna 409**
+    - Crear config, intentar crear con misma key, verificar `AppException` 409
+    - **Validates: Requirements 4.6**
+
+- [x] 9. Implementar `AuditLogService` y casos de uso de auditoría
+  - [x] 9.1 Completar implementación de `AuditLogService` en `src/modules/super-admin/domain/audit-log.service.ts`
+    - Inyectar `PrismaService` directamente (o `SuperAdminRepository`)
+    - Implementar `log(entry: AuditLogEntry): Promise<void>` con try/catch y `Logger.error` sin re-throw
+    - _Requirements: 6.2, 6.4_
+  - [x] 9.2 Crear `list-audit-log.use-case.ts`
+    - Recibir `AuditLogFilterDto` con filtros opcionales y paginación
+    - Llamar `repository.findAuditLogs(filters, page, limit)`
+    - _Requirements: 6.3_
+  - [x] 9.3 Conectar endpoint de audit log en el controlador
+    - Implementar: `GET /audit-log` con query params de filtro
+    - No exponer endpoints de escritura (POST/PATCH/DELETE) sobre audit log
+    - _Requirements: 6.3, 6.5_
+  - [ ]* 9.4 Escribir property test para eliminación registra AuditLog — Property 8
+    - **Property 8: Eliminación de recurso registra en AuditLog**
+    - Eliminar tenant o usuario, verificar que existe exactamente un registro en `AuditLog` con `entity_id` correcto
+    - **Validates: Requirements 2.7, 3.7**
+  - [ ]* 9.5 Escribir property test para AuditLog inmutable — Property 16
+    - **Property 16: AuditLog es inmutable vía API**
+    - Verificar que el controlador no expone métodos POST/PATCH/DELETE sobre `/audit-log`
+    - Verificar que cualquier intento de escritura retorna 404 o 405
+    - **Validates: Requirements 6.5**
+
+- [x] 10. Implementar casos de uso de dashboard y métricas
+  - [x] 10.1 Crear `get-dashboard.use-case.ts`
+    - Llamar `repository.getDashboardMetrics()` que ejecuta queries en tiempo real
+    - Retornar: total tenants activos, usuarios por rol, servicios por estado, mensajeros por estado operacional
+    - _Requirements: 5.1, 5.4_
+  - [x] 10.2 Crear `get-tenant-metrics.use-case.ts`
+    - Recibir `tenantId: string`, `from: Date`, `to: Date`
+    - Llamar `repository.getTenantMetrics(tenantId, from, to)`
+    - Retornar: servicios por estado en período, mensajeros activos, monto total liquidado
+    - _Requirements: 5.2_
+  - [x] 10.3 Crear `list-tenants-by-volume.use-case.ts`
+    - Recibir `from: Date`, `to: Date`
+    - Llamar `repository.getTenantsByVolume(from, to)` ordenado por volumen de servicios
+    - _Requirements: 5.3_
+  - [x] 10.4 Conectar use cases de métricas en el controlador
+    - Implementar: `GET /dashboard`, `GET /tenants/:id/metrics`, `GET /tenants/by-volume`
+    - _Requirements: 5.1, 5.2, 5.3_
+  - [ ]* 10.5 Escribir unit test para estructura de respuesta del dashboard
+    - Verificar que la respuesta contiene los campos: `activeTenants`, `usersByRole`, `servicesByStatus`, `couriersByStatus`
+    - _Requirements: 5.1_
+  - [ ]* 10.6 Escribir property test para métricas de tenant — Property 15
+    - **Property 15: Métricas de tenant contienen campos requeridos**
+    - Verificar que la respuesta contiene `servicesByStatus`, `activeCouriers`, `totalSettled`
+    - **Validates: Requirements 5.2**
+
+- [x] 11. Registrar `SuperAdminModule` en `AppModule` y configurar throttling
+  - [x] 11.1 Agregar throttler `super-admin` en `ThrottlerModule.forRoot` en `src/app.module.ts`
+    - Agregar `{ name: 'super-admin', ttl: 60_000, limit: 30 }` al array existente
+    - _Requirements: 7.3_
+  - [x] 11.2 Importar `SuperAdminModule` en `AppModule`
+    - Agregar `SuperAdminModule` al array `imports` de `AppModule`
+    - Agregar tag `'Super Admin'` al `DocumentBuilder` en `main.ts`
+    - _Requirements: 7.5_
+
+- [x] 12. Checkpoint — Verificar integración base
+  - Asegurarse de que todos los tests existentes siguen pasando, preguntar al usuario si hay dudas antes de continuar con los tests de la feature.
+
+- [x] 13. Instalar fast-check y escribir property-based tests
+  - [x] 13.1 Instalar `fast-check` como dependencia de desarrollo
+    - Correr `npm install --save-dev fast-check`
+    - _Requirements: (testing strategy del design)_
+  - [ ]* 13.2 Crear `specs/super-admin/super-admin-guard.spec.ts`
+    - Unit test: guard lanza `ForbiddenException` para `Role.ADMIN`, `Role.AUX`, `Role.COURIER`
+    - Unit test: guard retorna `true` para `Role.SUPER_ADMIN` con `company_id: null`
+    - Property test P2: `fc.constantFrom(Role.ADMIN, Role.AUX, Role.COURIER)` → siempre 403
+    - Property test P3: `fc.option(fc.uuid())` como `company_id` → siempre permite acceso
+    - _Requirements: 1.3, 1.6, 7.2_
+  - [ ]* 13.3 Crear `specs/super-admin/swagger-auth.middleware.spec.ts`
+    - Unit test: sin credenciales → 401 con header `WWW-Authenticate: Basic`
+    - Unit test: credenciales correctas → llama `next()`
+    - Unit test: `SWAGGER_ENABLED=false` → 404
+    - Property test P18, P19, P20
+    - _Requirements: 8.1, 8.2, 8.3, 8.5_
+  - [ ]* 13.4 Crear `specs/super-admin/tenants.use-case.spec.ts`
+    - Unit tests para `create-tenant`, `suspend-tenant`, `reactivate-tenant`, `delete-tenant`
+    - Property test P4, P5, P6
+    - _Requirements: 2.2, 2.3, 2.4, 2.6, 2.7_
+  - [ ]* 13.5 Crear `specs/super-admin/users.use-case.spec.ts`
+    - Unit tests para `suspend-user`, `reactivate-user`, `change-user-role`, `delete-user`
+    - Property test P9, P10, P11
+    - _Requirements: 3.2, 3.4, 3.5, 3.6, 3.7_
+  - [ ]* 13.6 Crear `specs/super-admin/global-config.use-case.spec.ts`
+    - Unit tests para `create-global-config`, `update-global-config`, `list-global-config`
+    - Property test P12, P13, P14
+    - _Requirements: 4.3, 4.4, 4.5, 4.6_
+  - [ ]* 13.7 Crear `specs/super-admin/audit-log.service.spec.ts`
+    - Unit test: fallo en escritura no lanza excepción (best-effort)
+    - Unit test: escritura exitosa crea registro con campos correctos
+    - Property test P8, P16
+    - _Requirements: 6.2, 6.4, 6.5_
+  - [ ]* 13.8 Crear `specs/super-admin/dashboard.use-case.spec.ts`
+    - Unit tests para estructura de respuesta del dashboard y métricas por tenant
+    - Property test P15
+    - _Requirements: 5.1, 5.2_
+
+- [x] 14. Checkpoint final — Asegurarse de que todos los tests pasan
+  - Correr `npx jest --testPathPattern=super-admin --passWithNoTests` para verificar la suite completa
+  - Preguntar al usuario si hay ajustes antes de cerrar la feature.
+
+## Notes
+
+- Las tareas marcadas con `*` son opcionales y pueden omitirse para un MVP más rápido
+- Cada tarea referencia los requisitos específicos para trazabilidad
+- Los checkpoints garantizan validación incremental
+- Los property tests usan `fast-check` con mínimo 100 iteraciones (`{ numRuns: 100 }`)
+- Los unit tests cubren casos concretos y condiciones de error
+- El `AuditLogService` es best-effort: un fallo de auditoría nunca interrumpe la operación principal

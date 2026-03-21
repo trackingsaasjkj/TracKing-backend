@@ -11,5 +11,5 @@ export class CambiarEstadoDto {
     description: 'Nuevo estado. ASSIGNED usa su propio endpoint /assign. CANCELLED usa /cancel.',
   })
   @IsEnum(ALLOWED, { message: `status debe ser uno de: ${ALLOWED.join(', ')}` })
-  status: ServicioEstado;
+  status!: ServicioEstado;
 }

@@ -1,0 +1,62 @@
+# FASE 9 — SUGERENCIAS DE MEJORA
+
+## 🎯 Objetivo
+Consolidar el proyecto existente como una solución producción-ready con calidad, seguridad, resiliencia y mantenibilidad.
+
+## 🧩 Mejora general y arquitectura
+- Activar `strict` de TypeScript en `tsconfig.json` (strictNullChecks, noImplicitAny, strictBindCallApply, noFallthroughCasesInSwitch, forceConsistentCasingInFileNames).
+- Reestructurar `domain`/`use-cases` para extraer lógica de validaciones al repositorio o servicios de domain: evitar lógica duplicada (existencia de cliente/servicio, validación de tenant).
+- En cada repositorio, aplicar filtros de `company_id` siempre para evitar leaks multi-tenant.
+- Introducir DTOs inmóviles (readonly) y validaciones `@IsUUID`, `@IsEnum`, `@IsPositive`, `@IsDateString`.
+
+## 🔧 Seguridad y auth
+- Agregar rate limit (login, refresh, endpoints críticos) con `@nestjs/throttler`.
+- Implementar locks de intentos fallidos (500 locked, incremento en cache/DB, desbloqueo temporal).
+- Usar `SameSite=strict` cookie si no se requiere cross-site y `secure=true` en producción.
+- Añadir refresh tokens rotativos: invalidación temprana al logout y limpieza de todos tokens asociados en usuario/empresa.
+- Agregar controles de expiración de sesión y token revocation en `TokenService`.
+
+## 🧪 Pruebas
+- Agregar tests unitarios de cada use-case; inyectar mocks de repositorios (`jest.mock`, `@nestjs/testing`).
+- Cobertura de tests para edge cases (error 404 multi-tenant, 401 no autorizado, 409 duplicados, transacciones fallidas).
+- Tests e2e con `supertest` para flujos completos: login->crear servicio->asignar->entregar->liquidar.
+- Scripts CI: `npm test`, `npm run lint`, `npm run test:cov`.
+
+## 🛠️ Mantenimiento e infra
+- Agregar linter/Eslint/Prettier y configurar en `package.json`.
+- Añadir GitHub Actions con pasos: `checkout`, `setup-node`, `npm i`, `npm run lint`, `npm run test`, `npm run prisma:generate`, `npm run build`.
+- Logging centralizado: `NestJS Logger`, o `pino` con levels `info/warn/error`. Reemplazar `console.log`.
+- Añadir métricas y healthchecks (`terminus`).
+
+## 🗃️ Base de datos y Prisma
+- Revisar y crear migraciones para índices y constraints faltantes (ej: status, company_id, unique combos).
+- Usar transacciones `prisma.$transaction` en operaciones multi-step (servicio + historial + asignación).
+- Evitar select * pobre; usar `select` con campos necesarios para performance.
+- Verificar `@relation` comportamientos: `onDelete: Cascade` ya presente, chequear que no se borren datos críticos accidentalmente.
+
+## 📦 API y UX
+- Añadir paginación/filtros en endpoints listados (`limit`, `offset`, `cursor`, `status`, `courier_id`).
+- Documentar errores con `ApiResponse` en Swagger.
+- Estándarizar respuestas: `success/data/error` está bien, mantenerlo uniforme.
+- Agregar endpoints de auditoría o eventos (historial, acciones del usuario).
+
+## 🧾 Documentación
+- Completar `fase-7-reportes.md` y agregar `fase-8` si corresponde.
+- Incluir `README` sobre deployment en producción (Docker, env, secrets, backups, sitemap).
+- Agregar `CONTRIBUTING.md` y convenciones de commits/branching.
+
+## 🧠 Refactor de roles/permissions
+- Usar `RolesGuard` y `PermissionsGuard` consistentes con `@Roles()` y `@RequirePermissions()`.
+- Definir permisos en enums (`permissions.enum.ts`) y migrar a un RBAC central.
+- Revisar que `Admin/Aux/Courier` no accedan a rutas fuera de alcance.
+
+## 📈 Roadmap rápido
+- fase 9: mejoras de calidad + tests.
+- fase 10: performance audit, escalabilidad horizontal, cache (Redis) para datos estáticos y tokens.
+- fase 11: monitoreo + alertas (Prometheus/Grafana o Datadog).
+
+## ✅ Resultados esperados
+- Proyecto robusto y seguro para producción.
+- Capa de autorización y tenant sin fugas.
+- Documentación clara y tests con >80% cobertura.
+- Mantenibilidad y facil extensión de nuevas fases.

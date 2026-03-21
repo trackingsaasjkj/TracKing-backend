@@ -39,8 +39,8 @@ export class TrackingController {
   @ApiResponse({ status: 400, description: 'Mensajero no está IN_SERVICE' })
   @ApiResponse({ status: 404, description: 'Perfil de mensajero no encontrado' })
   async registrar(@Body() dto: RegisterLocationDto, @CurrentUser() user: JwtPayload) {
-    const courier = await this.mensajerosUseCase.findCourierByUserId(user.sub, user.company_id);
-    return ok(await this.registrarUseCase.execute(dto, courier.id, user.company_id));
+    const courier = await this.mensajerosUseCase.findCourierByUserId(user.sub, user.company_id!);
+    return ok(await this.registrarUseCase.execute(dto, courier.id, user.company_id!));
   }
 
   /**
@@ -53,7 +53,7 @@ export class TrackingController {
   @ApiResponse({ status: 200, description: 'Última ubicación' })
   @ApiResponse({ status: 404, description: 'Sin ubicación registrada o mensajero no encontrado' })
   async findLast(@Param('courier_id') courier_id: string, @CurrentUser() user: JwtPayload) {
-    return ok(await this.consultarUseCase.findLast(courier_id, user.company_id));
+    return ok(await this.consultarUseCase.findLast(courier_id, user.company_id!));
   }
 
   /**
@@ -75,7 +75,7 @@ export class TrackingController {
     @Query('limit') limit?: string,
   ) {
     return ok(
-      await this.consultarUseCase.findHistory(courier_id, user.company_id, {
+      await this.consultarUseCase.findHistory(courier_id, user.company_id!, {
         from: from ? new Date(from) : undefined,
         to: to ? new Date(to) : undefined,
         limit: limit ? parseInt(limit, 10) : undefined,
