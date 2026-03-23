@@ -1,7 +1,9 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { MensajeroRepository } from '../../infrastructure/mensajero.repository';
 import { CreateMensajeroDto } from '../dto/create-mensajero.dto';
+import { UserRole } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class CrearMensajeroUseCase {
@@ -11,16 +13,21 @@ export class CrearMensajeroUseCase {
   ) {}
 
   async execute(dto: CreateMensajeroDto, company_id: string) {
-    // User must exist and belong to same company
-    const user = await this.prisma.user.findFirst({
-      where: { id: dto.user_id, company_id },
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.user.findFirst({ where: { email: dto.email, company_id } });
+      if (existing) throw new ConflictException('El email ya está registrado en esta empresa');
+
+      const password_hash = await bcrypt.hash(dto.password, 12);
+      const user = await tx.user.create({
+        data: { company_id, name: dto.name, email: dto.email, password_hash, role: UserRole.COURIER },
+      });
+
+      const courier = await tx.courier.create({
+        data: { company_id, user_id: user.id, document_id: dto.document_id, phone: dto.phone },
+        include: { user: { select: { id: true, name: true, email: true } } },
+      });
+
+      return courier;
     });
-    if (!user) throw new NotFoundException('Usuario no encontrado en esta empresa');
-
-    // One courier profile per user
-    const existing = await this.mensajeroRepo.findByUserId(dto.user_id, company_id);
-    if (existing) throw new ConflictException('Este usuario ya tiene perfil de mensajero');
-
-    return this.mensajeroRepo.create({ ...dto, company_id });
   }
 }

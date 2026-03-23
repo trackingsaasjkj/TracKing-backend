@@ -32,7 +32,8 @@ export class UsersUseCases {
     if (existing) throw new ConflictException('Email ya registrado en esta empresa');
 
     const password_hash = await this.tokenService.hashPassword(dto.password);
-    return this.usersRepo.create({ ...dto, company_id, password_hash });
+    const { password, ...rest } = dto;
+    return this.usersRepo.create({ ...rest, company_id, password_hash });
   }
 
   async update(id: string, dto: UpdateUserDto, company_id: string) {

@@ -15,6 +15,7 @@ import { LiquidacionesModule } from './modules/liquidaciones/liquidaciones.modul
 import { ReportesModule } from './modules/reportes/reportes.module';
 import { JwtAuthGuard } from './core/guards/jwt-auth.guard';
 import { HealthModule } from './modules/health/health.module';
+import { CustomersModule } from './modules/customers/customers.module';
 import { SuperAdminModule } from './modules/super-admin/super-admin.module';
 
 @Module({
@@ -36,6 +37,7 @@ import { SuperAdminModule } from './modules/super-admin/super-admin.module';
     LiquidacionesModule,
     ReportesModule,
     HealthModule,
+    CustomersModule,
     SuperAdminModule,
   ],
   providers: [

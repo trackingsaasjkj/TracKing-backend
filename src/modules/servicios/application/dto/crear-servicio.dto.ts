@@ -2,9 +2,33 @@ import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-v
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CrearServicioDto {
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001', description: 'UUID del cliente' })
+  @ApiPropertyOptional({
+    example: '550e8400-e29b-41d4-a716-446655440001',
+    description: 'UUID del cliente existente. Si no se provee, se crea uno nuevo con los campos customer_*',
+  })
+  @IsOptional()
   @IsUUID()
-  customer_id!: string;
+  customer_id?: string;
+
+  @ApiPropertyOptional({ example: 'Pedro Gómez', description: 'Nombre del cliente (requerido si no se provee customer_id)' })
+  @IsOptional()
+  @IsString()
+  customer_name?: string;
+
+  @ApiPropertyOptional({ example: 'Calle 10 #20-30', description: 'Dirección del cliente (requerido si no se provee customer_id)' })
+  @IsOptional()
+  @IsString()
+  customer_address?: string;
+
+  @ApiPropertyOptional({ example: '3001234567' })
+  @IsOptional()
+  @IsString()
+  customer_phone?: string;
+
+  @ApiPropertyOptional({ example: 'pedro@correo.com' })
+  @IsOptional()
+  @IsString()
+  customer_email?: string;
 
   @ApiProperty({ example: 'CASH', description: 'Método de pago (CASH, CARD, TRANSFER)' })
   @IsString()
