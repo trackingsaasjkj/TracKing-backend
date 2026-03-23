@@ -18,7 +18,7 @@ export class LoginUseCase {
   ) {}
 
   async execute(dto: LoginDto) {
-    const user = await this.authRepo.findUserByEmail(dto.email, dto.company_id);
+    const user = await this.authRepo.findUserByEmail(dto.email);
 
     if (!user) throw new UnauthorizedException('Credenciales inválidas');
     if (user.status !== 'ACTIVE') {
@@ -26,17 +26,16 @@ export class LoginUseCase {
     }
 
     // Lockout check (5 failed attempts tracked via token records)
-    const failedCount = await this.authRepo.countRecentFailedLogins(user.id, dto.company_id);
+    const failedCount = await this.authRepo.countRecentFailedLogins(user.id, user.company_id);
     if (failedCount >= MAX_FAILED_ATTEMPTS) {
       throw new AppException('Cuenta bloqueada temporalmente por múltiples intentos fallidos', HttpStatus.TOO_MANY_REQUESTS);
     }
 
     const valid = await this.tokenService.comparePassword(dto.password, user.password_hash);
     if (!valid) {
-      // Record failed attempt as a used ACCESS token (sentinel)
       await this.authRepo.saveToken({
         user_id: user.id,
-        company_id: dto.company_id,
+        company_id: user.company_id,
         type: TokenType.ACCESS,
         token_hash: 'FAILED_ATTEMPT',
         expiration: new Date(Date.now() + 60 * 60 * 1000),
@@ -57,7 +56,7 @@ export class LoginUseCase {
 
     await this.authRepo.saveToken({
       user_id: user.id,
-      company_id: dto.company_id,
+      company_id: user.company_id,
       type: TokenType.REFRESH,
       token_hash: refreshHash,
       expiration: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),

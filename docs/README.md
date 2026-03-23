@@ -56,7 +56,15 @@ npm run start:dev
 open http://localhost:3000/api/docs
 ```
 
-## Convenciones de respuesta
+## Primer uso
+
+```
+1. POST /api/companies/setup  →  crear empresa + admin en una operación
+2. POST /api/auth/login       →  { email, password }
+3. Usar el token para operar
+```
+
+Ver [fase-empresa-setup.md](./fase-empresa-setup.md) para detalle completo.
 
 Todas las respuestas siguen el formato:
 

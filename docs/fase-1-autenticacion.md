@@ -47,7 +47,7 @@ src/core/
 | POST | `/api/users` | ADMIN | Crear usuario |
 | PUT | `/api/users/:uuid` | ADMIN | Actualizar usuario |
 | DELETE | `/api/users/:uuid` | ADMIN | Eliminar usuario |
-| POST | `/api/companies` | Público | Crear empresa (tenant) |
+| POST | `/api/companies/setup` | Público | Crear empresa + admin (setup inicial) |
 | GET | `/api/companies` | JWT | Listar empresas activas |
 
 ## Reglas de negocio
@@ -70,19 +70,18 @@ src/core/
 ## Flujo de autenticación
 
 ```
-1. POST /api/companies → obtener company_id
-2. POST /api/auth/register → crear usuario + recibir tokens en cookies
-3. POST /api/auth/login → iniciar sesión
-4. Requests protegidos → Authorization: Bearer <token> o cookie access_token
-5. POST /api/auth/refresh → renovar tokens cuando expiren
-6. POST /api/auth/logout → cerrar sesión
+1. POST /api/companies/setup → crear empresa + admin en una sola operación
+2. POST /api/auth/login → iniciar sesión (solo email + password)
+3. Requests protegidos → Authorization: Bearer <token> o cookie access_token
+4. POST /api/auth/refresh → renovar tokens cuando expiren
+5. POST /api/auth/logout → cerrar sesión
 ```
 
 ## Testing manual (Swagger)
 
 1. Ir a `http://localhost:3000/api/docs`
-2. Ejecutar `POST /api/companies` para crear empresa
-3. Ejecutar `POST /api/auth/register` con el `company_id` obtenido
+2. Ejecutar `POST /api/companies/setup` con datos de empresa y admin
+3. Ejecutar `POST /api/auth/login` con email y password del admin creado
 4. Copiar el token de la respuesta (o usar cookie)
 5. Hacer clic en **Authorize** → ingresar `Bearer <token>`
 6. Probar endpoints protegidos

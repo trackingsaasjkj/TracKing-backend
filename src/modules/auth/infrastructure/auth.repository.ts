@@ -6,8 +6,11 @@ import { TokenType } from '@prisma/client';
 export class AuthRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findUserByEmail(email: string, company_id: string | null) {
-    return this.prisma.user.findFirst({ where: { email, company_id } });
+  async findUserByEmail(email: string, company_id?: string | null) {
+    if (company_id !== undefined) {
+      return this.prisma.user.findFirst({ where: { email, company_id } });
+    }
+    return this.prisma.user.findFirst({ where: { email } });
   }
 
   async findUserById(id: string, company_id: string | null) {
@@ -27,6 +30,7 @@ export class AuthRepository {
         user_id: userId,
         company_id,
         type: TokenType.ACCESS,
+        token_hash: 'FAILED_ATTEMPT',
         used: false,
         created_at: { gte: oneHourAgo },
       },
