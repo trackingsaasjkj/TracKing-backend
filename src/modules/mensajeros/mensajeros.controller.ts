@@ -2,7 +2,6 @@ import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/comm
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { CrearMensajeroUseCase } from './application/use-cases/crear-mensajero.use-case';
 import { ConsultarMensajerosUseCase } from './application/use-cases/consultar-mensajeros.use-case';
-import { JornadaUseCase } from './application/use-cases/jornada.use-case';
 import { UpdateMensajeroUseCase } from './application/use-cases/update-mensajero.use-case';
 import { CreateMensajeroDto } from './application/dto/create-mensajero.dto';
 import { UpdateMensajeroDto } from './application/dto/update-mensajero.dto';
@@ -21,7 +20,6 @@ export class MensajerosController {
   constructor(
     private readonly crearUseCase: CrearMensajeroUseCase,
     private readonly consultarUseCase: ConsultarMensajerosUseCase,
-    private readonly jornadaUseCase: JornadaUseCase,
     private readonly updateUseCase: UpdateMensajeroUseCase,
   ) {}
 
@@ -50,34 +48,6 @@ export class MensajerosController {
     return ok(await this.consultarUseCase.findActivos(user.company_id!));
   }
 
-  @Get('me/services')
-  @Roles(Role.COURIER)
-  @ApiOperation({ summary: 'Mis servicios (COURIER)', description: 'El mensajero autenticado consulta sus propios servicios.' })
-  @ApiResponse({ status: 200, description: 'Servicios del mensajero' })
-  async misServicios(@CurrentUser() user: JwtPayload) {
-    const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id!);
-    return ok(await this.consultarUseCase.findMyServices(courier.id, user.company_id!));
-  }
-
-  @Post('start')
-  @Roles(Role.COURIER)
-  @ApiOperation({ summary: 'Iniciar jornada (COURIER)', description: 'Transición UNAVAILABLE → AVAILABLE.' })
-  @ApiResponse({ status: 200, description: 'Jornada iniciada' })
-  @ApiResponse({ status: 400, description: 'No se puede iniciar jornada desde el estado actual' })
-  async iniciarJornada(@CurrentUser() user: JwtPayload) {
-    const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id!);
-    return ok(await this.jornadaUseCase.iniciar(courier.id, user.company_id!));
-  }
-
-  @Post('end')
-  @Roles(Role.COURIER)
-  @ApiOperation({ summary: 'Finalizar jornada (COURIER)', description: 'Transición AVAILABLE → UNAVAILABLE. Bloqueado si hay servicios activos.' })
-  @ApiResponse({ status: 200, description: 'Jornada finalizada' })
-  @ApiResponse({ status: 400, description: 'Servicios activos pendientes o estado inválido' })
-  async finalizarJornada(@CurrentUser() user: JwtPayload) {
-    const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id!);
-    return ok(await this.jornadaUseCase.finalizar(courier.id, user.company_id!));
-  }
 
   @Get(':id')
   @Roles(Role.ADMIN, Role.AUX)

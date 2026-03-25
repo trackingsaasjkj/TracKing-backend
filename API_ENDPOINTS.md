@@ -319,33 +319,6 @@ Lista mensajeros con estado operacional `AVAILABLE`.
 
 ---
 
-### GET /api/mensajeros/me/services
-**Roles:** `COURIER`
-
-El mensajero autenticado consulta sus propios servicios asignados.
-
----
-
-### POST /api/mensajeros/start
-**Roles:** `COURIER`
-
-Inicia la jornada laboral. Transición: `UNAVAILABLE → AVAILABLE`.
-
-**Errores:** `400` No se puede iniciar desde el estado actual
-
----
-
-### POST /api/mensajeros/end
-**Roles:** `COURIER`
-
-Finaliza la jornada laboral. Transición: `AVAILABLE → UNAVAILABLE`.
-
-> Bloqueado si el mensajero tiene servicios activos.
-
-**Errores:** `400` Servicios activos pendientes o estado inválido
-
----
-
 ### GET /api/mensajeros/:id
 **Roles:** `ADMIN`, `AUX`
 

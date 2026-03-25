@@ -32,11 +32,10 @@ src/modules/mensajeros/
 | POST | `/api/mensajeros` | ADMIN | Crear perfil de mensajero |
 | GET | `/api/mensajeros` | ADMIN, AUX | Listar todos |
 | GET | `/api/mensajeros/activos` | ADMIN, AUX | Solo AVAILABLE |
-| GET | `/api/mensajeros/me/services` | COURIER | Mis servicios |
-| POST | `/api/mensajeros/start` | COURIER | Iniciar jornada |
-| POST | `/api/mensajeros/end` | COURIER | Finalizar jornada |
 | GET | `/api/mensajeros/:id` | ADMIN, AUX | Obtener por ID |
 | PUT | `/api/mensajeros/:id` | ADMIN | Actualizar datos |
+
+> Las operaciones del mensajero (jornada, servicios, ubicación) están en el módulo [Courier Mobile](./fase-courier-mobile.md) bajo `/api/courier`.
 
 ## Estados operacionales
 
@@ -64,13 +63,11 @@ UNAVAILABLE ──→ AVAILABLE ──→ IN_SERVICE
 ## Flujo de prueba (Swagger)
 
 ```
-1. POST /api/auth/login (con usuario COURIER)
-2. POST /api/mensajeros/start → iniciar jornada
-3. [Admin asigna servicio al mensajero]
-4. GET /api/mensajeros/me/services → ver mis servicios
-5. POST /api/services/:id/status → { "status": "ACCEPTED" }
-6. POST /api/services/:id/status → { "status": "IN_TRANSIT" }
-7. [Subir evidencia]
-8. POST /api/services/:id/status → { "status": "DELIVERED" }
-9. POST /api/mensajeros/end → finalizar jornada
+1. POST /api/auth/login (con usuario ADMIN)
+2. POST /api/mensajeros → crear perfil de mensajero
+3. GET  /api/mensajeros → listar mensajeros
+4. GET  /api/mensajeros/activos → ver disponibles
+5. PUT  /api/mensajeros/:id → actualizar datos
 ```
+
+> Para el flujo operativo del mensajero (jornada, servicios, evidencias) ver [fase-courier-mobile.md](./fase-courier-mobile.md).
