@@ -15,6 +15,6 @@ import { MensajeroRepository } from './infrastructure/mensajero.repository';
     UpdateMensajeroUseCase,
     MensajeroRepository,
   ],
-  exports: [MensajeroRepository, ConsultarMensajerosUseCase],
+  exports: [MensajeroRepository, ConsultarMensajerosUseCase, JornadaUseCase],
 })
 export class MensajerosModule {}

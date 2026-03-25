@@ -16,6 +16,7 @@ import { ReportesModule } from './modules/reportes/reportes.module';
 import { JwtAuthGuard } from './core/guards/jwt-auth.guard';
 import { HealthModule } from './modules/health/health.module';
 import { CustomersModule } from './modules/customers/customers.module';
+import { CourierMobileModule } from './modules/courier-mobile/courier-mobile.module';
 import { SuperAdminModule } from './modules/super-admin/super-admin.module';
 
 @Module({
@@ -38,6 +39,7 @@ import { SuperAdminModule } from './modules/super-admin/super-admin.module';
     ReportesModule,
     HealthModule,
     CustomersModule,
+    CourierMobileModule,
     SuperAdminModule,
   ],
   providers: [

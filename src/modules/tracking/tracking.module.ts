@@ -13,5 +13,6 @@ import { MensajerosModule } from '../mensajeros/mensajeros.module';
     ConsultarUbicacionUseCase,
     LocationRepository,
   ],
+  exports: [RegistrarUbicacionUseCase],
 })
 export class TrackingModule {}

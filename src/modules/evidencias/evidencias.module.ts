@@ -13,6 +13,6 @@ import { ServiciosModule } from '../servicios/servicios.module';
     ConsultarEvidenciaUseCase,
     EvidenciaRepository,
   ],
-  exports: [EvidenciaRepository],
+  exports: [EvidenciaRepository, SubirEvidenciaUseCase],
 })
 export class EvidenciasModule {}

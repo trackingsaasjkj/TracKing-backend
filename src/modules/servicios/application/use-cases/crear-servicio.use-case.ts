@@ -8,7 +8,7 @@ export class CrearServicioUseCase {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(dto: CrearServicioDto, company_id: string, user_id: string) {
-    let customer_id = dto.customer_id;
+    let customer_id = dto.customer_id?.trim() || undefined;
 
     if (customer_id) {
       // Validate existing customer belongs to this company

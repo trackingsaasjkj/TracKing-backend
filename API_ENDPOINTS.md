@@ -11,7 +11,9 @@
 - [Auth](#auth)
 - [Companies](#companies)
 - [Users](#users)
+- [Customers](#customers)
 - [Mensajeros](#mensajeros)
+- [Courier Mobile](#courier-mobile)
 - [Services](#services)
 - [Evidence](#evidence)
 - [Tracking](#tracking)
@@ -233,6 +235,52 @@ Elimina un usuario de la empresa.
 
 ---
 
+## Customers
+
+Base: `/api/customers` · Requiere JWT · Roles: `ADMIN`, `AUX`
+
+### POST /api/customers
+Crea un nuevo cliente en la empresa.
+
+**Body:**
+```json
+{
+  "name": "Pedro Gómez",
+  "address": "Calle 10 #20-30, Bogotá",
+  "phone": "3001234567",
+  "email": "pedro@correo.com"
+}
+```
+`name` y `address` requeridos. `phone` y `email` opcionales.
+
+**Respuesta 201:** Cliente creado.
+
+---
+
+### GET /api/customers
+Lista todos los clientes activos de la empresa.
+
+---
+
+### GET /api/customers/:id
+Obtiene un cliente por UUID.
+
+**Errores:** `404` No encontrado
+
+---
+
+### PUT /api/customers/:id
+Actualiza datos del cliente.
+
+---
+
+### DELETE /api/customers/:id
+**Roles:** `ADMIN`
+
+Desactiva el cliente (soft delete). El registro permanece para mantener integridad con servicios históricos.
+
+---
+
 ## Mensajeros
 
 Base: `/api/mensajeros` · Requiere JWT
@@ -311,6 +359,85 @@ Obtiene un mensajero por UUID.
 **Roles:** `ADMIN`
 
 Actualiza datos del mensajero (documento, teléfono).
+
+---
+
+## Courier Mobile
+
+Base: `/api/courier` · Requiere JWT con rol `COURIER`
+
+> API dedicada para la app móvil del mensajero. El `company_id` y `courier_id` se resuelven automáticamente desde el token.
+
+### GET /api/courier/me
+Retorna el perfil completo del mensajero autenticado.
+
+---
+
+### POST /api/courier/jornada/start
+Inicia la jornada laboral. Transición: `UNAVAILABLE → AVAILABLE`.
+
+**Errores:** `400` Transición inválida desde el estado actual
+
+---
+
+### POST /api/courier/jornada/end
+Finaliza la jornada laboral. Transición: `AVAILABLE → UNAVAILABLE`.
+
+> Bloqueado si hay servicios en estado ASSIGNED, ACCEPTED o IN_TRANSIT.
+
+**Errores:** `400` Servicios activos o transición inválida
+
+---
+
+### GET /api/courier/services
+Lista los servicios asignados al mensajero autenticado.
+
+---
+
+### POST /api/courier/services/:id/status
+Cambia el estado de un servicio.
+
+**Transiciones válidas:**
+```
+ASSIGNED → ACCEPTED
+ACCEPTED → IN_TRANSIT
+IN_TRANSIT → DELIVERED  (requiere evidencia previa)
+```
+
+**Body:**
+```json
+{ "status": "ACCEPTED" }
+```
+
+**Errores:** `400` Transición inválida o falta evidencia para DELIVERED
+
+---
+
+### POST /api/courier/services/:id/evidence
+Sube evidencia fotográfica de entrega. Solo cuando el servicio está en `IN_TRANSIT`.
+
+**Body:**
+```json
+{ "image_url": "https://storage.ejemplo.com/foto.jpg" }
+```
+
+**Errores:** `400` Servicio no está IN_TRANSIT
+
+---
+
+### POST /api/courier/location
+Registra la ubicación actual del mensajero. Solo cuando está en estado `IN_SERVICE`.
+
+**Body:**
+```json
+{
+  "latitude": 4.710989,
+  "longitude": -74.072092,
+  "accuracy": 10.5
+}
+```
+
+**Errores:** `400` Mensajero no está IN_SERVICE
 
 ---
 
@@ -837,9 +964,18 @@ Verifica el estado del servidor y la conexión a la base de datos.
 | GET /api/users | ✅ | ✅ | ✅ | — | — |
 | POST /api/users | ✅ | ✅ | — | — | — |
 | DELETE /api/users/:id | ✅ | ✅ | — | — | — |
+| POST /api/customers | ✅ | ✅ | ✅ | — | — |
+| GET /api/customers | ✅ | ✅ | ✅ | — | — |
+| DELETE /api/customers/:id | ✅ | ✅ | — | — | — |
 | POST /api/mensajeros | ✅ | ✅ | — | — | — |
 | GET /api/mensajeros | ✅ | ✅ | ✅ | — | — |
-| POST /api/mensajeros/start | — | — | — | ✅ | — |
+| GET /api/courier/me | — | — | — | ✅ | — |
+| POST /api/courier/jornada/start | — | — | — | ✅ | — |
+| POST /api/courier/jornada/end | — | — | — | ✅ | — |
+| GET /api/courier/services | — | — | — | ✅ | — |
+| POST /api/courier/services/:id/status | — | — | — | ✅ | — |
+| POST /api/courier/services/:id/evidence | — | — | — | ✅ | — |
+| POST /api/courier/location | — | — | — | ✅ | — |
 | POST /api/services | ✅ | ✅ | ✅ | — | — |
 | POST /api/services/:id/assign | ✅ | ✅ | ✅ | — | — |
 | POST /api/services/:id/status | ✅ | ✅ | ✅ | ✅ | — |
