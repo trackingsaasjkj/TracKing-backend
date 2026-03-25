@@ -2,7 +2,7 @@ import { AppException } from '../../../../core/errors/app.exception';
 import { MensajeroStateMachine, MensajeroEstado } from '../mensajero.machine';
 
 export function validarInicioJornada(estado: MensajeroEstado): void {
-  if (!MensajeroStateMachine.canTransition(estado, 'AVAILABLE')) {
+  if (estado !== 'UNAVAILABLE') {
     throw new AppException(`No se puede iniciar jornada desde estado ${estado}`);
   }
 }

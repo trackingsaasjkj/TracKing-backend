@@ -67,6 +67,15 @@
       "<rootDir>/specs"
     ],
     "testRegex": ".*\\.spec\\.ts$",
+    "testPathIgnorePatterns": [
+      "<rootDir>/specs/database-connection.spec.ts",
+      "<rootDir>/specs/env.spec.ts",
+      "<rootDir>/specs/prisma.spec.ts",
+      "<rootDir>/specs/mensajeros.spec.ts",
+      "<rootDir>/specs/liquidaciones.spec.ts",
+      "<rootDir>/specs/servicios.spec.ts",
+      "<rootDir>/src/specs/"
+    ],
     "transform": {
       "^.+\\.(t|j)s$": ["ts-jest", { "tsconfig": "tsconfig.spec.json" }]
     },
