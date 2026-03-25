@@ -302,12 +302,17 @@ async function bootstrap() {
       .addTag('Auth', 'Autenticación y gestión de sesión')
       .addTag('Companies', 'Gestión de empresas (tenants)')
       .addTag('Users', 'Gestión de usuarios por empresa')
+      .addTag('Customers', 'Gestión de clientes')
       .addTag('Mensajeros', 'Gestión de mensajeros y jornadas')
+      .addTag('Courier Mobile', 'API móvil del mensajero')
       .addTag('Services', 'Ciclo de vida de servicios de entrega')
       .addTag('Evidence', 'Evidencias de entrega')
       .addTag('Tracking', 'Geolocalización de mensajeros en tiempo real')
       .addTag('Liquidaciones', 'Liquidaciones de mensajeros y facturación de clientes')
+      .addTag('Suscripción', 'Suscripción activa de la empresa')
       .addTag('Super Admin', 'Control centralizado del sistema')
+      .addTag('Super Admin — Planes', 'Gestión de planes de suscripción')
+      .addTag('Super Admin — Suscripciones', 'Gestión de suscripciones de empresas')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);

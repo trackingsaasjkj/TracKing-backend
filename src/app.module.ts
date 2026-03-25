@@ -18,6 +18,8 @@ import { HealthModule } from './modules/health/health.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { CourierMobileModule } from './modules/courier-mobile/courier-mobile.module';
 import { SuperAdminModule } from './modules/super-admin/super-admin.module';
+import { PlanesModule } from './modules/planes/planes.module';
+import { SuscripcionesModule } from './modules/suscripciones/suscripciones.module';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { SuperAdminModule } from './modules/super-admin/super-admin.module';
     CustomersModule,
     CourierMobileModule,
     SuperAdminModule,
+    PlanesModule,
+    SuscripcionesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

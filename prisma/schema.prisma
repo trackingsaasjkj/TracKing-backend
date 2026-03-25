@@ -45,6 +45,12 @@ enum SettlementRuleType {
   FIXED
 }
 
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+}
+
 enum TokenType {
   ACCESS
   REFRESH
@@ -67,6 +73,7 @@ model Company {
   courierSettlements  CourierSettlement[]
   customerSettlements CustomerSettlement[]
   tokens              Token[]
+  subscriptions       Subscription[]
 
   @@map("company")
 }
@@ -298,4 +305,36 @@ model GlobalConfig {
   updated_at  DateTime @updatedAt
 
   @@map("global_config")
+}
+
+model Plan {
+  id                     String   @id @default(uuid())
+  name                   String   @unique @db.VarChar(100)
+  description            String?
+  max_couriers           Int
+  max_services_per_month Int      @default(0)
+  max_users              Int
+  price                  Decimal  @db.Decimal(12, 2)
+  active                 Boolean  @default(true)
+  created_at             DateTime @default(now())
+
+  subscriptions Subscription[]
+
+  @@map("plan")
+}
+
+model Subscription {
+  id         String             @id @default(uuid())
+  company_id String
+  plan_id    String
+  status     SubscriptionStatus @default(ACTIVE)
+  start_date DateTime           @db.Date
+  end_date   DateTime           @db.Date
+  created_at DateTime           @default(now())
+
+  company Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  plan    Plan    @relation(fields: [plan_id], references: [id])
+
+  @@index([company_id, status])
+  @@map("subscription")
 }

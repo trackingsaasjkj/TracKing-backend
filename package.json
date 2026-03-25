@@ -74,6 +74,7 @@
       "<rootDir>/specs/mensajeros.spec.ts",
       "<rootDir>/specs/liquidaciones.spec.ts",
       "<rootDir>/specs/servicios.spec.ts",
+      "<rootDir>/specs/planes-suscripciones.spec.ts",
       "<rootDir>/src/specs/"
     ],
     "transform": {
