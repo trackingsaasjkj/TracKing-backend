@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { ConsultarServiciosUseCase } from '../../../servicios/application/use-cases/consultar-servicios.use-case';
 import { ConsultarMensajerosUseCase } from '../../../mensajeros/application/use-cases/consultar-mensajeros.use-case';
 import { ReporteFinancieroUseCase } from '../../../reportes/application/use-cases/reporte-financiero.use-case';
-import { format } from 'date-fns';
 
 @Injectable()
 export class BffDashboardUseCase {
@@ -13,7 +12,8 @@ export class BffDashboardUseCase {
   ) {}
 
   async execute(company_id: string) {
-    const today = format(new Date(), 'yyyy-MM-dd');
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     const [pendingServices, activeCouriers, financial] = await Promise.all([
       this.consultarServicios.findAll(company_id, { status: 'PENDING' }),
