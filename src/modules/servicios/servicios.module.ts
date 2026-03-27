@@ -25,6 +25,6 @@ import { EvidenceRepository } from './infrastructure/repositories/evidence.repos
     HistorialRepository,
     EvidenceRepository,
   ],
-  exports: [ServicioRepository, CourierRepository, EvidenceRepository, HistorialRepository],
+  exports: [ServicioRepository, CourierRepository, EvidenceRepository, HistorialRepository, ConsultarServiciosUseCase],
 })
 export class ServiciosModule {}

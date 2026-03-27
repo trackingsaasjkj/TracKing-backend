@@ -18,5 +18,6 @@ import { PrismaModule } from '../../infrastructure/database/prisma.module';
     GestionarReglasUseCase,
     LiquidacionRepository,
   ],
+  exports: [ConsultarLiquidacionesUseCase, GestionarReglasUseCase],
 })
 export class LiquidacionesModule {}

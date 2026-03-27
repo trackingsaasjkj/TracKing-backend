@@ -45,16 +45,23 @@ npm install
 cp .env.example .env
 # Editar .env con DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET
 
-# 3. Generar cliente Prisma y migrar DB
+# 3. Generar cliente Prisma
 npm run prisma:generate
+
+# 4a. Primera instalación (DB vacía)
 npm run prisma:migrate
 
-# 4. Iniciar servidor
+# 4b. DB existente con datos — usa deploy, no migrate dev
+npx prisma migrate deploy
+
+# 5. Iniciar servidor
 npm run start:dev
 
-# 5. Abrir Swagger
+# 6. Abrir Swagger
 open http://localhost:3000/api/docs
 ```
+
+> ⚠️ `prisma migrate dev` puede borrar todos los datos si la DB ya tiene contenido y detecta inconsistencias. Para DBs con datos usa siempre `prisma migrate deploy`.
 
 ## Primer uso
 

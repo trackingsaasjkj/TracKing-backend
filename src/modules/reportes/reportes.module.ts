@@ -9,5 +9,6 @@ import { PrismaModule } from '../../infrastructure/database/prisma.module';
   imports: [PrismaModule],
   controllers: [ReportesController],
   providers: [ReporteServiciosUseCase, ReporteFinancieroUseCase, ReportesRepository],
+  exports: [ReporteServiciosUseCase, ReporteFinancieroUseCase],
 })
 export class ReportesModule {}

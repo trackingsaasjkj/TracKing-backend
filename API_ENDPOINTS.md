@@ -19,6 +19,7 @@
 - [Tracking](#tracking)
 - [Liquidaciones](#liquidaciones)
 - [Reportes](#reportes)
+- [BFF Web](#bff-web)
 - [Super Admin](#super-admin)
 - [Health](#health)
 - [Roles y permisos](#roles-y-permisos)
@@ -729,6 +730,104 @@ Rendimiento agrupado por mensajero.
 
 ---
 
+## BFF Web
+
+Base: `/api/bff` · Requiere JWT · Roles: `ADMIN`, `AUX`
+
+> Endpoints agregados para el panel web. Cada endpoint consolida múltiples llamadas internas en paralelo y retorna todo lo necesario para una vista en una sola respuesta. Los endpoints originales siguen disponibles sin cambios.
+
+### GET /api/bff/dashboard
+**Roles:** `ADMIN`, `AUX`
+
+Datos para el panel principal. Consolida servicios pendientes, mensajeros activos e ingresos del día.
+
+**Respuesta 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "pending_services": [ /* servicios con status PENDING */ ],
+    "active_couriers": [ /* mensajeros con status AVAILABLE */ ],
+    "today_financial": { /* reporte financiero del día actual */ }
+  }
+}
+```
+
+---
+
+### GET /api/bff/active-orders
+**Roles:** `ADMIN`, `AUX`
+
+Datos para la vista de pedidos activos. Retorna todos los servicios y los mensajeros disponibles para el modal de asignación.
+
+**Respuesta 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "services": [ /* todos los servicios de la empresa */ ],
+    "available_couriers": [ /* mensajeros con status AVAILABLE */ ]
+  }
+}
+```
+
+---
+
+### GET /api/bff/reports
+**Roles:** `ADMIN`, `AUX`
+
+Reportes consolidados. `from` y `to` son **obligatorios**.
+
+**Query params:**
+| Param | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `from` | `ISO date` | ✅ | Fecha inicio (ej: `2026-01-01`) |
+| `to` | `ISO date` | ✅ | Fecha fin (ej: `2026-01-31T23:59:59`) |
+
+**Respuesta 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "services": { /* reporte operativo de servicios */ },
+    "financial": { /* reporte financiero */ }
+  }
+}
+```
+
+**Errores:** `400` `from` o `to` ausentes o `from >= to`
+
+---
+
+### GET /api/bff/settlements
+**Roles:** `ADMIN`
+
+Datos para la pantalla de liquidaciones. `courier_id` es opcional.
+
+**Query params:**
+| Param | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `courier_id` | `UUID` | ❌ | Filtrar por mensajero |
+
+**Respuesta 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "couriers": [ /* mensajeros activos */ ],
+    "active_rule": { /* regla de liquidación activa o null */ },
+    "earnings": {
+      "total_settlements": 5,
+      "total_services": 87,
+      "total_earned": 130500,
+      "settlements": [ /* historial de liquidaciones */ ]
+    }
+  }
+}
+```
+
+---
+
 ## Super Admin
 
 Base: `/super-admin` · Requiere JWT con rol `SUPER_ADMIN` · Rate limit: 30 req/min
@@ -956,6 +1055,10 @@ Verifica el estado del servidor y la conexión a la base de datos.
 | GET /api/tracking/:id/last | ✅ | ✅ | ✅ | — | — |
 | GET /api/liquidations/* | ✅ | ✅ | — | — | — |
 | GET /api/reports/* | ✅ | ✅ | ✅* | — | — |
+| GET /api/bff/dashboard | ✅ | ✅ | ✅ | — | — |
+| GET /api/bff/active-orders | ✅ | ✅ | ✅ | — | — |
+| GET /api/bff/reports | ✅ | ✅ | ✅ | — | — |
+| GET /api/bff/settlements | ✅ | ✅ | — | — | — |
 | /super-admin/* | ✅ | — | — | — | — |
 
 > *AUX tiene acceso a reportes de servicios y mensajeros, pero no al reporte financiero.

@@ -60,6 +60,7 @@ src/
     ├── tracking/        # Geolocalización en tiempo real
     ├── liquidaciones/   # Liquidaciones de mensajeros y clientes
     ├── reportes/        # Reportes operativos y financieros
+    ├── bff-web/         # Backend for Frontend — endpoints agregados para el panel web
     ├── health/          # Health check
     └── super-admin/     # Panel de control centralizado
 ```
@@ -120,13 +121,29 @@ SWAGGER_PASSWORD=tu_password_seguro
 
 ### 3. Base de datos
 
-```bash
-# Generar cliente Prisma
-npm run prisma:generate
+> ⚠️ **Importante — lee esto antes de ejecutar cualquier comando de migración**
 
-# Aplicar migraciones
-npm run prisma:migrate
+Prisma tiene dos comandos de migración con comportamientos muy distintos:
+
+| Comando | Cuándo usarlo | Efecto sobre datos |
+|---------|--------------|-------------------|
+| `prisma migrate dev` | Solo en tu entorno local, DB vacía o nueva | Puede hacer **reset** (borra todos los datos) si detecta inconsistencias |
+| `prisma migrate deploy` | DB existente con datos, staging, producción | Solo aplica migraciones pendientes, **nunca borra datos** |
+
+**Primera instalación (DB vacía):**
+```bash
+npm run prisma:generate
+npm run prisma:migrate:dev    # solo para DB local vacía
 ```
+
+**Actualizar una DB existente con datos (staging / compartida):**
+```bash
+npm run prisma:generate
+npm run prisma:migrate        # usa migrate deploy — seguro para datos existentes
+```
+
+> `npm run prisma:migrate` usa `migrate deploy` por defecto — es el comando seguro.
+> `npm run prisma:migrate:dev` es solo para desarrollo local con DB propia.
 
 ### 4. Iniciar servidor
 
@@ -170,7 +187,8 @@ npm run test:cov         # Tests con cobertura
 npm run lint             # Lint + autofix
 npm run format           # Prettier
 npm run prisma:generate  # Regenerar cliente Prisma
-npm run prisma:migrate   # Aplicar migraciones
+npm run prisma:migrate   # Aplicar migraciones (deploy — seguro para datos)
+npm run prisma:migrate:dev  # Crear nueva migración (solo DB local vacía)
 npm run prisma:studio    # Abrir Prisma Studio
 ```
 

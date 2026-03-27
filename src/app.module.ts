@@ -20,6 +20,7 @@ import { CourierMobileModule } from './modules/courier-mobile/courier-mobile.mod
 import { SuperAdminModule } from './modules/super-admin/super-admin.module';
 import { PlanesModule } from './modules/planes/planes.module';
 import { SuscripcionesModule } from './modules/suscripciones/suscripciones.module';
+import { BffWebModule } from './modules/bff-web/bff-web.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { SuscripcionesModule } from './modules/suscripciones/suscripciones.modul
     SuperAdminModule,
     PlanesModule,
     SuscripcionesModule,
+    BffWebModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
