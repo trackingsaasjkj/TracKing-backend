@@ -41,7 +41,7 @@ export class AuthController {
     const result = await this.loginUseCase.execute(dto);
     res.cookie('access_token', result.accessToken, COOKIE_OPTIONS);
     res.cookie('refresh_token', result.refreshToken, { ...COOKIE_OPTIONS, maxAge: 7 * 24 * 60 * 60 * 1000 });
-    return ok(result.user);
+    return ok({ ...result.user, accessToken: result.accessToken });
   }
 
   @Public()
@@ -53,7 +53,7 @@ export class AuthController {
     const result = await this.registerUseCase.execute(dto);
     res.cookie('access_token', result.accessToken, COOKIE_OPTIONS);
     res.cookie('refresh_token', result.refreshToken, { ...COOKIE_OPTIONS, maxAge: 7 * 24 * 60 * 60 * 1000 });
-    return ok(result.user);
+    return ok({ ...result.user, accessToken: result.accessToken });
   }
 
   @Post('logout')
