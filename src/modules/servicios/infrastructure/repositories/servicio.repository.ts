@@ -2,6 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { ServiceStatus } from '@prisma/client';
 
+type ServiceRow = Awaited<ReturnType<PrismaService['service']['findFirst']>>;
+
+function mapService<T extends ServiceRow>(s: T) {
+  if (!s) return s;
+  return {
+    ...s,
+    delivery_price: Number(s.delivery_price),
+    product_price: Number(s.product_price),
+    total_price: Number(s.total_price),
+  };
+}
+
 @Injectable()
 export class ServicioRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -23,14 +35,16 @@ export class ServicioRepository {
     total_price: number;
     notes_observations?: string;
   }) {
-    return this.prisma.service.create({ data: { ...data, status: 'PENDING' } });
+    const s = await this.prisma.service.create({ data: { ...data, status: 'PENDING' } });
+    return mapService(s);
   }
 
   async findById(id: string, company_id: string) {
-    return this.prisma.service.findFirst({
+    const s = await this.prisma.service.findFirst({
       where: { id, company_id },
       include: { customer: true, courier: true, statusHistory: { orderBy: { change_date: 'desc' } } },
     });
+    return mapService(s);
   }
 
   async findAllByCompany(
@@ -40,13 +54,14 @@ export class ServicioRepository {
   ) {
     const take = pagination?.limit ?? 50;
     const skip = pagination?.offset ?? 0;
-    return this.prisma.service.findMany({
+    const rows = await this.prisma.service.findMany({
       where: { company_id, ...filters },
       include: { customer: true, courier: true },
       orderBy: { created_at: 'desc' },
       take,
       skip,
     });
+    return rows.map(mapService);
   }
 
   async update(id: string, company_id: string, data: Partial<{

@@ -68,10 +68,16 @@ export class MensajeroRepository {
   }
 
   async findMyServices(courier_id: string, company_id: string) {
-    return this.prisma.service.findMany({
+    const rows = await this.prisma.service.findMany({
       where: { courier_id, company_id },
       include: { customer: true },
       orderBy: { created_at: 'desc' },
     });
+    return rows.map((s) => ({
+      ...s,
+      delivery_price: Number(s.delivery_price),
+      product_price: Number(s.product_price),
+      total_price: Number(s.total_price),
+    }));
   }
 }
