@@ -600,6 +600,35 @@ Historial de ubicaciones del mensajero.
 
 ---
 
+### WebSocket — Tracking en tiempo real
+
+**Namespace:** `ws://localhost:3000/tracking`
+**Roles:** `ADMIN`, `AUX`
+
+Conexión persistente que recibe la posición de los mensajeros de la empresa en tiempo real. El cliente se une automáticamente al room de su `company_id` al conectarse.
+
+**Autenticación (handshake):**
+```js
+const socket = io('http://localhost:3000/tracking', {
+  auth: { token: 'Bearer eyJ...' }
+});
+```
+
+**Evento recibido: `location:updated`**
+```json
+{
+  "courier_id": "uuid-mensajero",
+  "latitude": 4.710989,
+  "longitude": -74.072092,
+  "accuracy": 10.5,
+  "timestamp": "2026-01-01T12:00:00.000Z"
+}
+```
+
+> El evento se emite cada vez que un mensajero llama `POST /api/tracking/location`. Frecuencia esperada: ~15 segundos.
+
+---
+
 ## Liquidaciones
 
 Base: `/api/liquidations` · Requiere JWT · Roles: `ADMIN`

@@ -10,18 +10,19 @@ const dto = { latitude: 4.710989, longitude: -74.072092, accuracy: 10.5 };
 
 const mockLocationRepo = { create: jest.fn() };
 const mockMensajeroRepo = { findById: jest.fn() };
+const mockGateway = { emitLocation: jest.fn() };
 
 describe('RegistrarUbicacionUseCase', () => {
   let useCase: RegistrarUbicacionUseCase;
 
   beforeEach(() => {
-    useCase = new RegistrarUbicacionUseCase(mockLocationRepo as any, mockMensajeroRepo as any);
+    useCase = new RegistrarUbicacionUseCase(mockLocationRepo as any, mockMensajeroRepo as any, mockGateway as any);
     jest.clearAllMocks();
   });
 
   it('saves location when courier is IN_SERVICE', async () => {
     mockMensajeroRepo.findById.mockResolvedValue(makeCourier('IN_SERVICE'));
-    mockLocationRepo.create.mockResolvedValue({ id: 'loc-1', ...dto });
+    mockLocationRepo.create.mockResolvedValue({ id: 'loc-1', ...dto, registration_date: new Date() });
 
     const result = await useCase.execute(dto, 'c-1', 'co-1');
 
@@ -55,7 +56,7 @@ describe('RegistrarUbicacionUseCase', () => {
 
   it('saves location without optional accuracy field', async () => {
     mockMensajeroRepo.findById.mockResolvedValue(makeCourier('IN_SERVICE'));
-    mockLocationRepo.create.mockResolvedValue({ id: 'loc-2', latitude: 4.71, longitude: -74.07 });
+    mockLocationRepo.create.mockResolvedValue({ id: 'loc-2', latitude: 4.71, longitude: -74.07, registration_date: new Date() });
 
     await useCase.execute({ latitude: 4.71, longitude: -74.07 }, 'c-1', 'co-1');
 
