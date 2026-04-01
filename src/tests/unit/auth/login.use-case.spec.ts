@@ -12,11 +12,16 @@ const mockUser = {
   status: 'ACTIVE',
   name: 'Test',
   created_at: new Date(),
+  failed_attempts: 0,
+  locked_until: null,
+  company: { id: 'company-uuid', status: true },
 };
 
 const mockAuthRepo = {
-  findUserByEmail: jest.fn(),
+  findUserByEmailWithCompany: jest.fn(),
   countRecentFailedLogins: jest.fn().mockResolvedValue(0),
+  incrementFailedAttempts: jest.fn().mockResolvedValue(undefined),
+  resetFailedAttempts: jest.fn().mockResolvedValue(undefined),
   saveToken: jest.fn(),
 } as unknown as AuthRepository;
 
@@ -34,23 +39,25 @@ describe('LoginUseCase', () => {
     useCase = new LoginUseCase(mockAuthRepo, mockTokenService);
     jest.clearAllMocks();
     (mockAuthRepo.countRecentFailedLogins as jest.Mock).mockResolvedValue(0);
+    (mockAuthRepo.incrementFailedAttempts as jest.Mock).mockResolvedValue(undefined);
+    (mockAuthRepo.resetFailedAttempts as jest.Mock).mockResolvedValue(undefined);
   });
 
   it('should throw if user not found', async () => {
-    (mockAuthRepo.findUserByEmail as jest.Mock).mockResolvedValue(null);
+    (mockAuthRepo.findUserByEmailWithCompany as jest.Mock).mockResolvedValue(null);
     await expect(useCase.execute({ email: 'x@x.com', password: '123' }))
       .rejects.toThrow(UnauthorizedException);
   });
 
   it('should throw if password is wrong', async () => {
-    (mockAuthRepo.findUserByEmail as jest.Mock).mockResolvedValue(mockUser);
+    (mockAuthRepo.findUserByEmailWithCompany as jest.Mock).mockResolvedValue(mockUser);
     (mockTokenService.comparePassword as jest.Mock).mockResolvedValue(false);
     await expect(useCase.execute({ email: 'x@x.com', password: 'wrong' }))
       .rejects.toThrow(UnauthorizedException);
   });
 
   it('should return tokens on valid credentials', async () => {
-    (mockAuthRepo.findUserByEmail as jest.Mock).mockResolvedValue(mockUser);
+    (mockAuthRepo.findUserByEmailWithCompany as jest.Mock).mockResolvedValue(mockUser);
     (mockTokenService.comparePassword as jest.Mock).mockResolvedValue(true);
     const result = await useCase.execute({ email: 'test@test.com', password: 'correct' });
     expect(result.accessToken).toBe('access-token');
@@ -58,9 +65,12 @@ describe('LoginUseCase', () => {
     expect(result.user.email).toBe('test@test.com');
   });
 
-  it('should block after 5 failed attempts', async () => {
-    (mockAuthRepo.findUserByEmail as jest.Mock).mockResolvedValue(mockUser);
-    (mockAuthRepo.countRecentFailedLogins as jest.Mock).mockResolvedValue(5);
+  it('should block when locked_until is in the future', async () => {
+    const lockedUser = {
+      ...mockUser,
+      locked_until: new Date(Date.now() + 60 * 60 * 1000),
+    };
+    (mockAuthRepo.findUserByEmailWithCompany as jest.Mock).mockResolvedValue(lockedUser);
     await expect(useCase.execute({ email: 'x@x.com', password: '123' }))
       .rejects.toThrow();
   });

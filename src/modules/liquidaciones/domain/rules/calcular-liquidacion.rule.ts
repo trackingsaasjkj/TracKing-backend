@@ -1,4 +1,4 @@
-import { liquidacionSpec } from '../../../../specs/liquidaciones.spec';
+import { liquidacionSpec } from '../liquidacion-spec.data';
 
 export type TipoRegla = (typeof liquidacionSpec.reglas.tiposRegla)[number];
 

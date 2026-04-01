@@ -1,4 +1,4 @@
-import { mensajeroSpec } from '../../../specs/mensajeros.spec';
+import { mensajeroSpec } from './mensajero-spec.data';
 
 export type MensajeroEstado = (typeof mensajeroSpec.estados)[number];
 

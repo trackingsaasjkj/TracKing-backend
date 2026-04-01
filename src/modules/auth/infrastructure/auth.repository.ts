@@ -13,16 +13,50 @@ export class AuthRepository {
     return this.prisma.user.findFirst({ where: { email } });
   }
 
+  async findUserByEmailWithCompany(email: string) {
+    return this.prisma.user.findFirst({
+      where: { email },
+      include: {
+        company: {
+          select: { id: true, status: true },
+        },
+      },
+    });
+  }
+
   async findUserById(id: string, company_id: string | null) {
     return this.prisma.user.findFirst({ where: { id, company_id } });
   }
 
   async incrementFailedAttempts(userId: string): Promise<void> {
-    // Stored as count of REFRESH tokens with used=false in last hour as proxy
-    // Real implementation: add failed_attempts column via migration
-    // For now we track via token table — see lockout check below
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { failed_attempts: true },
+    });
+
+    const newCount = (user?.failed_attempts ?? 0) + 1;
+    const lockedUntil = newCount >= 5 ? new Date(Date.now() + 60 * 60 * 1000) : undefined;
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        failed_attempts: newCount,
+        ...(lockedUntil !== undefined && { locked_until: lockedUntil }),
+      },
+    });
   }
 
+  async resetFailedAttempts(userId: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { failed_attempts: 0, locked_until: null },
+    });
+  }
+
+  /**
+   * @deprecated Use `failed_attempts` column directly via `incrementFailedAttempts`.
+   * Kept for compatibility.
+   */
   async countRecentFailedLogins(userId: string, company_id: string | null): Promise<number> {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     return this.prisma.token.count({

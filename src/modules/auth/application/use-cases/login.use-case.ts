@@ -8,8 +8,6 @@ import { TokenType } from '@prisma/client';
 import { AppException } from '../../../../core/errors/app.exception';
 import { HttpStatus } from '@nestjs/common';
 
-const MAX_FAILED_ATTEMPTS = 5;
-
 @Injectable()
 export class LoginUseCase {
   constructor(
@@ -18,30 +16,31 @@ export class LoginUseCase {
   ) {}
 
   async execute(dto: LoginDto) {
-    const user = await this.authRepo.findUserByEmail(dto.email);
+    const user = await this.authRepo.findUserByEmailWithCompany(dto.email);
 
     if (!user) throw new UnauthorizedException('Credenciales inválidas');
     if (user.status !== 'ACTIVE') {
       throw new AppException('Cuenta suspendida', HttpStatus.FORBIDDEN);
     }
 
-    // Lockout check (5 failed attempts tracked via token records)
-    const failedCount = await this.authRepo.countRecentFailedLogins(user.id, user.company_id);
-    if (failedCount >= MAX_FAILED_ATTEMPTS) {
-      throw new AppException('Cuenta bloqueada temporalmente por múltiples intentos fallidos', HttpStatus.TOO_MANY_REQUESTS);
+    // Req 8: verificar empresa suspendida (omitir para SUPER_ADMIN sin empresa)
+    if (user.company_id !== null && user.company && !user.company.status) {
+      throw new AppException('Empresa suspendida', HttpStatus.FORBIDDEN);
+    }
+
+    // Req 7: verificar lockout con columna dedicada
+    if (user.locked_until && user.locked_until > new Date()) {
+      throw new AppException('Cuenta bloqueada temporalmente', HttpStatus.TOO_MANY_REQUESTS);
     }
 
     const valid = await this.tokenService.comparePassword(dto.password, user.password_hash);
     if (!valid) {
-      await this.authRepo.saveToken({
-        user_id: user.id,
-        company_id: user.company_id,
-        type: TokenType.ACCESS,
-        token_hash: 'FAILED_ATTEMPT',
-        expiration: new Date(Date.now() + 60 * 60 * 1000),
-      });
+      await this.authRepo.incrementFailedAttempts(user.id);
       throw new UnauthorizedException('Credenciales inválidas');
     }
+
+    // Login exitoso: resetear contador
+    await this.authRepo.resetFailedAttempts(user.id);
 
     const payload: JwtPayload = {
       sub: user.id,

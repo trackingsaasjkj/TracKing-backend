@@ -1,4 +1,4 @@
-import { servicioSpec } from '../../../../specs/servicios.spec';
+import { servicioSpec } from './servicio-spec.data';
 
 export type ServicioEstado = (typeof servicioSpec.estados)[number];
 
