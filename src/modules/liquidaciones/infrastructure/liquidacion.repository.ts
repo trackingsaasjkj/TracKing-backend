@@ -80,19 +80,40 @@ export class LiquidacionRepository {
 
   // ── Customer Settlement ─────────────────────────────────────
 
+  async findCustomerById(customer_id: string, company_id: string) {
+    return this.prisma.customer.findFirst({ where: { id: customer_id, company_id } });
+  }
+
+  async findDeliveredServicesByCustomer(company_id: string, customer_id: string, startDate: Date, endDate: Date) {
+    return this.prisma.service.findMany({
+      where: {
+        company_id,
+        customer_id,
+        status: 'DELIVERED',
+        delivery_date: { gte: startDate, lte: endDate },
+      },
+      select: { id: true, delivery_price: true, delivery_date: true },
+    });
+  }
+
   async createCustomerSettlement(data: {
     company_id: string;
+    customer_id: string;
     start_date: Date;
     end_date: Date;
     total_services: number;
     total_invoiced: number;
   }) {
-    return this.prisma.customerSettlement.create({ data });
+    return this.prisma.customerSettlement.create({
+      data,
+      include: { customer: { select: { id: true, name: true } } },
+    });
   }
 
-  async findCustomerSettlements(company_id: string) {
+  async findCustomerSettlements(company_id: string, customer_id?: string) {
     return this.prisma.customerSettlement.findMany({
-      where: { company_id },
+      where: { company_id, ...(customer_id && { customer_id }) },
+      include: { customer: { select: { id: true, name: true } } },
       orderBy: { generation_date: 'desc' },
     });
   }

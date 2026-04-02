@@ -13,11 +13,14 @@ Calcular y registrar pagos a mensajeros y facturación a clientes basados en ser
 
 | Método | Ruta | Roles | Descripción |
 |--------|------|-------|-------------|
-| POST | `/api/liquidations/generate` | ADMIN | Generar liquidación por rango de fechas |
-| GET | `/api/liquidations` | ADMIN, AUX | Listar liquidaciones |
-| GET | `/api/liquidations/:id` | ADMIN, AUX | Detalle de liquidación |
+| POST | `/api/liquidations/generate/courier` | ADMIN | Generar liquidación de mensajero por rango de fechas |
+| POST | `/api/liquidations/generate/customer` | ADMIN | Generar liquidación de cliente por rango de fechas |
+| GET | `/api/liquidations` | ADMIN, AUX | Listar liquidaciones de mensajeros |
+| GET | `/api/liquidations/:id` | ADMIN, AUX | Detalle de liquidación de mensajero |
+| GET | `/api/liquidations/customer` | ADMIN, AUX | Listar liquidaciones de clientes (filtrable por `customer_id`) |
 | GET | `/api/liquidations/earnings` | ADMIN | Resumen de ganancias |
 | GET | `/api/liquidations/rules` | ADMIN | Ver reglas de liquidación |
+| GET | `/api/liquidations/rules/active` | ADMIN | Ver regla activa |
 | POST | `/api/liquidations/rules` | ADMIN | Crear regla de liquidación |
 
 ## Reglas de negocio
@@ -52,9 +55,16 @@ src/modules/liquidaciones/
 ## DTO esperado
 
 ```json
-POST /api/liquidations/generate
+POST /api/liquidations/generate/courier
 {
   "courier_id": "uuid",
+  "start_date": "2025-01-01",
+  "end_date": "2025-01-31"
+}
+
+POST /api/liquidations/generate/customer
+{
+  "customer_id": "uuid",
   "start_date": "2025-01-01",
   "end_date": "2025-01-31"
 }
@@ -63,10 +73,17 @@ POST /api/liquidations/generate
 ## Lógica de cálculo
 
 ```
-Para cada servicio DELIVERED en el rango:
+── Liquidación de mensajero ──────────────────────────────────
+Para cada servicio DELIVERED del courier en el rango:
   Si regla es PERCENTAGE: ganancia = delivery_price * (value / 100)
   Si regla es FIXED:      ganancia = value
 
-total_earned = suma de ganancias de todos los servicios
-total_services = count de servicios en el rango
+total_earned    = suma de ganancias de todos los servicios
+total_services  = count de servicios en el rango
+
+── Liquidación de cliente ────────────────────────────────────
+Para cada servicio DELIVERED del customer en el rango:
+  total_invoiced += delivery_price
+
+total_services  = count de servicios en el rango
 ```

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { LiquidacionRepository } from '../../infrastructure/liquidacion.repository';
 import { validarRangoFechas, validarResultadoLiquidacion } from '../../domain/rules/validar-liquidacion.rule';
 import { GenerarLiquidacionClienteDto } from '../dto/generar-liquidacion-cliente.dto';
@@ -13,17 +13,22 @@ export class GenerarLiquidacionClienteUseCase {
 
     validarRangoFechas(startDate, endDate);
 
-    const servicios = await this.liquidacionRepo.findDeliveredServicesAllCouriers(
-      company_id, startDate, endDate,
+    // Validate customer belongs to company
+    const customer = await this.liquidacionRepo.findCustomerById(dto.customer_id, company_id);
+    if (!customer) throw new NotFoundException('Cliente no encontrado en esta empresa');
+
+    const servicios = await this.liquidacionRepo.findDeliveredServicesByCustomer(
+      company_id, dto.customer_id, startDate, endDate,
     );
 
     const totalServices = servicios.length;
-    const totalInvoiced = servicios.reduce((sum, s) => sum + Number(s.total_price), 0);
+    const totalInvoiced = servicios.reduce((sum, s) => sum + Number(s.delivery_price), 0);
 
     validarResultadoLiquidacion(totalServices, totalInvoiced);
 
     return this.liquidacionRepo.createCustomerSettlement({
       company_id,
+      customer_id: dto.customer_id,
       start_date: startDate,
       end_date: endDate,
       total_services: totalServices,

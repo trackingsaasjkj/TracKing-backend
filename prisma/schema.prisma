@@ -131,8 +131,9 @@ model Customer {
   status     Boolean  @default(true)
   created_at DateTime @default(now())
 
-  company  Company   @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  services Service[]
+  company             Company              @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  services            Service[]
+  customerSettlements CustomerSettlement[]
 
   @@index([company_id])
   @@map("customer")
@@ -253,15 +254,17 @@ model CourierSettlement {
 model CustomerSettlement {
   id              String   @id @default(uuid())
   company_id      String
+  customer_id     String
   start_date      DateTime @db.Date
   end_date        DateTime @db.Date
   total_services  Int
   total_invoiced  Decimal  @db.Decimal(12, 2)
   generation_date DateTime @default(now())
 
-  company Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  company  Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customer_id], references: [id])
 
-  @@index([company_id])
+  @@index([company_id, customer_id])
   @@map("customer_settlement")
 }
 

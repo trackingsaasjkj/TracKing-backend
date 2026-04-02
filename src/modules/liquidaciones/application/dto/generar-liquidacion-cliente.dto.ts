@@ -1,7 +1,11 @@
-import { IsDateString } from 'class-validator';
+import { IsDateString, IsUUID } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class GenerarLiquidacionClienteDto {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440010', description: 'UUID del cliente' })
+  @IsUUID()
+  customer_id!: string;
+
   @ApiProperty({ example: '2025-01-01', description: 'Fecha inicio (ISO date)' })
   @IsDateString()
   start_date!: string;

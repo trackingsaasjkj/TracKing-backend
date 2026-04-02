@@ -15,8 +15,8 @@ export class ConsultarLiquidacionesUseCase {
     return settlement;
   }
 
-  async findCustomerSettlements(company_id: string) {
-    return this.liquidacionRepo.findCustomerSettlements(company_id);
+  async findCustomerSettlements(company_id: string, customer_id?: string) {
+    return this.liquidacionRepo.findCustomerSettlements(company_id, customer_id);
   }
 
   /** Earnings summary: total earned across all courier settlements for the company */

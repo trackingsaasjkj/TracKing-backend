@@ -87,9 +87,10 @@ export class LiquidacionesController {
 
   @Get('customer')
   @ApiOperation({ summary: 'Listar liquidaciones de clientes (facturación)' })
+  @ApiQuery({ name: 'customer_id', required: false, description: 'Filtrar por cliente' })
   @ApiResponse({ status: 200, description: 'Lista de liquidaciones de clientes' })
-  async findCustomer(@CurrentUser() user: JwtPayload) {
-    return ok(await this.consultarUseCase.findCustomerSettlements(user.company_id!));
+  async findCustomer(@CurrentUser() user: JwtPayload, @Query('customer_id') customer_id?: string) {
+    return ok(await this.consultarUseCase.findCustomerSettlements(user.company_id!, customer_id));
   }
 
   @Get('earnings')
