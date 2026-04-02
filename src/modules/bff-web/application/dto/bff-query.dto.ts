@@ -1,16 +1,16 @@
-import { IsDateString, IsOptional, IsUUID } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsDateString, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class BffReportsQueryDto {
-  @ApiPropertyOptional({ example: '2026-01-01', description: 'Fecha inicio (ISO date)' })
-  @IsOptional()
+  @ApiProperty({ example: '2026-01-01', description: 'Fecha inicio (ISO date). Requerido.' })
+  @IsNotEmpty()
   @IsDateString()
-  from?: string;
+  from!: string;
 
-  @ApiPropertyOptional({ example: '2026-01-31T23:59:59', description: 'Fecha fin (ISO date)' })
-  @IsOptional()
+  @ApiProperty({ example: '2026-01-31T23:59:59', description: 'Fecha fin (ISO date). Requerido.' })
+  @IsNotEmpty()
   @IsDateString()
-  to?: string;
+  to!: string;
 }
 
 export class BffSettlementsQueryDto {

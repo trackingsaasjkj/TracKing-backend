@@ -42,7 +42,7 @@ export class ServicioRepository {
   async findById(id: string, company_id: string) {
     const s = await this.prisma.service.findFirst({
       where: { id, company_id },
-      include: { customer: true, courier: true, statusHistory: { orderBy: { change_date: 'desc' } } },
+      include: { customer: true, courier: { include: { user: true } }, statusHistory: { orderBy: { change_date: 'desc' } } },
     });
     return mapService(s);
   }
@@ -56,7 +56,7 @@ export class ServicioRepository {
     const skip = pagination?.offset ?? 0;
     const rows = await this.prisma.service.findMany({
       where: { company_id, ...filters },
-      include: { customer: true, courier: true },
+      include: { customer: true, courier: { include: { user: true } } },
       orderBy: { created_at: 'desc' },
       take,
       skip,

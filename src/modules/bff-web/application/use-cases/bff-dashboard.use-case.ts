@@ -15,8 +15,8 @@ export class BffDashboardUseCase {
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-    const [pendingServices, activeCouriers, financial] = await Promise.all([
-      this.consultarServicios.findAll(company_id, { status: 'PENDING' }),
+    const [allServices, activeCouriers, financial] = await Promise.all([
+      this.consultarServicios.findAll(company_id, {}),
       this.consultarMensajeros.findActivos(company_id),
       this.reporteFinanciero.execute(
         { from: today, to: `${today}T23:59:59` },
@@ -25,7 +25,7 @@ export class BffDashboardUseCase {
     ]);
 
     return {
-      pending_services: pendingServices,
+      services: allServices,
       active_couriers: activeCouriers,
       today_financial: financial,
     };

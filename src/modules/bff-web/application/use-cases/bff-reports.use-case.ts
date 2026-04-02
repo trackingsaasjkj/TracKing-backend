@@ -16,6 +16,10 @@ export class BffReportsUseCase {
       throw new AppException('Los parámetros from y to son obligatorios');
     }
 
+    if (query.from >= query.to) {
+      throw new AppException('El parámetro from debe ser anterior a to');
+    }
+
     const [services, financial] = await Promise.all([
       this.reporteServicios.execute(query, company_id),
       this.reporteFinanciero.execute(query, company_id),
