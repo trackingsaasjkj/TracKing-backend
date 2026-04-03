@@ -25,7 +25,7 @@ export class BffDashboardUseCase {
     ]);
 
     return {
-      services: allServices,
+      pending_services: allServices,
       active_couriers: activeCouriers,
       today_financial: financial,
     };

@@ -12,6 +12,10 @@ class EnvVars {
   @IsOptional() @IsString() SWAGGER_ENABLED?: string;
   @IsOptional() @IsString() SWAGGER_USER?: string;
   @IsOptional() @IsString() SWAGGER_PASSWORD?: string;
+
+  @IsString() @IsNotEmpty() SUPABASE_URL!: string;
+  @IsString() @IsNotEmpty() SUPABASE_SERVICE_ROLE_KEY!: string;
+  @IsString() @IsNotEmpty() SUPABASE_STORAGE_BUCKET!: string;
 }
 
 export function validate(config: Record<string, unknown>) {

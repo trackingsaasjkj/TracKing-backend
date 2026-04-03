@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { RolesGuard } from '../../core/guards/roles.guard';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
@@ -13,7 +14,6 @@ import { RegistrarUbicacionUseCase } from '../tracking/application/use-cases/reg
 import { SubirEvidenciaUseCase } from '../evidencias/application/use-cases/subir-evidencia.use-case';
 import { CambiarEstadoDto } from '../servicios/application/dto/cambiar-estado.dto';
 import { RegisterLocationDto } from '../tracking/application/dto/register-location.dto';
-import { SubirEvidenciaDto } from '../evidencias/application/dto/subir-evidencia.dto';
 
 @ApiTags('Courier Mobile')
 @ApiBearerAuth('access-token')
@@ -87,16 +87,27 @@ export class CourierMobileController {
   // ── Evidencia ─────────────────────────────────────────────────────────────────
 
   @Post('services/:id/evidence')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary', description: 'Imagen de evidencia (jpg, png, webp)' },
+      },
+      required: ['file'],
+    },
+  })
   @ApiOperation({ summary: 'Subir evidencia de entrega', description: 'Solo cuando el servicio está en estado IN_TRANSIT.' })
   @ApiParam({ name: 'id', description: 'UUID del servicio' })
   @ApiResponse({ status: 201, description: 'Evidencia registrada' })
   @ApiResponse({ status: 400, description: 'Servicio no está IN_TRANSIT' })
   async subirEvidencia(
     @Param('id') id: string,
-    @Body() dto: SubirEvidenciaDto,
+    @UploadedFile() file: Express.Multer.File,
     @CurrentUser() user: JwtPayload,
   ) {
-    return ok(await this.subirEvidenciaUseCase.execute(id, dto, user.company_id!));
+    return ok(await this.subirEvidenciaUseCase.execute(id, file, user.company_id!));
   }
 
   // ── Ubicación ─────────────────────────────────────────────────────────────────
