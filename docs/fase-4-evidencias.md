@@ -28,8 +28,12 @@ src/infrastructure/storage/
 
 | Método | Ruta | Roles | Descripción |
 |--------|------|-------|-------------|
-| POST | `/api/services/:id/evidence` | ADMIN, AUX, COURIER | Subir evidencia (multipart/form-data) |
+| POST | `/api/courier/services/:id/evidence` | COURIER | Subir evidencia desde app móvil (multipart/form-data) |
+| POST | `/api/services/:id/evidence` | ADMIN, AUX, COURIER | Subir evidencia desde panel web (multipart/form-data) |
 | GET | `/api/services/:id/evidence` | Todos (JWT) | Consultar evidencia |
+
+> El endpoint `/api/courier/services/:id/evidence` es el que usa la app móvil del mensajero.
+> Está registrado en `CourierMobileController` y delega al mismo `SubirEvidenciaUseCase`.
 
 ## Reglas de negocio
 
@@ -40,7 +44,20 @@ src/infrastructure/storage/
 - Formatos permitidos: `image/jpeg`, `image/png`, `image/webp`
 - Tamaño máximo: 5 MB
 
-## Formato del request
+## Formato del request (app móvil)
+
+```
+POST /api/courier/services/:id/evidence
+Authorization: Bearer <token>
+Content-Type: multipart/form-data   ← NO establecer manualmente, el cliente lo setea con boundary
+
+Campo: file (binary) — imagen jpg, png o webp, máx 5 MB
+```
+
+> No agregar `Content-Type` manualmente en el cliente — el boundary del multipart se pierde.
+> En React Native con axios, pasar `FormData` directamente y dejar que axios lo gestione.
+
+## Formato del request (panel web)
 
 ```
 POST /api/services/:id/evidence

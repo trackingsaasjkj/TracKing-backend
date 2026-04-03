@@ -171,15 +171,42 @@ IN_TRANSIT → DELIVERED   ← requiere subir evidencia primero
 ### Subir evidencia
 
 Debe hacerse antes de marcar como `DELIVERED`. El servicio debe estar en `IN_TRANSIT`.
+El endpoint acepta `multipart/form-data` con el campo `file`.
 
 ```ts
 // POST /api/courier/services/:id/evidence
-await fetch(`${BASE_URL}/api/courier/services/${serviceId}/evidence`, {
-  method: 'POST',
-  headers,
-  body: JSON.stringify({ image_url: 'https://storage.ejemplo.com/foto.jpg' }),
-});
+// Content-Type: multipart/form-data
+
+import * as ImagePicker from 'expo-image-picker';
+
+async function subirEvidencia(serviceId: string) {
+  const result = await ImagePicker.launchCameraAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    quality: 0.7,
+  });
+
+  if (result.canceled) return;
+
+  const asset = result.assets[0];
+  const formData = new FormData();
+  formData.append('file', {
+    uri: asset.uri,
+    name: 'evidencia.jpg',
+    type: 'image/jpeg',
+  } as any);
+
+  await fetch(`${BASE_URL}/api/courier/services/${serviceId}/evidence`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      // NO agregar Content-Type manualmente
+    },
+    body: formData,
+  });
+}
 ```
+
+Formatos permitidos: `jpg`, `png`, `webp`. Tamaño máximo: 5 MB.
 
 > Re-subir reemplaza la evidencia anterior (upsert).
 
@@ -322,7 +349,7 @@ async function detenerTrackingBackground() {
 7.  Iniciar tracking               iniciarTrackingBackground()
         └─ loop cada 15s           POST /api/courier/location  { lat, lng, accuracy }
 8.  Llegar al destino
-9.  Subir evidencia                POST /api/courier/services/:id/evidence  { "image_url": "..." }
+9.  Subir evidencia                POST /api/courier/services/:id/evidence  multipart/form-data (campo: file)
 10. Marcar como entregado          POST /api/courier/services/:id/status  { "status": "DELIVERED" }
                                         → estado mensajero: AVAILABLE
 11. Detener tracking               detenerTrackingBackground()
