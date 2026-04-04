@@ -56,6 +56,17 @@ enum TokenType {
   REFRESH
 }
 
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  CREDIT
+}
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+}
+
 model Company {
   id         String   @id @default(uuid())
   name       String   @db.VarChar(150)
@@ -144,7 +155,9 @@ model Service {
   company_id                  String
   customer_id                 String
   courier_id                  String?
-  payment_method              String        @db.VarChar(50)
+  payment_method              PaymentMethod
+  payment_status              PaymentStatus @default(UNPAID)
+  is_settled                  Boolean       @default(false)
   origin_address              String
   origin_apartment_office     String?
   origin_contact_phone        String        @db.VarChar(20)

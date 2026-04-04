@@ -3,11 +3,13 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery }
 import { CrearServicioUseCase } from './application/use-cases/crear-servicio.use-case';
 import { AsignarServicioUseCase } from './application/use-cases/asignar-servicio.use-case';
 import { CambiarEstadoUseCase } from './application/use-cases/cambiar-estado.use-case';
+import { CambiarPagoUseCase } from './application/use-cases/cambiar-pago.use-case';
 import { CancelarServicioUseCase } from './application/use-cases/cancelar-servicio.use-case';
 import { ConsultarServiciosUseCase } from './application/use-cases/consultar-servicios.use-case';
 import { CrearServicioDto } from './application/dto/crear-servicio.dto';
 import { AsignarServicioDto } from './application/dto/asignar-servicio.dto';
 import { CambiarEstadoDto } from './application/dto/cambiar-estado.dto';
+import { CambiarPagoDto } from './application/dto/cambiar-pago.dto';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { RolesGuard } from '../../core/guards/roles.guard';
@@ -25,6 +27,7 @@ export class ServiciosController {
     private readonly crearUseCase: CrearServicioUseCase,
     private readonly asignarUseCase: AsignarServicioUseCase,
     private readonly cambiarEstadoUseCase: CambiarEstadoUseCase,
+    private readonly cambiarPagoUseCase: CambiarPagoUseCase,
     private readonly cancelarUseCase: CancelarServicioUseCase,
     private readonly consultarUseCase: ConsultarServiciosUseCase,
   ) {}
@@ -69,6 +72,20 @@ export class ServiciosController {
   @ApiResponse({ status: 400, description: 'No se puede cancelar en el estado actual' })
   async cancelar(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return ok(await this.cancelarUseCase.execute(id, user.company_id!, user.sub));
+  }
+
+  @Post(':id/payment')
+  @Roles(Role.ADMIN, Role.AUX, Role.COURIER)
+  @ApiOperation({
+    summary: 'Cambiar estado de pago',
+    description:
+      'PAGADO → payment_method cambia a EFECTIVO. NO_PAGADO → payment_method cambia a CREDITO. El mensajero puede usar este endpoint para registrar cobros en campo.',
+  })
+  @ApiParam({ name: 'id', description: 'UUID del servicio' })
+  @ApiResponse({ status: 200, description: 'Estado de pago actualizado' })
+  @ApiResponse({ status: 404, description: 'Servicio no encontrado' })
+  async cambiarPago(@Param('id') id: string, @Body() dto: CambiarPagoDto, @CurrentUser() user: JwtPayload) {
+    return ok(await this.cambiarPagoUseCase.execute(id, dto, user.company_id!));
   }
 
   @Get()

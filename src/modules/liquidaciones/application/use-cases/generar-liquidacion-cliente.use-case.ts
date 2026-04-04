@@ -26,7 +26,7 @@ export class GenerarLiquidacionClienteUseCase {
 
     validarResultadoLiquidacion(totalServices, totalInvoiced);
 
-    return this.liquidacionRepo.createCustomerSettlement({
+    const settlement = await this.liquidacionRepo.createCustomerSettlement({
       company_id,
       customer_id: dto.customer_id,
       start_date: startDate,
@@ -34,5 +34,10 @@ export class GenerarLiquidacionClienteUseCase {
       total_services: totalServices,
       total_invoiced: totalInvoiced,
     });
+
+    // Marcar servicios como liquidados
+    await this.liquidacionRepo.markServicesAsSettled(servicios.map(s => s.id), company_id);
+
+    return settlement;
   }
 }

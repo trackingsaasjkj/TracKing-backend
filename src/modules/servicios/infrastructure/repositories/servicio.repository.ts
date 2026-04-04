@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
-import { ServiceStatus } from '@prisma/client';
+import { PaymentMethod, PaymentStatus, ServiceStatus } from '@prisma/client';
 
 type ServiceRow = Awaited<ReturnType<PrismaService['service']['findFirst']>>;
 
@@ -21,7 +21,8 @@ export class ServicioRepository {
   async create(data: {
     company_id: string;
     customer_id: string;
-    payment_method: string;
+    payment_method: PaymentMethod;
+    payment_status: PaymentStatus;
     origin_address: string;
     origin_apartment_office?: string;
     origin_contact_phone: string;
@@ -69,6 +70,9 @@ export class ServicioRepository {
     courier_id: string;
     assignment_date: Date;
     delivery_date: Date;
+    payment_method: PaymentMethod;
+    payment_status: PaymentStatus;
+    is_settled: boolean;
   }>) {
     return this.prisma.service.updateMany({ where: { id, company_id }, data });
   }

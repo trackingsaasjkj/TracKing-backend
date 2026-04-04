@@ -3,6 +3,7 @@ import { ServiciosController } from './servicios.controller';
 import { CrearServicioUseCase } from './application/use-cases/crear-servicio.use-case';
 import { AsignarServicioUseCase } from './application/use-cases/asignar-servicio.use-case';
 import { CambiarEstadoUseCase } from './application/use-cases/cambiar-estado.use-case';
+import { CambiarPagoUseCase } from './application/use-cases/cambiar-pago.use-case';
 import { CancelarServicioUseCase } from './application/use-cases/cancelar-servicio.use-case';
 import { ConsultarServiciosUseCase } from './application/use-cases/consultar-servicios.use-case';
 import { ServicioRepository } from './infrastructure/repositories/servicio.repository';
@@ -13,18 +14,17 @@ import { EvidenceRepository } from './infrastructure/repositories/evidence.repos
 @Module({
   controllers: [ServiciosController],
   providers: [
-    // Use-cases
     CrearServicioUseCase,
     AsignarServicioUseCase,
     CambiarEstadoUseCase,
+    CambiarPagoUseCase,
     CancelarServicioUseCase,
     ConsultarServiciosUseCase,
-    // Repositories
     ServicioRepository,
     CourierRepository,
     HistorialRepository,
     EvidenceRepository,
   ],
-  exports: [ServicioRepository, CourierRepository, EvidenceRepository, HistorialRepository, ConsultarServiciosUseCase],
+  exports: [ServicioRepository, CourierRepository, EvidenceRepository, HistorialRepository, ConsultarServiciosUseCase, CambiarPagoUseCase],
 })
 export class ServiciosModule {}

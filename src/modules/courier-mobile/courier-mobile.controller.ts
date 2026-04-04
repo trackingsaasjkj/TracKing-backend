@@ -10,9 +10,11 @@ import { ok } from '../../core/utils/response.util';
 import { ConsultarMensajerosUseCase } from '../mensajeros/application/use-cases/consultar-mensajeros.use-case';
 import { JornadaUseCase } from '../mensajeros/application/use-cases/jornada.use-case';
 import { CambiarEstadoUseCase } from '../servicios/application/use-cases/cambiar-estado.use-case';
+import { CambiarPagoUseCase } from '../servicios/application/use-cases/cambiar-pago.use-case';
 import { RegistrarUbicacionUseCase } from '../tracking/application/use-cases/registrar-ubicacion.use-case';
 import { SubirEvidenciaUseCase } from '../evidencias/application/use-cases/subir-evidencia.use-case';
 import { CambiarEstadoDto } from '../servicios/application/dto/cambiar-estado.dto';
+import { CambiarPagoDto } from '../servicios/application/dto/cambiar-pago.dto';
 import { RegisterLocationDto } from '../tracking/application/dto/register-location.dto';
 
 @ApiTags('Courier Mobile')
@@ -25,6 +27,7 @@ export class CourierMobileController {
     private readonly consultarUseCase: ConsultarMensajerosUseCase,
     private readonly jornadaUseCase: JornadaUseCase,
     private readonly cambiarEstadoUseCase: CambiarEstadoUseCase,
+    private readonly cambiarPagoUseCase: CambiarPagoUseCase,
     private readonly registrarUbicacionUseCase: RegistrarUbicacionUseCase,
     private readonly subirEvidenciaUseCase: SubirEvidenciaUseCase,
   ) {}
@@ -84,8 +87,25 @@ export class CourierMobileController {
     return ok(await this.cambiarEstadoUseCase.execute(id, dto, user.company_id!, user.sub));
   }
 
-  // ── Evidencia ─────────────────────────────────────────────────────────────────
+  // ── Pago ──────────────────────────────────────────────────────────────────────
 
+  @Post('services/:id/payment')
+  @ApiOperation({
+    summary: 'Cambiar estado de pago',
+    description:
+      'PAGADO → payment_method cambia a EFECTIVO. NO_PAGADO → payment_method cambia a CREDITO.',
+  })
+  @ApiParam({ name: 'id', description: 'UUID del servicio' })
+  @ApiResponse({ status: 200, description: 'Estado de pago actualizado' })
+  async cambiarPago(
+    @Param('id') id: string,
+    @Body() dto: CambiarPagoDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return ok(await this.cambiarPagoUseCase.execute(id, dto, user.company_id!));
+  }
+
+  // ── Evidencia ─────────────────────────────────────────────────────────────────
   @Post('services/:id/evidence')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')

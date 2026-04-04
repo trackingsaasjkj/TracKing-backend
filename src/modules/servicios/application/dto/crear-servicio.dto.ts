@@ -1,5 +1,6 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaymentMethod } from '@prisma/client';
 
 export class CrearServicioDto {
   @ApiPropertyOptional({
@@ -30,10 +31,13 @@ export class CrearServicioDto {
   @IsString()
   customer_email?: string;
 
-  @ApiProperty({ example: 'CASH', description: 'Método de pago (CASH, CARD, TRANSFER)' })
-  @IsString()
-  @IsNotEmpty()
-  payment_method!: string;
+  @ApiProperty({
+    enum: PaymentMethod,
+    example: PaymentMethod.CASH,
+    description: 'Método de pago. CASH/TRANSFER → payment_status: PAID. CREDIT → payment_status: UNPAID.',
+  })
+  @IsEnum(PaymentMethod)
+  payment_method!: PaymentMethod;
 
   @ApiProperty({ example: 'Calle 10 # 5-20, Bogotá' })
   @IsString()

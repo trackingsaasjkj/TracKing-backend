@@ -12,6 +12,7 @@ const mockLiquidacionRepo = {
   findCustomerById: jest.fn(),
   findDeliveredServicesByCustomer: jest.fn(),
   createCustomerSettlement: jest.fn(),
+  markServicesAsSettled: jest.fn().mockResolvedValue(undefined),
 };
 
 const dto = { customer_id: 'cust-1', start_date: '2025-01-01', end_date: '2025-01-31' };

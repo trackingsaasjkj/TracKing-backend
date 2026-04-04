@@ -38,10 +38,9 @@ export class GenerarLiquidacionCourierUseCase {
       { type: regla!.type as any, value: Number(regla!.value) },
     );
 
-    // Spec: totalServiciosDebeCoincidir + totalGanadoDebeSerPositivo
     validarResultadoLiquidacion(totalServices, totalEarned);
 
-    return this.liquidacionRepo.createCourierSettlement({
+    const settlement = await this.liquidacionRepo.createCourierSettlement({
       company_id,
       courier_id: dto.courier_id,
       start_date: startDate,
@@ -49,5 +48,10 @@ export class GenerarLiquidacionCourierUseCase {
       total_services: totalServices,
       total_earned: totalEarned,
     });
+
+    // Marcar servicios como liquidados
+    await this.liquidacionRepo.markServicesAsSettled(servicios.map(s => s.id), company_id);
+
+    return settlement;
   }
 }
