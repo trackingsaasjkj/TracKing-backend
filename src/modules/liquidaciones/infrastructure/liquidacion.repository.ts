@@ -120,10 +120,17 @@ export class LiquidacionRepository {
 
   // ── Mark services as settled ────────────────────────────────
 
-  async markServicesAsSettled(service_ids: string[], company_id: string) {
+  async markCourierServicesAsSettled(service_ids: string[], company_id: string) {
     return this.prisma.service.updateMany({
       where: { id: { in: service_ids }, company_id },
-      data: { is_settled: true },
+      data: { is_settled_courier: true },
+    });
+  }
+
+  async markCustomerServicesAsSettled(service_ids: string[], company_id: string) {
+    return this.prisma.service.updateMany({
+      where: { id: { in: service_ids }, company_id },
+      data: { is_settled_customer: true },
     });
   }
 }

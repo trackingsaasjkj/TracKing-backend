@@ -123,7 +123,7 @@ describe('GenerarLiquidacionCourierUseCase — servicios ya liquidados', () => {
     liquidacionRepo = makeLiquidacionRepo();
     mensajeroRepo = makeMensajeroRepo();
     useCase = new GenerarLiquidacionCourierUseCase(liquidacionRepo, mensajeroRepo);
-    liquidacionRepo.markServicesAsSettled = jest.fn().mockResolvedValue(undefined);
+    liquidacionRepo.markCourierServicesAsSettled = jest.fn().mockResolvedValue(undefined);
   });
 
   // 7.7 Unit test: servicios ya liquidados no se incluyen (mock returns empty array)

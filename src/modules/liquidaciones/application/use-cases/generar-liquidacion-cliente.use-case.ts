@@ -35,8 +35,8 @@ export class GenerarLiquidacionClienteUseCase {
       total_invoiced: totalInvoiced,
     });
 
-    // Marcar servicios como liquidados
-    await this.liquidacionRepo.markServicesAsSettled(servicios.map(s => s.id), company_id);
+    // Marcar servicios como liquidados (customer)
+    await this.liquidacionRepo.markCustomerServicesAsSettled(servicios.map(s => s.id), company_id);
 
     return settlement;
   }

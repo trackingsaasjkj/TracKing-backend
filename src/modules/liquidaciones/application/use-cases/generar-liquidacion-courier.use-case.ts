@@ -49,8 +49,8 @@ export class GenerarLiquidacionCourierUseCase {
       total_earned: totalEarned,
     });
 
-    // Marcar servicios como liquidados
-    await this.liquidacionRepo.markServicesAsSettled(servicios.map(s => s.id), company_id);
+    // Marcar servicios como liquidados (courier)
+    await this.liquidacionRepo.markCourierServicesAsSettled(servicios.map(s => s.id), company_id);
 
     return settlement;
   }

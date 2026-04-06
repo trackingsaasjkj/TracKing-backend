@@ -72,7 +72,8 @@ export class ServicioRepository {
     delivery_date: Date;
     payment_method: PaymentMethod;
     payment_status: PaymentStatus;
-    is_settled: boolean;
+    is_settled_courier: boolean;
+    is_settled_customer: boolean;
   }>) {
     return this.prisma.service.updateMany({ where: { id, company_id }, data });
   }

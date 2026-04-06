@@ -11,7 +11,7 @@ const mockLiquidacionRepo = {
   findActiveRule: jest.fn(),
   findDeliveredServices: jest.fn(),
   createCourierSettlement: jest.fn(),
-  markServicesAsSettled: jest.fn().mockResolvedValue(undefined),
+  markCourierServicesAsSettled: jest.fn().mockResolvedValue(undefined),
 };
 const mockMensajeroRepo = { findById: jest.fn() };
 

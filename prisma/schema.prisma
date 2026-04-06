@@ -157,7 +157,8 @@ model Service {
   courier_id                  String?
   payment_method              PaymentMethod
   payment_status              PaymentStatus @default(UNPAID)
-  is_settled                  Boolean       @default(false)
+  is_settled_courier          Boolean       @default(false)
+  is_settled_customer         Boolean       @default(false)
   origin_address              String
   origin_apartment_office     String?
   origin_contact_phone        String        @db.VarChar(20)

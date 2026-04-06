@@ -12,7 +12,8 @@ Se agregaron tres campos nuevos al modelo `Service`:
 |-------|------|-------------|
 | `payment_method` | enum | Método de pago: `CASH`, `TRANSFER`, `CREDIT` |
 | `payment_status` | enum | Estado del pago: `PAID`, `UNPAID` |
-| `is_settled` | boolean | `true` si el servicio fue incluido en una liquidación, `false` si no |
+| `is_settled_courier` | boolean | `true` si el servicio fue incluido en una liquidación de mensajero |
+| `is_settled_customer` | boolean | `true` si el servicio fue incluido en una liquidación de cliente |
 
 ---
 
@@ -39,10 +40,12 @@ El mensajero o el admin pueden cambiar el estado de pago. El sistema aplica esta
 
 ### Is Settled
 
-- `is_settled: false` — el servicio aún no ha sido incluido en ninguna liquidación
-- `is_settled: true` — el servicio fue contabilizado al generar una liquidación (courier o cliente)
+- `is_settled_courier: false` — el servicio aún no ha sido incluido en una liquidación de mensajero
+- `is_settled_courier: true` — fue contabilizado al generar una liquidación de mensajero
+- `is_settled_customer: false` — el servicio aún no ha sido incluido en una liquidación de cliente
+- `is_settled_customer: true` — fue contabilizado al generar una liquidación de cliente
 
-Se marca automáticamente al generar la liquidación. No se puede modificar manualmente.
+Ambos campos se marcan automáticamente al generar la liquidación correspondiente. No se pueden modificar manualmente.
 
 ---
 
@@ -102,7 +105,8 @@ Todos los endpoints que retornan un servicio ahora incluyen los tres campos:
   "id": "uuid",
   "payment_method": "CASH",
   "payment_status": "PAID",
-  "is_settled": false,
+  "is_settled_courier": false,
+  "is_settled_customer": false,
   "status": "DELIVERED",
   ...
 }
@@ -158,9 +162,14 @@ async function cambiarPago(serviceId: string, status: 'PAID' | 'UNPAID', token: 
 // Servicios no pagados
 const unpaid = servicios.filter(s => s.payment_status === 'UNPAID');
 
-// Servicios entregados pendientes de liquidar
-const pendingSettlement = servicios.filter(
-  s => s.status === 'DELIVERED' && s.is_settled === false
+// Servicios entregados pendientes de liquidar (mensajero)
+const pendingCourierSettlement = servicios.filter(
+  s => s.status === 'DELIVERED' && s.is_settled_courier === false
+);
+
+// Servicios entregados pendientes de liquidar (cliente)
+const pendingCustomerSettlement = servicios.filter(
+  s => s.status === 'DELIVERED' && s.is_settled_customer === false
 );
 ```
 
