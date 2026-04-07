@@ -6,7 +6,7 @@ services:
     branch: render
     buildCommand: npm install && npm run prisma:generate && npm run build
     startCommand: npm run start:prod
-    healthCheckPath: /health
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
