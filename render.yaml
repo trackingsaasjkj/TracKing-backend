@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: TracKing-backend
+    env: node
+    plan: starter
+    branch: render
+    buildCommand: npm install && npm run prisma:generate && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromSecret: DATABASE_URL
+      - key: DIRECT_URL
+        fromSecret: DIRECT_URL
+      - key: JWT_SECRET
+        fromSecret: JWT_SECRET
+      - key: JWT_REFRESH_SECRET
+        fromSecret: JWT_REFRESH_SECRET
+      - key: JWT_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: SWAGGER_ENABLED
+        value: true
+      - key: SWAGGER_USER
+        fromSecret: SWAGGER_USER
+      - key: SWAGGER_PASSWORD
+        fromSecret: SWAGGER_PASSWORD
