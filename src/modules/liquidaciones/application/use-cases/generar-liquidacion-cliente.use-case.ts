@@ -2,10 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { AppException } from '../../../../core/errors/app.exception';
 import { GenerarLiquidacionClienteDto } from '../dto/generar-liquidacion-cliente.dto';
 import { validarRangoFechas } from '../../domain/rules/validar-liquidacion.rule';
+import { LiquidacionRepository } from '../../infrastructure/liquidacion.repository';
 
 @Injectable()
 export class GenerarLiquidacionClienteUseCase {
-  constructor(private readonly liquidacionRepo: any) {}
+  constructor(private readonly liquidacionRepo: LiquidacionRepository) {}
 
   async execute(dto: GenerarLiquidacionClienteDto, company_id: string) {
     const startDate = new Date(dto.start_date);

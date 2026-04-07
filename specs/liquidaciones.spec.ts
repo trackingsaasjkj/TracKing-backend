@@ -472,8 +472,9 @@ describe('P-3: findPendingTodayCourier filtra por día actual (PBT)', () => {
             delivery_date: fc.date({
               min: new Date(new Date().setHours(0, 0, 0, 0)),
               max: new Date(new Date().setHours(23, 59, 59, 999)),
+              noInvalidDate: true,
             }),
-            delivery_price: fc.float({ min: 1, max: 10000, noNaN: true }),
+            delivery_price: fc.float({ min: 1, max: Math.fround(10000), noNaN: true }),
           }),
           { minLength: 0, maxLength: 20 },
         ),
