@@ -1,16 +1,14 @@
-import { IsDateString, IsUUID } from 'class-validator';
+import { IsArray, IsUUID, ArrayMinSize } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class GenerarLiquidacionClienteDto {
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440010', description: 'UUID del cliente' })
-  @IsUUID()
-  customer_id!: string;
-
-  @ApiProperty({ example: '2025-01-01', description: 'Fecha inicio (ISO date)' })
-  @IsDateString()
-  start_date!: string;
-
-  @ApiProperty({ example: '2025-01-31', description: 'Fecha fin (ISO date)' })
-  @IsDateString()
-  end_date!: string;
+  @ApiProperty({
+    example: ['550e8400-e29b-41d4-a716-446655440010'],
+    description: 'UUIDs de los servicios a liquidar',
+    type: [String],
+  })
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsUUID('all', { each: true })
+  service_ids!: string[];
 }

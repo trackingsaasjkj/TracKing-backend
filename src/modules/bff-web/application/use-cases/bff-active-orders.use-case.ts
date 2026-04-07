@@ -12,7 +12,7 @@ export class BffActiveOrdersUseCase {
   async execute(company_id: string) {
     const [services, availableCouriers] = await Promise.all([
       this.consultarServicios.findAll(company_id),
-      this.consultarMensajeros.findActivos(company_id),
+      this.consultarMensajeros.findAll(company_id),
     ]);
 
     return {

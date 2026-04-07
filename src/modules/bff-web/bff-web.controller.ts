@@ -10,6 +10,7 @@ import { BffDashboardUseCase } from './application/use-cases/bff-dashboard.use-c
 import { BffActiveOrdersUseCase } from './application/use-cases/bff-active-orders.use-case';
 import { BffReportsUseCase } from './application/use-cases/bff-reports.use-case';
 import { BffSettlementsUseCase } from './application/use-cases/bff-settlements.use-case';
+import { BffLiquidacionesUseCase } from './application/use-cases/bff-liquidaciones.use-case';
 import { BffReportsQueryDto, BffSettlementsQueryDto } from './application/dto/bff-query.dto';
 
 @ApiTags('BFF Web')
@@ -22,6 +23,7 @@ export class BffWebController {
     private readonly bffActiveOrders: BffActiveOrdersUseCase,
     private readonly bffReports: BffReportsUseCase,
     private readonly bffSettlements: BffSettlementsUseCase,
+    private readonly bffLiquidaciones: BffLiquidacionesUseCase,
   ) {}
 
   @Get('dashboard')
@@ -67,5 +69,16 @@ export class BffWebController {
   @ApiResponse({ status: 200, description: 'Settlements data' })
   async getSettlements(@Query() query: BffSettlementsQueryDto, @CurrentUser() user: JwtPayload) {
     return ok(await this.bffSettlements.execute(user.company_id!, query.courier_id));
+  }
+
+  @Get('liquidaciones')
+  @Roles(Role.ADMIN, Role.AUX)
+  @ApiOperation({
+    summary: 'Datos de la página de liquidaciones',
+    description: 'Retorna mensajeros, regla activa y conteo de pendientes hoy en una sola llamada.',
+  })
+  @ApiResponse({ status: 200, description: 'Liquidaciones page data' })
+  async getLiquidaciones(@CurrentUser() user: JwtPayload) {
+    return ok(await this.bffLiquidaciones.execute(user.company_id!));
   }
 }

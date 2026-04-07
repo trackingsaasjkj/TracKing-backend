@@ -19,7 +19,10 @@ export interface LocationPayload {
 @Injectable()
 @WebSocketGateway({
   namespace: '/tracking',
-  cors: { origin: '*', credentials: true },
+  cors: {
+    origin: ['http://localhost:5173', 'http://localhost:3001'],
+    credentials: true,
+  },
 })
 export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server!: Server;
@@ -34,6 +37,7 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
         (client.handshake.headers?.authorization as string);
 
       if (!token) {
+        this.logger.warn(`[Tracking] Client ${client.id} rejected: no token`);
         client.disconnect();
         return;
       }
@@ -41,14 +45,18 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
       const clean = token.replace('Bearer ', '');
       const payload = this.jwtService.verify(clean);
 
+      this.logger.log(`[Tracking] Token payload: role=${payload.role}, company_id=${payload.company_id}`);
+
       // Admin/AUX join their company room to receive location updates
       if (payload.company_id && ['ADMIN', 'AUX'].includes(payload.role)) {
         client.join(payload.company_id);
         this.logger.log(`Client ${client.id} joined room ${payload.company_id}`);
       } else {
+        this.logger.warn(`[Tracking] Client ${client.id} rejected: role=${payload.role} not allowed`);
         client.disconnect();
       }
-    } catch {
+    } catch (err) {
+      this.logger.error(`[Tracking] Client ${client.id} rejected: JWT error — ${(err as Error).message}`);
       client.disconnect();
     }
   }

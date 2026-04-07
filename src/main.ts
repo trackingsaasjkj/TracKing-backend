@@ -210,6 +210,11 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule, { logger: ['log', 'warn', 'error', 'debug'] });
 
+  app.enableCors({
+    origin: ['http://localhost:5173', 'http://localhost:3001'],
+    credentials: true,
+  });
+
   app.use(cookieParser());
   app.use(express.json());
 
