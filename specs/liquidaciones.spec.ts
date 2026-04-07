@@ -273,8 +273,8 @@ describe('P-3: findPendingTodayCourier filtra por día actual (PBT)', () => {
             id: fc.uuid(),
             status: fc.constant('DELIVERED'),
             is_settled_courier: fc.constant(false),
-            delivery_date: fc.date({ min: new Date(new Date().setHours(0, 0, 0, 0)), max: new Date(new Date().setHours(23, 59, 59, 999)) }),
-            delivery_price: fc.float({ min: 1, max: 10000, noNaN: true }),
+            delivery_date: fc.date({ min: new Date(new Date().setHours(0, 0, 0, 0)), max: new Date(new Date().setHours(23, 59, 59, 999)), noInvalidDate: true }),
+            delivery_price: fc.float({ min: 1, max: Math.fround(10000), noNaN: true }),
           }),
           { minLength: 0, maxLength: 20 },
         ),
@@ -405,7 +405,7 @@ describe('P-13: Round-trip de serialización de valores Decimal (PBT)', () => {
   it('P-13: Number(decimal) → JSON.stringify → JSON.parse produce el mismo número', () => {
     fc.assert(
       fc.property(
-        fc.float({ min: 0, max: 999999.99, noNaN: true }),
+        fc.float({ min: 0, max: Math.fround(999999.99), noNaN: true }),
         (value) => {
           const asNumber = Number(value.toFixed(2));
           const serialized = JSON.stringify({ v: asNumber });
@@ -592,7 +592,7 @@ describe('P-13: Round-trip de serialización de valores Decimal (PBT)', () => {
   it('P-13: Number(decimal) → JSON.stringify → JSON.parse produce el mismo número', () => {
     fc.assert(
       fc.property(
-        fc.float({ min: 0, max: 999999.99, noNaN: true }),
+        fc.float({ min: 0, max: Math.fround(999999.99), noNaN: true }),
         (value) => {
           const asNumber = Number(value.toFixed(2));
           const serialized = JSON.stringify({ v: asNumber });
