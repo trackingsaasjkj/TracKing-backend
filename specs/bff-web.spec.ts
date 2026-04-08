@@ -16,7 +16,7 @@ function makeConsultarServicios() {
 }
 
 function makeConsultarMensajeros() {
-  return { findActivos: jest.fn() } as any;
+  return { findActivos: jest.fn(), findAvailableAndInService: jest.fn() } as any;
 }
 
 function makeReporteFinanciero() {
@@ -81,7 +81,7 @@ describe('BffDashboardUseCase — Property 1: dashboard result shape', () => {
     reporteFinanciero = makeReporteFinanciero();
 
     consultarServicios.findAll.mockResolvedValue(stubServices);
-    consultarMensajeros.findActivos.mockResolvedValue(stubCouriers);
+    consultarMensajeros.findAvailableAndInService.mockResolvedValue(stubCouriers);
     reporteFinanciero.execute.mockResolvedValue(stubFinancial);
 
     useCase = new BffDashboardUseCase(consultarServicios, consultarMensajeros, reporteFinanciero);
@@ -117,7 +117,7 @@ describe('BffActiveOrdersUseCase — Property 2: active-orders result shape', ()
     consultarMensajeros = makeConsultarMensajeros();
 
     consultarServicios.findAll.mockResolvedValue(stubServices);
-    consultarMensajeros.findActivos.mockResolvedValue(stubCouriers);
+    consultarMensajeros.findAvailableAndInService.mockResolvedValue(stubCouriers);
 
     useCase = new BffActiveOrdersUseCase(consultarServicios, consultarMensajeros);
   });
@@ -363,7 +363,7 @@ describe('BffDashboardUseCase — Property 8: exceptions propagate without suppr
         async (companyId, errorMessage) => {
           const error = new Error(errorMessage);
           consultarServicios.findAll.mockRejectedValue(error);
-          consultarMensajeros.findActivos.mockResolvedValue(stubCouriers);
+          consultarMensajeros.findAvailableAndInService.mockResolvedValue(stubCouriers);
           reporteFinanciero.execute.mockResolvedValue(stubFinancial);
 
           const useCase = new BffDashboardUseCase(consultarServicios, consultarMensajeros, reporteFinanciero);

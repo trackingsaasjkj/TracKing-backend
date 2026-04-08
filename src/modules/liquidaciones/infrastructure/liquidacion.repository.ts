@@ -144,15 +144,25 @@ export class LiquidacionRepository {
   }
 
   async markCustomerServicesAsSettled(service_ids: string[], company_id: string) {
-    return this.prisma.service.updateMany({
+    // Mark all as settled for customer
+    await this.prisma.service.updateMany({
       where: { id: { in: service_ids }, company_id },
+      data: { is_settled_customer: true },
+    });
+    // Also mark UNPAID ones as PAID
+    await this.prisma.service.updateMany({
+      where: { id: { in: service_ids }, company_id, payment_status: 'UNPAID' },
       data: { payment_status: 'PAID' },
     });
   }
 
   async markServicesAsPaid(service_ids: string[], company_id: string) {
-    return this.prisma.service.updateMany({
+    await this.prisma.service.updateMany({
       where: { id: { in: service_ids }, company_id },
+      data: { is_settled_customer: true },
+    });
+    await this.prisma.service.updateMany({
+      where: { id: { in: service_ids }, company_id, payment_status: 'UNPAID' },
       data: { payment_status: 'PAID' },
     });
   }
@@ -160,7 +170,7 @@ export class LiquidacionRepository {
   async findServicesByIds(service_ids: string[], company_id: string) {
     return this.prisma.service.findMany({
       where: { id: { in: service_ids }, company_id },
-      select: { id: true, customer_id: true, delivery_price: true, payment_status: true },
+      select: { id: true, customer_id: true, delivery_price: true, payment_status: true, is_settled_customer: true },
     });
   }
 
@@ -216,9 +226,10 @@ export class LiquidacionRepository {
   }
 
   async findCustomersWithUnpaid(company_id: string) {
+    // Customers with at least one service not yet settled (is_settled_customer = false)
     const result = await this.prisma.service.groupBy({
       by: ['customer_id'],
-      where: { company_id, payment_status: 'UNPAID' },
+      where: { company_id, is_settled_customer: false },
       _count: { id: true },
     });
 
@@ -242,11 +253,12 @@ export class LiquidacionRepository {
     from?: Date,
     to?: Date,
   ) {
+    // All unsettled services for the customer (is_settled_customer = false)
     const services = await this.prisma.service.findMany({
       where: {
         company_id,
         customer_id,
-        payment_status: 'UNPAID',
+        is_settled_customer: false,
         ...(from || to
           ? {
               delivery_date: {
@@ -262,6 +274,7 @@ export class LiquidacionRepository {
         payment_method: true,
         delivery_price: true,
         payment_status: true,
+        is_settled_customer: true,
       },
       orderBy: { delivery_date: 'desc' },
     });

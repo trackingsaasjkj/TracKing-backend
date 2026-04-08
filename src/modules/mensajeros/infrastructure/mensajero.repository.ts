@@ -27,6 +27,13 @@ export class MensajeroRepository {
     });
   }
 
+  async findAvailableAndInService(company_id: string) {
+    return this.prisma.courier.findMany({
+      where: { company_id, operational_status: { in: ['AVAILABLE', 'IN_SERVICE'] } },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+  }
+
   async findAll(company_id: string) {
     return this.prisma.courier.findMany({
       where: { company_id },

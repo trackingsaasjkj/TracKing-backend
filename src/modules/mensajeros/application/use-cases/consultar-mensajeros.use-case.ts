@@ -13,6 +13,10 @@ export class ConsultarMensajerosUseCase {
     return this.mensajeroRepo.findAllActive(company_id);
   }
 
+  async findAvailableAndInService(company_id: string) {
+    return this.mensajeroRepo.findAvailableAndInService(company_id);
+  }
+
   async findOne(id: string, company_id: string) {
     const mensajero = await this.mensajeroRepo.findById(id, company_id);
     if (!mensajero) throw new NotFoundException('Mensajero no encontrado');

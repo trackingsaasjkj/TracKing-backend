@@ -17,7 +17,7 @@ export class BffDashboardUseCase {
 
     const [allServices, activeCouriers, financial] = await Promise.all([
       this.consultarServicios.findAll(company_id, {}),
-      this.consultarMensajeros.findActivos(company_id),
+      this.consultarMensajeros.findAvailableAndInService(company_id),
       this.reporteFinanciero.execute(
         { from: today, to: `${today}T23:59:59` },
         company_id,
