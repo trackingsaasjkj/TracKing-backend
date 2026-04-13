@@ -13,6 +13,7 @@ import { CambiarEstadoUseCase } from '../servicios/application/use-cases/cambiar
 import { CambiarPagoUseCase } from '../servicios/application/use-cases/cambiar-pago.use-case';
 import { RegistrarUbicacionUseCase } from '../tracking/application/use-cases/registrar-ubicacion.use-case';
 import { SubirEvidenciaUseCase } from '../evidencias/application/use-cases/subir-evidencia.use-case';
+import { ConsultarLiquidacionesUseCase } from '../liquidaciones/application/use-cases/consultar-liquidaciones.use-case';
 import { CambiarEstadoDto } from '../servicios/application/dto/cambiar-estado.dto';
 import { CambiarPagoDto } from '../servicios/application/dto/cambiar-pago.dto';
 import { RegisterLocationDto } from '../tracking/application/dto/register-location.dto';
@@ -30,6 +31,7 @@ export class CourierMobileController {
     private readonly cambiarPagoUseCase: CambiarPagoUseCase,
     private readonly registrarUbicacionUseCase: RegistrarUbicacionUseCase,
     private readonly subirEvidenciaUseCase: SubirEvidenciaUseCase,
+    private readonly consultarLiquidacionesUseCase: ConsultarLiquidacionesUseCase,
   ) {}
 
   // ── Perfil ───────────────────────────────────────────────────────────────────
@@ -142,5 +144,32 @@ export class CourierMobileController {
   ) {
     const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id!);
     return ok(await this.registrarUbicacionUseCase.execute(dto, courier.id, user.company_id!));
+  }
+
+  // ── Liquidaciones ─────────────────────────────────────────────────────────────
+
+  @Get('settlements')
+  @ApiOperation({ summary: 'Mis liquidaciones', description: 'Lista todas las liquidaciones generadas para el mensajero autenticado.' })
+  @ApiResponse({ status: 200, description: 'Lista de liquidaciones del mensajero' })
+  async misLiquidaciones(@CurrentUser() user: JwtPayload) {
+    const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id!);
+    return ok(await this.consultarLiquidacionesUseCase.findCourierSettlements(user.company_id!, courier.id));
+  }
+
+  @Get('settlements/earnings')
+  @ApiOperation({ summary: 'Resumen de mis ganancias', description: 'Total acumulado de ganancias, servicios y liquidaciones del mensajero autenticado.' })
+  @ApiResponse({ status: 200, description: 'Resumen de ganancias' })
+  async misGanancias(@CurrentUser() user: JwtPayload) {
+    const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id!);
+    return ok(await this.consultarLiquidacionesUseCase.getEarnings(user.company_id!, courier.id));
+  }
+
+  @Get('settlements/:id')
+  @ApiOperation({ summary: 'Detalle de una liquidación', description: 'Retorna el detalle de una liquidación específica. Solo accesible si pertenece al mensajero autenticado.' })
+  @ApiParam({ name: 'id', description: 'UUID de la liquidación' })
+  @ApiResponse({ status: 200, description: 'Detalle de la liquidación' })
+  @ApiResponse({ status: 404, description: 'Liquidación no encontrada' })
+  async detalleLiquidacion(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return ok(await this.consultarLiquidacionesUseCase.findCourierSettlementById(id, user.company_id!));
   }
 }

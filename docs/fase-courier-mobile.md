@@ -19,6 +19,9 @@ Base: `/api/courier` · Requiere JWT con rol `COURIER`
 | POST | `/api/courier/services/:id/status` | Cambiar estado de un servicio |
 | POST | `/api/courier/services/:id/evidence` | Subir evidencia de entrega |
 | POST | `/api/courier/location` | Registrar ubicación actual |
+| GET | `/api/courier/settlements` | Mis liquidaciones |
+| GET | `/api/courier/settlements/earnings` | Resumen de mis ganancias |
+| GET | `/api/courier/settlements/:id` | Detalle de una liquidación |
 
 ---
 
@@ -97,19 +100,65 @@ Frecuencia recomendada: cada 15 segundos.
 
 ---
 
+### GET /api/courier/settlements
+Lista todas las liquidaciones generadas para el mensajero autenticado. El `courier_id` se resuelve desde el token — no se envía en la request.
+
+**Respuesta 200:**
+```json
+[
+  {
+    "id": "uuid",
+    "start_date": "2025-01-01T00:00:00.000Z",
+    "end_date": "2025-01-31T00:00:00.000Z",
+    "total_services": 42,
+    "total_earned": 315000,
+    "created_at": "2025-02-01T10:00:00.000Z"
+  }
+]
+```
+
+---
+
+### GET /api/courier/settlements/earnings
+Resumen acumulado de ganancias del mensajero autenticado.
+
+**Respuesta 200:**
+```json
+{
+  "total_settlements": 3,
+  "total_services": 120,
+  "total_earned": 900000,
+  "settlements": [ ... ]
+}
+```
+
+---
+
+### GET /api/courier/settlements/:id
+Detalle completo de una liquidación específica.
+
+**Error 404:** Liquidación no encontrada o no pertenece a la empresa.
+
+---
+
 ## Flujo típico en la app móvil
 
 ```
-1. POST /api/auth/login          → autenticarse
-2. GET  /api/courier/me          → ver perfil y estado actual
-3. POST /api/courier/jornada/start → iniciar jornada
-4. GET  /api/courier/services    → ver servicios asignados
+1. POST /api/auth/login              → autenticarse
+2. GET  /api/courier/me              → ver perfil y estado actual
+3. POST /api/courier/jornada/start   → iniciar jornada
+4. GET  /api/courier/services        → ver servicios asignados
 5. POST /api/courier/services/:id/status  { "status": "ACCEPTED" }
 6. POST /api/courier/services/:id/status  { "status": "IN_TRANSIT" }
-7. POST /api/courier/location    → reportar ubicación (loop cada 15s)
+7. POST /api/courier/location        → reportar ubicación (loop cada 15s)
 8. POST /api/courier/services/:id/evidence  { "image_url": "..." }
 9. POST /api/courier/services/:id/status  { "status": "DELIVERED" }
-10. POST /api/courier/jornada/end → finalizar jornada
+10. POST /api/courier/jornada/end    → finalizar jornada
+
+── Sección de ganancias ──
+11. GET /api/courier/settlements/earnings  → resumen de ganancias
+12. GET /api/courier/settlements           → historial de liquidaciones
+13. GET /api/courier/settlements/:id       → detalle de una liquidación
 ```
 
 ## Archivos
@@ -126,3 +175,4 @@ El módulo no duplica lógica — reutiliza use cases exportados de:
 - `ServiciosModule` — `CambiarEstadoUseCase` y repositorios
 - `EvidenciasModule` — `SubirEvidenciaUseCase`
 - `TrackingModule` — `RegistrarUbicacionUseCase`
+- `LiquidacionesModule` — `ConsultarLiquidacionesUseCase`
