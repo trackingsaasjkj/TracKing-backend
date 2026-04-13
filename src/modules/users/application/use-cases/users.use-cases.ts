@@ -3,6 +3,7 @@ import { UsersRepository } from '../../infrastructure/users.repository';
 import { TokenService } from '../../../auth/domain/token.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
+import { Role } from '../../../../core/constants/roles.enum';
 
 @Injectable()
 export class UsersUseCases {
@@ -32,17 +33,28 @@ export class UsersUseCases {
     if (existing) throw new ConflictException('Email ya registrado en esta empresa');
 
     const password_hash = await this.tokenService.hashPassword(dto.password);
-    const { password, ...rest } = dto;
-    return this.usersRepo.create({ ...rest, company_id, password_hash });
+    const { password, permissions, ...rest } = dto;
+    return this.usersRepo.create({
+      ...rest,
+      company_id,
+      password_hash,
+      permissions: dto.role === Role.AUX ? (permissions ?? []) : [],
+    });
   }
 
   async update(id: string, dto: UpdateUserDto, company_id: string) {
-    await this.findById(id, company_id);
+    const user = await this.findById(id, company_id);
     const data: any = { ...dto };
     if (dto.password) {
       data.password_hash = await this.tokenService.hashPassword(dto.password);
       delete data.password;
     }
+
+    const targetRole = dto.role ?? user.role;
+    if (targetRole !== Role.AUX) {
+      delete data.permissions;
+    }
+
     return this.usersRepo.update(id, company_id, data);
   }
 

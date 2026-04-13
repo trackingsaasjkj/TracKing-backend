@@ -31,4 +31,10 @@ export class CustomersUseCases {
     await this.findById(id, company_id);
     await this.repo.deactivate(id, company_id);
   }
+
+  async toggleFavorite(id: string, company_id: string) {
+    const customer = await this.findById(id, company_id);
+    await this.repo.toggleFavorite(id, company_id, !customer!.is_favorite);
+    return this.repo.findById(id, company_id);
+  }
 }

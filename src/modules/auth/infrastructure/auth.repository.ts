@@ -16,7 +16,17 @@ export class AuthRepository {
   async findUserByEmailWithCompany(email: string) {
     return this.prisma.user.findFirst({
       where: { email },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+        company_id: true,
+        password_hash: true,
+        failed_attempts: true,
+        locked_until: true,
+        permissions: true,
         company: {
           select: { id: true, status: true },
         },

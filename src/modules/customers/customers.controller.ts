@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { CustomersUseCases } from './application/use-cases/customers.use-cases';
 import { CreateCustomerDto } from './application/dto/create-customer.dto';
@@ -60,5 +60,14 @@ export class CustomersController {
   async deactivate(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     await this.useCases.deactivate(id, user.company_id!);
     return ok(null);
+  }
+
+  @Patch(':id/favorite')
+  @Roles(Role.ADMIN, Role.AUX)
+  @ApiOperation({ summary: 'Toggle favorito del cliente' })
+  @ApiParam({ name: 'id', description: 'UUID del cliente' })
+  @ApiResponse({ status: 200, description: 'Estado favorito actualizado' })
+  async toggleFavorite(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return ok(await this.useCases.toggleFavorite(id, user.company_id!));
   }
 }

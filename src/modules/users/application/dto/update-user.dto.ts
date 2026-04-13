@@ -1,13 +1,19 @@
-import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsArray, IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Role } from '../../../../core/constants/roles.enum';
 import { UserStatus } from '@prisma/client';
+import { Permission } from '../../../../core/constants/permissions.enum';
 
 export class UpdateUserDto {
   @ApiPropertyOptional({ example: 'Carlos Ruiz' })
   @IsOptional()
   @IsString()
   name?: string;
+
+  @ApiPropertyOptional({ example: 'carlos@empresa.com' })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 
   @ApiPropertyOptional({ enum: Role })
   @IsOptional()
@@ -24,4 +30,10 @@ export class UpdateUserDto {
   @IsString()
   @MinLength(8)
   password?: string;
+
+  @ApiPropertyOptional({ enum: Permission, isArray: true })
+  @IsOptional()
+  @IsArray()
+  @IsEnum(Permission, { each: true })
+  permissions?: Permission[];
 }

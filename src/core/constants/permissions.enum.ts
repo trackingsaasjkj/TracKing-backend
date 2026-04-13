@@ -1,6 +1,12 @@
 export enum Permission {
-  USERS_READ = 'users:read',
-  USERS_CREATE = 'users:create',
-  USERS_UPDATE = 'users:update',
-  USERS_DELETE = 'users:delete',
+  SERVICES_VIEW         = 'services:view',
+  SERVICES_HISTORY_VIEW = 'services:history_view',
+  SERVICES_CREATE       = 'services:create',
+  CUSTOMERS_VIEW        = 'customers:view',
+  COURIERS_VIEW         = 'couriers:view',
+  SETTLEMENTS_VIEW      = 'settlements:view',
+  SETTLEMENTS_CREATE    = 'settlements:create',
+  REPORTS_VIEW          = 'reports:view',
+  USERS_READ            = 'users:read',
+  USERS_CREATE          = 'users:create',
 }
