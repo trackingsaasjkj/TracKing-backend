@@ -7,6 +7,7 @@ import { validarTransicion } from '../../domain/rules/validar-transicion.rule';
 import { validarEntrega } from '../../domain/rules/validar-entrega.rule';
 import { ServicioEstado } from '../../domain/state-machine/servicio.machine';
 import { CambiarEstadoDto } from '../dto/cambiar-estado.dto';
+import { CacheService } from '../../../../infrastructure/cache/cache.service';
 
 @Injectable()
 export class CambiarEstadoUseCase {
@@ -15,6 +16,7 @@ export class CambiarEstadoUseCase {
     private readonly historialRepo: HistorialRepository,
     private readonly evidenceRepo: EvidenceRepository,
     private readonly courierRepo: CourierRepository,
+    private readonly cache: CacheService,
   ) {}
 
   async execute(service_id: string, dto: CambiarEstadoDto, company_id: string, user_id: string) {
@@ -47,6 +49,9 @@ export class CambiarEstadoUseCase {
       new_status: nuevoEstado as any,
       user_id,
     });
+
+    this.cache.deleteByPrefix(`bff:dashboard:${company_id}`);
+    this.cache.deleteByPrefix(`bff:active-orders:${company_id}`);
 
     return this.servicioRepo.findById(service_id, company_id);
   }

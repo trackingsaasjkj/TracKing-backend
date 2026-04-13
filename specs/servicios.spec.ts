@@ -14,8 +14,19 @@ import { validarTransicion } from '../src/modules/servicios/domain/rules/validar
 import { validarEntrega } from '../src/modules/servicios/domain/rules/validar-entrega.rule';
 import { AppException } from '../src/core/errors/app.exception';
 import { servicioSpec } from '../src/modules/servicios/domain/state-machine/servicio-spec.data';
+import { CacheService } from '../src/infrastructure/cache/cache.service';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function makeCache() {
+  return {
+    get: jest.fn().mockReturnValue(null),
+    set: jest.fn(),
+    delete: jest.fn(),
+    deleteByPrefix: jest.fn(),
+    size: jest.fn(),
+  } as unknown as CacheService;
+}
 
 function makeServicio(overrides: Record<string, unknown> = {}) {
   return {
@@ -87,7 +98,7 @@ describe('CrearServicioUseCase', () => {
 
   beforeEach(() => {
     mockPrisma = makePrisma();
-    useCase = new CrearServicioUseCase(mockPrisma);
+    useCase = new CrearServicioUseCase(mockPrisma, makeCache());
   });
 
   // 5.3 Unit test: crear servicio → total_price = delivery_price + product_price
@@ -217,7 +228,7 @@ describe('CambiarEstadoUseCase', () => {
     historialRepo = makeHistorialRepo();
     evidenceRepo = makeEvidenceRepo();
     courierRepo = makeCourierRepo();
-    useCase = new CambiarEstadoUseCase(servicioRepo, historialRepo, evidenceRepo, courierRepo);
+    useCase = new CambiarEstadoUseCase(servicioRepo, historialRepo, evidenceRepo, courierRepo, makeCache());
   });
 
   function setupTransition(fromStatus: string, toStatus: string, extraOverrides: Record<string, unknown> = {}) {
@@ -309,7 +320,7 @@ describe('CancelarServicioUseCase', () => {
     servicioRepo = makeServicioRepo();
     historialRepo = makeHistorialRepo();
     courierRepo = makeCourierRepo();
-    useCase = new CancelarServicioUseCase(servicioRepo, historialRepo, courierRepo);
+    useCase = new CancelarServicioUseCase(servicioRepo, historialRepo, courierRepo, makeCache());
   });
 
   // 5.10 Unit test: cancelar desde PENDING → OK, libera mensajero si había

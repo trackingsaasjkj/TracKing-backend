@@ -1,5 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CustomersUseCases } from './application/use-cases/customers.use-cases';
 import { CreateCustomerDto } from './application/dto/create-customer.dto';
 import { UpdateCustomerDto } from './application/dto/update-customer.dto';
@@ -9,6 +9,7 @@ import { RolesGuard } from '../../core/guards/roles.guard';
 import { Role } from '../../core/constants/roles.enum';
 import { JwtPayload } from '../../core/types/jwt-payload.type';
 import { ok } from '../../core/utils/response.util';
+import { PaginationDto } from '../../core/dto/pagination.dto';
 
 @ApiTags('Customers')
 @ApiBearerAuth('access-token')
@@ -20,9 +21,17 @@ export class CustomersController {
   @Get()
   @Roles(Role.ADMIN, Role.AUX)
   @ApiOperation({ summary: 'Listar clientes activos de la empresa' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Número de página (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Registros por página (default: 20, max: 100)' })
   @ApiResponse({ status: 200, description: 'Lista de clientes' })
-  async findAll(@CurrentUser() user: JwtPayload) {
-    return ok(await this.useCases.findAll(user.company_id!));
+  async findAll(@CurrentUser() user: JwtPayload, @Query() pagination?: PaginationDto) {
+    const hasPagination = pagination?.page !== undefined || pagination?.limit !== undefined;
+    return ok(
+      await this.useCases.findAll(
+        user.company_id!,
+        hasPagination ? { page: pagination!.page ?? 1, limit: pagination!.limit ?? 20 } : undefined,
+      ),
+    );
   }
 
   @Get(':id')

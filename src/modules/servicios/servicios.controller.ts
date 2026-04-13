@@ -17,6 +17,7 @@ import { Role } from '../../core/constants/roles.enum';
 import { JwtPayload } from '../../core/types/jwt-payload.type';
 import { ok } from '../../core/utils/response.util';
 import { ServiceStatus } from '@prisma/client';
+import { PaginationDto } from '../../core/dto/pagination.dto';
 
 @ApiTags('Services')
 @ApiBearerAuth('access-token')
@@ -89,16 +90,23 @@ export class ServiciosController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar servicios', description: 'Filtra por status y/o courier_id. Siempre scoped a la empresa del token.' })
+  @ApiOperation({ summary: 'Listar servicios', description: 'Filtra por status y/o courier_id. Siempre scoped a la empresa del token. Soporta paginación con page y limit.' })
   @ApiQuery({ name: 'status', required: false, enum: ServiceStatus })
   @ApiQuery({ name: 'courier_id', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Número de página (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Resultados por página (default: 20, max: 100)' })
   @ApiResponse({ status: 200, description: 'Lista de servicios' })
   async findAll(
     @CurrentUser() user: JwtPayload,
     @Query('status') status?: ServiceStatus,
     @Query('courier_id') courier_id?: string,
+    @Query() pagination?: PaginationDto,
   ) {
-    return ok(await this.consultarUseCase.findAll(user.company_id!, { status, courier_id }));
+    const filters = { status, courier_id };
+    if (pagination?.page !== undefined || pagination?.limit !== undefined) {
+      return ok(await this.consultarUseCase.findAllPaginated(user.company_id!, filters, pagination));
+    }
+    return ok(await this.consultarUseCase.findAll(user.company_id!, filters));
   }
 
   @Get(':id')

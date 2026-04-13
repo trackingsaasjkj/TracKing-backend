@@ -4,6 +4,7 @@ import { HistorialRepository } from '../../infrastructure/repositories/historial
 import { CourierRepository } from '../../infrastructure/repositories/courier.repository';
 import { ServicioStateMachine } from '../../domain/state-machine/servicio.machine';
 import { AppException } from '../../../../core/errors/app.exception';
+import { CacheService } from '../../../../infrastructure/cache/cache.service';
 
 @Injectable()
 export class CancelarServicioUseCase {
@@ -11,6 +12,7 @@ export class CancelarServicioUseCase {
     private readonly servicioRepo: ServicioRepository,
     private readonly historialRepo: HistorialRepository,
     private readonly courierRepo: CourierRepository,
+    private readonly cache: CacheService,
   ) {}
 
   async execute(service_id: string, company_id: string, user_id: string) {
@@ -35,6 +37,9 @@ export class CancelarServicioUseCase {
       new_status: 'CANCELLED',
       user_id,
     });
+
+    this.cache.deleteByPrefix(`bff:dashboard:${company_id}`);
+    this.cache.deleteByPrefix(`bff:active-orders:${company_id}`);
 
     return this.servicioRepo.findById(service_id, company_id);
   }

@@ -8,8 +8,19 @@ import { BffDashboardUseCase } from '../src/modules/bff-web/application/use-case
 import { BffActiveOrdersUseCase } from '../src/modules/bff-web/application/use-cases/bff-active-orders.use-case';
 import { BffReportsUseCase } from '../src/modules/bff-web/application/use-cases/bff-reports.use-case';
 import { BffSettlementsUseCase } from '../src/modules/bff-web/application/use-cases/bff-settlements.use-case';
+import { CacheService } from '../src/infrastructure/cache/cache.service';
 
 // ─── Mock factories ───────────────────────────────────────────────────────────
+
+function makeCache() {
+  return {
+    get: jest.fn().mockReturnValue(null),
+    set: jest.fn(),
+    delete: jest.fn(),
+    deleteByPrefix: jest.fn(),
+    size: jest.fn(),
+  } as unknown as CacheService;
+}
 
 function makeConsultarServicios() {
   return { findAll: jest.fn() } as any;
@@ -84,14 +95,14 @@ describe('BffDashboardUseCase — Property 1: dashboard result shape', () => {
     consultarMensajeros.findAvailableAndInService.mockResolvedValue(stubCouriers);
     reporteFinanciero.execute.mockResolvedValue(stubFinancial);
 
-    useCase = new BffDashboardUseCase(consultarServicios, consultarMensajeros, reporteFinanciero);
+    useCase = new BffDashboardUseCase(consultarServicios, consultarMensajeros, reporteFinanciero, makeCache());
   });
 
   // Validates: Requirements 3.1, 3.2
   it('retorna pending_services, active_couriers y today_financial para cualquier company_id', async () => {
     await fc.assert(
       fc.asyncProperty(fc.uuid(), async (companyId) => {
-        const result = await useCase.execute(companyId);
+        const result = await useCase.execute(companyId) as any;
 
         expect(Array.isArray(result.pending_services)).toBe(true);
         expect(Array.isArray(result.active_couriers)).toBe(true);
@@ -119,14 +130,14 @@ describe('BffActiveOrdersUseCase — Property 2: active-orders result shape', ()
     consultarServicios.findAll.mockResolvedValue(stubServices);
     consultarMensajeros.findAvailableAndInService.mockResolvedValue(stubCouriers);
 
-    useCase = new BffActiveOrdersUseCase(consultarServicios, consultarMensajeros);
+    useCase = new BffActiveOrdersUseCase(consultarServicios, consultarMensajeros, makeCache());
   });
 
   // Validates: Requirements 4.1, 4.2
   it('retorna services y available_couriers para cualquier company_id', async () => {
     await fc.assert(
       fc.asyncProperty(fc.uuid(), async (companyId) => {
-        const result = await useCase.execute(companyId);
+        const result = await useCase.execute(companyId) as any;
 
         expect(Array.isArray(result.services)).toBe(true);
         expect(Array.isArray(result.available_couriers)).toBe(true);
@@ -366,7 +377,7 @@ describe('BffDashboardUseCase — Property 8: exceptions propagate without suppr
           consultarMensajeros.findAvailableAndInService.mockResolvedValue(stubCouriers);
           reporteFinanciero.execute.mockResolvedValue(stubFinancial);
 
-          const useCase = new BffDashboardUseCase(consultarServicios, consultarMensajeros, reporteFinanciero);
+          const useCase = new BffDashboardUseCase(consultarServicios, consultarMensajeros, reporteFinanciero, makeCache());
 
           await expect(useCase.execute(companyId)).rejects.toThrow(error);
         },

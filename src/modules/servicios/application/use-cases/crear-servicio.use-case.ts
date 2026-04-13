@@ -1,12 +1,16 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
+import { CacheService } from '../../../../infrastructure/cache/cache.service';
 import { validarPrecio } from '../../domain/rules/validar-precio.rule';
 import { calcularPaymentStatusInicial } from '../../domain/rules/validar-pago.rule';
 import { CrearServicioDto } from '../dto/crear-servicio.dto';
 
 @Injectable()
 export class CrearServicioUseCase {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
+  ) {}
 
   async execute(dto: CrearServicioDto, company_id: string, user_id: string) {
     let customer_id = dto.customer_id?.trim() || undefined;
@@ -46,6 +50,9 @@ export class CrearServicioUseCase {
       });
       return [created];
     });
+
+    this.cache.deleteByPrefix(`bff:dashboard:${company_id}`);
+    this.cache.deleteByPrefix(`bff:active-orders:${company_id}`);
 
     return servicio;
   }

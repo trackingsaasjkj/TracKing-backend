@@ -1,5 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PaginatedResponse } from '../../../core/types/paginated-response.type';
+
+export interface CustomerTableRow {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  address: string;
+  status: boolean;
+  is_favorite: boolean;
+  created_at: Date;
+}
 
 @Injectable()
 export class CustomersRepository {
@@ -10,6 +22,40 @@ export class CustomersRepository {
       where: { company_id, status: true },
       orderBy: { name: 'asc' },
     });
+  }
+
+  async findAllPaginated(
+    company_id: string,
+    pagination: { page: number; limit: number },
+  ): Promise<PaginatedResponse<CustomerTableRow>> {
+    const { page, limit } = pagination;
+    const skip = (page - 1) * limit;
+
+    const select = {
+      id: true,
+      name: true,
+      phone: true,
+      email: true,
+      address: true,
+      status: true,
+      is_favorite: true,
+      created_at: true,
+    };
+
+    const where = { company_id, status: true };
+
+    const [data, total] = await Promise.all([
+      this.prisma.customer.findMany({
+        where,
+        select,
+        orderBy: { name: 'asc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.customer.count({ where }),
+    ]);
+
+    return { data, total, page, limit };
   }
 
   findById(id: string, company_id: string) {

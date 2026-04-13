@@ -5,6 +5,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { validate } from './config/env';
 import { PrismaModule } from './infrastructure/database/prisma.module';
 import { StorageModule } from './infrastructure/storage/storage.module';
+import { CacheModule } from './infrastructure/cache/cache.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { CompanyModule } from './modules/company/company.module';
@@ -33,6 +34,7 @@ import { BffWebModule } from './modules/bff-web/bff-web.module';
     ]),
     PrismaModule,
     StorageModule,
+    CacheModule,
     AuthModule,
     UsersModule,
     CompanyModule,

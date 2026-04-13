@@ -7,7 +7,10 @@ import { UpdateCustomerDto } from '../dto/update-customer.dto';
 export class CustomersUseCases {
   constructor(private readonly repo: CustomersRepository) {}
 
-  findAll(company_id: string) {
+  findAll(company_id: string, pagination?: { page: number; limit: number }) {
+    if (pagination) {
+      return this.repo.findAllPaginated(company_id, pagination);
+    }
     return this.repo.findAll(company_id);
   }
 

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { CourierStatus } from '@prisma/client';
+import { PaginatedResponse } from '../../../core/types/paginated-response.type';
 
 @Injectable()
 export class MensajeroRepository {
@@ -39,6 +40,26 @@ export class MensajeroRepository {
       where: { company_id },
       include: { user: { select: { id: true, name: true, email: true, status: true } } },
     });
+  }
+
+  async findAllPaginated(
+    company_id: string,
+    pagination: { page: number; limit: number },
+  ): Promise<PaginatedResponse<Awaited<ReturnType<typeof this.prisma.courier.findFirst>>>> {
+    const { page, limit } = pagination;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.courier.findMany({
+        where: { company_id },
+        include: { user: { select: { id: true, name: true, email: true, status: true } } },
+        skip,
+        take: limit,
+      }),
+      this.prisma.courier.count({ where: { company_id } }),
+    ]);
+
+    return { data, total, page, limit };
   }
 
   async create(data: {

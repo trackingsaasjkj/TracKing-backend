@@ -1,11 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { MensajeroRepository } from '../../infrastructure/mensajero.repository';
+import { PaginationDto } from '../../../../core/dto/pagination.dto';
 
 @Injectable()
 export class ConsultarMensajerosUseCase {
   constructor(private readonly mensajeroRepo: MensajeroRepository) {}
 
-  async findAll(company_id: string) {
+  async findAll(company_id: string, pagination?: PaginationDto) {
+    if (pagination) {
+      const page = pagination.page ?? 1;
+      const limit = pagination.limit ?? 20;
+      return this.mensajeroRepo.findAllPaginated(company_id, { page, limit });
+    }
     return this.mensajeroRepo.findAll(company_id);
   }
 
