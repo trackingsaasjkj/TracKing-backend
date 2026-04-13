@@ -11,7 +11,6 @@ import { RolesGuard } from '../../core/guards/roles.guard';
 import { Role } from '../../core/constants/roles.enum';
 import { JwtPayload } from '../../core/types/jwt-payload.type';
 import { ok } from '../../core/utils/response.util';
-import { PaginationDto } from '../../core/dto/pagination.dto';
 
 @ApiTags('Mensajeros')
 @ApiBearerAuth('access-token')
@@ -39,7 +38,15 @@ export class MensajerosController {
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Número de página (default: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Elementos por página (default: 20, max: 100)' })
   @ApiResponse({ status: 200, description: 'Lista de mensajeros' })
-  async findAll(@CurrentUser() user: JwtPayload, @Query() pagination?: PaginationDto) {
+  async findAll(
+    @CurrentUser() user: JwtPayload,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const hasPagination = page !== undefined || limit !== undefined;
+    const pagination = hasPagination
+      ? { page: page ? parseInt(page, 10) : 1, limit: limit ? parseInt(limit, 10) : 20 }
+      : undefined;
     return ok(await this.consultarUseCase.findAll(user.company_id!, pagination));
   }
 

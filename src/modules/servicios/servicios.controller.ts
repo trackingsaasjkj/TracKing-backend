@@ -17,7 +17,6 @@ import { Role } from '../../core/constants/roles.enum';
 import { JwtPayload } from '../../core/types/jwt-payload.type';
 import { ok } from '../../core/utils/response.util';
 import { ServiceStatus } from '@prisma/client';
-import { PaginationDto } from '../../core/dto/pagination.dto';
 
 @ApiTags('Services')
 @ApiBearerAuth('access-token')
@@ -100,10 +99,12 @@ export class ServiciosController {
     @CurrentUser() user: JwtPayload,
     @Query('status') status?: ServiceStatus,
     @Query('courier_id') courier_id?: string,
-    @Query() pagination?: PaginationDto,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     const filters = { status, courier_id };
-    if (pagination?.page !== undefined || pagination?.limit !== undefined) {
+    if (page !== undefined || limit !== undefined) {
+      const pagination = { page: page ? parseInt(page, 10) : 1, limit: limit ? parseInt(limit, 10) : 20 };
       return ok(await this.consultarUseCase.findAllPaginated(user.company_id!, filters, pagination));
     }
     return ok(await this.consultarUseCase.findAll(user.company_id!, filters));

@@ -9,7 +9,6 @@ import { RolesGuard } from '../../core/guards/roles.guard';
 import { Role } from '../../core/constants/roles.enum';
 import { JwtPayload } from '../../core/types/jwt-payload.type';
 import { ok } from '../../core/utils/response.util';
-import { PaginationDto } from '../../core/dto/pagination.dto';
 
 @ApiTags('Customers')
 @ApiBearerAuth('access-token')
@@ -24,12 +23,18 @@ export class CustomersController {
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Número de página (default: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Registros por página (default: 20, max: 100)' })
   @ApiResponse({ status: 200, description: 'Lista de clientes' })
-  async findAll(@CurrentUser() user: JwtPayload, @Query() pagination?: PaginationDto) {
-    const hasPagination = pagination?.page !== undefined || pagination?.limit !== undefined;
+  async findAll(
+    @CurrentUser() user: JwtPayload,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const hasPagination = page !== undefined || limit !== undefined;
     return ok(
       await this.useCases.findAll(
         user.company_id!,
-        hasPagination ? { page: pagination!.page ?? 1, limit: pagination!.limit ?? 20 } : undefined,
+        hasPagination
+          ? { page: page ? parseInt(page, 10) : 1, limit: limit ? parseInt(limit, 10) : 20 }
+          : undefined,
       ),
     );
   }
