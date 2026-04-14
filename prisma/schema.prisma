@@ -107,6 +107,12 @@ model Service {
   product_price                Decimal                @db.Decimal(10, 2)
   total_price                  Decimal                @default(0) @db.Decimal(10, 2)
   notes_observations           String?
+  origin_lat                   Decimal?               @db.Decimal(9, 6)
+  origin_lng                   Decimal?               @db.Decimal(9, 6)
+  origin_verified              Boolean                @default(false)
+  destination_lat              Decimal?               @db.Decimal(9, 6)
+  destination_lng              Decimal?               @db.Decimal(9, 6)
+  destination_verified         Boolean                @default(false)
   status                       ServiceStatus          @default(PENDING)
   assignment_date              DateTime?
   delivery_date                DateTime?

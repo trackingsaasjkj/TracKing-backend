@@ -23,6 +23,7 @@ import { SuperAdminModule } from './modules/super-admin/super-admin.module';
 import { PlanesModule } from './modules/planes/planes.module';
 import { SuscripcionesModule } from './modules/suscripciones/suscripciones.module';
 import { BffWebModule } from './modules/bff-web/bff-web.module';
+import { GeocodingModule } from './modules/geocoding/geocoding.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { BffWebModule } from './modules/bff-web/bff-web.module';
     PlanesModule,
     SuscripcionesModule,
     BffWebModule,
+    GeocodingModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

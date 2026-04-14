@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentMethod } from '@prisma/client';
 
@@ -93,4 +93,44 @@ export class CrearServicioDto {
   @IsOptional()
   @IsString()
   notes_observations?: string;
+
+  // ─── Geocoding fields (optional) ─────────────────────────────────────────
+
+  @ApiPropertyOptional({ example: 4.710989, description: 'Latitud del punto de recogida' })
+  @IsOptional()
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  origin_lat?: number;
+
+  @ApiPropertyOptional({ example: -74.072092, description: 'Longitud del punto de recogida' })
+  @IsOptional()
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  origin_lng?: number;
+
+  @ApiPropertyOptional({ example: false, description: 'Indica si las coordenadas de recogida fueron verificadas visualmente' })
+  @IsOptional()
+  @IsBoolean()
+  origin_verified?: boolean;
+
+  @ApiPropertyOptional({ example: 4.710989, description: 'Latitud del punto de entrega' })
+  @IsOptional()
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  destination_lat?: number;
+
+  @ApiPropertyOptional({ example: -74.072092, description: 'Longitud del punto de entrega' })
+  @IsOptional()
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  destination_lng?: number;
+
+  @ApiPropertyOptional({ example: false, description: 'Indica si las coordenadas de entrega fueron verificadas visualmente' })
+  @IsOptional()
+  @IsBoolean()
+  destination_verified?: boolean;
 }
