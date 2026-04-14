@@ -38,7 +38,17 @@ export class GeocodingService {
     this.logger.log(`Mapbox call | company: ${company_id} | address: ${normalized}`);
 
     const encoded = encodeURIComponent(address.trim());
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encoded}.json?access_token=${token}&limit=1`;
+
+    // Restrict results to Colombia and bias toward the configured default city
+    const country = this.config.get<string>('MAPBOX_COUNTRY') ?? 'co';
+    const proximityLng = this.config.get<string>('MAPBOX_PROXIMITY_LNG') ?? '-73.122742';
+    const proximityLat = this.config.get<string>('MAPBOX_PROXIMITY_LAT') ?? '7.119349';
+
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encoded}.json` +
+      `?access_token=${token}` +
+      `&limit=1` +
+      `&country=${country}` +
+      `&proximity=${proximityLng},${proximityLat}`;
 
     let data: any;
     try {
