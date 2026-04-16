@@ -96,8 +96,22 @@ export class MensajeroRepository {
   }
 
   async findMyServices(courier_id: string, company_id: string) {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
     const rows = await this.prisma.service.findMany({
-      where: { courier_id, company_id },
+      where: {
+        courier_id,
+        company_id,
+        OR: [
+          // Active services (all statuses except DELIVERED)
+          { status: { not: 'DELIVERED' } },
+          // Delivered services only from today
+          { status: 'DELIVERED', delivery_date: { gte: todayStart, lte: todayEnd } },
+        ],
+      },
       include: { customer: true },
       orderBy: { created_at: 'desc' },
     });
