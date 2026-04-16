@@ -119,6 +119,7 @@ model Service {
   created_at                   DateTime               @default(now())
   is_settled_courier           Boolean                @default(false)
   is_settled_customer          Boolean                @default(false)
+  settle_immediately           Boolean                @default(false)
   evidence                     Evidence?
   company                      Company                @relation(fields: [company_id], references: [id], onDelete: Cascade)
   courier                      Courier?               @relation(fields: [courier_id], references: [id])

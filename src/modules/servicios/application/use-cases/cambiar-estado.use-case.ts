@@ -34,6 +34,10 @@ export class CambiarEstadoUseCase {
 
     const updateData: any = { status: nuevoEstado };
     if (nuevoEstado === 'DELIVERED') updateData.delivery_date = new Date();
+    // Auto-settle customer if service has settle_immediately = true
+    if (nuevoEstado === 'DELIVERED' && (servicio as any).settle_immediately) {
+      updateData.is_settled_customer = true;
+    }
 
     await this.servicioRepo.update(service_id, company_id, updateData);
 

@@ -39,6 +39,7 @@ const SERVICE_TABLE_SELECT = {
   created_at: true,
   is_settled_courier: true,
   is_settled_customer: true,
+  settle_immediately: true,
   customer: { select: { id: true, name: true, phone: true } },
   courier: { select: { id: true, user: { select: { id: true, name: true } } } },
 } as const;
@@ -64,6 +65,7 @@ export class ServicioRepository {
     product_price: number;
     total_price: number;
     notes_observations?: string;
+    settle_immediately?: boolean;
   }) {
     const s = await this.prisma.service.create({ data: { ...data, status: 'PENDING' } });
     return mapService(s);

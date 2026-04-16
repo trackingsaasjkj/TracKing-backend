@@ -48,6 +48,7 @@ export class GenerarLiquidacionCourierUseCase {
       end_date: endDate,
       total_services: totalServices,
       total_earned: totalEarned,
+      status: 'SETTLED',
     });
 
     // Marcar servicios como liquidados (courier)

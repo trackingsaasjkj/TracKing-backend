@@ -71,8 +71,9 @@ export class LiquidacionRepository {
     end_date: Date;
     total_services: number;
     total_earned: number;
+    status?: 'SETTLED' | 'UNSETTLED';
   }) {
-    return this.prisma.courierSettlement.create({ data });
+    return this.prisma.courierSettlement.create({ data: { ...data, status: data.status ?? 'SETTLED' } });
   }
 
   async findCourierSettlements(company_id: string, courier_id?: string) {

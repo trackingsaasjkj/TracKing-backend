@@ -94,6 +94,11 @@ export class CrearServicioDto {
   @IsString()
   notes_observations?: string;
 
+  @ApiPropertyOptional({ example: false, description: 'Si true, el servicio se liquidará automáticamente al ser entregado (is_settled_courier y is_settled_customer = true).' })
+  @IsOptional()
+  @IsBoolean()
+  settle_immediately?: boolean;
+
   // ─── Geocoding fields (optional) ─────────────────────────────────────────
 
   @ApiPropertyOptional({ example: 4.710989, description: 'Latitud del punto de recogida' })
