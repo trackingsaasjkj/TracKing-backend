@@ -15,7 +15,9 @@ Base: `/api/courier` · Requiere JWT con rol `COURIER`
 | GET | `/api/courier/me` | Mi perfil de mensajero |
 | POST | `/api/courier/jornada/start` | Iniciar jornada (UNAVAILABLE → AVAILABLE) |
 | POST | `/api/courier/jornada/end` | Finalizar jornada (AVAILABLE → UNAVAILABLE) |
-| GET | `/api/courier/services` | Mis servicios asignados |
+| GET | `/api/courier/services` | Mis servicios activos del día |
+| GET | `/api/courier/services/:id` | Detalle de un servicio individual |
+| GET | `/api/courier/services/history` | Historial paginado de servicios |
 | POST | `/api/courier/services/:id/status` | Cambiar estado de un servicio |
 | POST | `/api/courier/services/:id/evidence` | Subir evidencia de entrega |
 | POST | `/api/courier/location` | Registrar ubicación actual |
@@ -51,7 +53,41 @@ Finaliza la jornada. Solo posible desde estado `AVAILABLE` y sin servicios activ
 ---
 
 ### GET /api/courier/services
-Lista todos los servicios asignados al mensajero autenticado, ordenados por fecha de creación descendente.
+Lista los servicios activos del mensajero autenticado: todos los no entregados + los entregados hoy. Ordenados por fecha de creación descendente.
+
+---
+
+### GET /api/courier/services/:id
+Retorna el detalle completo de un servicio que pertenece al mensajero autenticado. Funciona para servicios en cualquier estado (activos e históricos).
+
+**Error 404:** El servicio no existe o no pertenece al mensajero.
+
+---
+
+### GET /api/courier/services/history
+Retorna el historial paginado de servicios del mensajero. Por defecto filtra por `DELIVERED`.
+
+**Query params:**
+| Param | Tipo | Default | Descripción |
+|-------|------|---------|-------------|
+| `page` | number | 1 | Número de página |
+| `limit` | number | 20 | Items por página (máx. 100) |
+| `status` | string | DELIVERED | Estado a filtrar |
+
+**Respuesta 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "data": [ { "id": "uuid", "status": "DELIVERED", ... } ],
+    "total": 87,
+    "page": 1,
+    "limit": 20
+  }
+}
+```
+
+> **Nota técnica:** Los query params `page`, `limit` y `status` se leen individualmente con `@Query('field')` para evitar que `ValidationPipe` con `forbidNonWhitelisted: true` rechace `status` al no estar en `PaginationDto`.
 
 ---
 
@@ -147,7 +183,8 @@ Detalle completo de una liquidación específica.
 1. POST /api/auth/login              → autenticarse
 2. GET  /api/courier/me              → ver perfil y estado actual
 3. POST /api/courier/jornada/start   → iniciar jornada
-4. GET  /api/courier/services        → ver servicios asignados
+4. GET  /api/courier/services        → ver servicios activos del día
+4b. GET /api/courier/services/history?page=1&limit=20 → historial paginado
 5. POST /api/courier/services/:id/status  { "status": "ACCEPTED" }
 6. POST /api/courier/services/:id/status  { "status": "IN_TRANSIT" }
 7. POST /api/courier/location        → reportar ubicación (loop cada 15s)
@@ -167,6 +204,8 @@ Detalle completo de una liquidación específica.
 |---------|-------------|
 | `src/modules/courier-mobile/courier-mobile.controller.ts` | Controlador HTTP |
 | `src/modules/courier-mobile/courier-mobile.module.ts` | Módulo NestJS |
+| `src/modules/mensajeros/infrastructure/mensajero.repository.ts` | `findMyServicesPaginated()` |
+| `src/modules/mensajeros/application/use-cases/consultar-mensajeros.use-case.ts` | `findMyServicesHistory()` |
 
 ## Dependencias de módulos
 
