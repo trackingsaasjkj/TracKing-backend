@@ -211,7 +211,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { logger: ['log', 'warn', 'error', 'debug'] });
 
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://localhost:3001'],
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:3001',
+      'https://tracking-xi-seven.vercel.app',
+    ],
     credentials: true,
   });
 
