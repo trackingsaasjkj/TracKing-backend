@@ -1,5 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CustomersUseCases } from './application/use-cases/customers.use-cases';
 import { CreateCustomerDto } from './application/dto/create-customer.dto';
 import { UpdateCustomerDto } from './application/dto/update-customer.dto';
@@ -20,9 +20,23 @@ export class CustomersController {
   @Get()
   @Roles(Role.ADMIN, Role.AUX)
   @ApiOperation({ summary: 'Listar clientes activos de la empresa' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Número de página (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Registros por página (default: 20, max: 100)' })
   @ApiResponse({ status: 200, description: 'Lista de clientes' })
-  async findAll(@CurrentUser() user: JwtPayload) {
-    return ok(await this.useCases.findAll(user.company_id!));
+  async findAll(
+    @CurrentUser() user: JwtPayload,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const hasPagination = page !== undefined || limit !== undefined;
+    return ok(
+      await this.useCases.findAll(
+        user.company_id!,
+        hasPagination
+          ? { page: page ? parseInt(page, 10) : 1, limit: limit ? parseInt(limit, 10) : 20 }
+          : undefined,
+      ),
+    );
   }
 
   @Get(':id')
@@ -60,5 +74,14 @@ export class CustomersController {
   async deactivate(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     await this.useCases.deactivate(id, user.company_id!);
     return ok(null);
+  }
+
+  @Patch(':id/favorite')
+  @Roles(Role.ADMIN, Role.AUX)
+  @ApiOperation({ summary: 'Toggle favorito del cliente' })
+  @ApiParam({ name: 'id', description: 'UUID del cliente' })
+  @ApiResponse({ status: 200, description: 'Estado favorito actualizado' })
+  async toggleFavorite(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return ok(await this.useCases.toggleFavorite(id, user.company_id!));
   }
 }

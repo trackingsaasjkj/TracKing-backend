@@ -13,6 +13,8 @@ import { RolesGuard } from '../../core/guards/roles.guard';
 import { Role } from '../../core/constants/roles.enum';
 import { JwtPayload } from '../../core/types/jwt-payload.type';
 import { ok } from '../../core/utils/response.util';
+import { LiquidacionRepository } from './infrastructure/liquidacion.repository';
+import { AppException } from '../../core/errors/app.exception';
 
 @ApiTags('Liquidaciones')
 @ApiBearerAuth('access-token')
@@ -25,6 +27,7 @@ export class LiquidacionesController {
     private readonly generarClienteUseCase: GenerarLiquidacionClienteUseCase,
     private readonly consultarUseCase: ConsultarLiquidacionesUseCase,
     private readonly reglasUseCase: GestionarReglasUseCase,
+    private readonly liquidacionRepo: LiquidacionRepository,
   ) {}
 
   // ── Settlement Rules ────────────────────────────────────────
@@ -99,6 +102,45 @@ export class LiquidacionesController {
   @ApiResponse({ status: 200, description: 'Resumen de ganancias' })
   async earnings(@CurrentUser() user: JwtPayload, @Query('courier_id') courier_id?: string) {
     return ok(await this.consultarUseCase.getEarnings(user.company_id!, courier_id));
+  }
+
+  @Get('courier/:courier_id/pending-today')
+  @Roles(Role.ADMIN, Role.AUX)
+  @ApiOperation({ summary: 'Servicios pendientes de liquidar hoy para un mensajero' })
+  @ApiParam({ name: 'courier_id', description: 'UUID del mensajero' })
+  @ApiResponse({ status: 200, description: 'Lista de servicios pendientes hoy' })
+  async pendingTodayCourier(@Param('courier_id') courier_id: string, @CurrentUser() user: JwtPayload) {
+    return ok(await this.liquidacionRepo.findPendingTodayCourier(user.company_id!, courier_id));
+  }
+
+  @Get('customers/with-unpaid')
+  @Roles(Role.ADMIN, Role.AUX)
+  @ApiOperation({ summary: 'Clientes con servicios sin pagar' })
+  @ApiResponse({ status: 200, description: 'Lista de clientes con servicios UNPAID' })
+  async customersWithUnpaid(@CurrentUser() user: JwtPayload) {
+    return ok(await this.liquidacionRepo.findCustomersWithUnpaid(user.company_id!));
+  }
+
+  @Get('customer/:customer_id/unpaid-services')
+  @Roles(Role.ADMIN, Role.AUX)
+  @ApiOperation({ summary: 'Servicios sin pagar de un cliente' })
+  @ApiParam({ name: 'customer_id', description: 'UUID del cliente' })
+  @ApiQuery({ name: 'from', required: false, description: 'Fecha inicio (ISO)' })
+  @ApiQuery({ name: 'to', required: false, description: 'Fecha fin (ISO)' })
+  @ApiResponse({ status: 200, description: 'Lista de servicios UNPAID del cliente' })
+  @ApiResponse({ status: 400, description: 'from debe ser anterior o igual a to' })
+  async unpaidServicesByCustomer(
+    @Param('customer_id') customer_id: string,
+    @CurrentUser() user: JwtPayload,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    if (from && to && from > to) {
+      throw new AppException('from debe ser anterior o igual a to', 400);
+    }
+    const fromDate = from ? new Date(from) : undefined;
+    const toDate = to ? new Date(to) : undefined;
+    return ok(await this.liquidacionRepo.findUnpaidServicesByCustomer(user.company_id!, customer_id, fromDate, toDate));
   }
 
   @Get(':id')

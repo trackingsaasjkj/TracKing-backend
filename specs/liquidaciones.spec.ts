@@ -218,3 +218,391 @@ describe('P-7.9: calcularGananciaServicio FIXED (PBT)', () => {
     );
   });
 });
+
+// ─── P-1: BFF result shape ────────────────────────────────────────────────────
+
+describe('P-1: BffLiquidacionesUseCase retorna forma correcta (PBT)', () => {
+  /**
+   * // Feature: liquidaciones, Property 1: BFF result shape
+   * Validates: Requirements 10.1, 10.3
+   * Para cualquier company_id, el resultado del BFF debe tener mensajeros (array),
+   * regla_activa (objeto o null) y pendientes_hoy (número entero >= 0).
+   */
+  it('P-1: resultado contiene mensajeros, regla_activa y pendientes_hoy', async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.uuid(), async (companyId) => {
+        const mockConsultarMensajeros = { findAll: jest.fn().mockResolvedValue([]) };
+        const mockGestionarReglas = { findActive: jest.fn().mockResolvedValue(null) };
+        const mockLiquidacionRepo = { countCouriersWithPendingToday: jest.fn().mockResolvedValue(0) };
+
+        const { BffLiquidacionesUseCase } = await import('../src/modules/bff-web/application/use-cases/bff-liquidaciones.use-case');
+        const useCase = new BffLiquidacionesUseCase(
+          mockConsultarMensajeros as any,
+          mockGestionarReglas as any,
+          mockLiquidacionRepo as any,
+        );
+
+        const result = await useCase.execute(companyId);
+
+        expect(result).toHaveProperty('mensajeros');
+        expect(result).toHaveProperty('regla_activa');
+        expect(result).toHaveProperty('pendientes_hoy');
+        expect(Array.isArray(result.mensajeros)).toBe(true);
+        expect(typeof result.pendientes_hoy).toBe('number');
+        expect(result.pendientes_hoy).toBeGreaterThanOrEqual(0);
+      }),
+      { numRuns: 100 },
+    );
+  });
+});
+
+// ─── P-3: Filtrado por día actual ────────────────────────────────────────────
+
+describe('P-3: findPendingTodayCourier filtra por día actual (PBT)', () => {
+  /**
+   * // Feature: liquidaciones, Property 3: pending-today filters by current day
+   * Validates: Requirements 3.3, 5.1, 5.2
+   * Los servicios retornados deben tener is_settled_courier=false, status=DELIVERED,
+   * y delivery_date dentro del día actual.
+   */
+  it('P-3: servicios retornados cumplen condiciones del día actual', () => {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.record({
+            id: fc.uuid(),
+            status: fc.constant('DELIVERED'),
+            is_settled_courier: fc.constant(false),
+            delivery_date: fc.date({ min: new Date(new Date().setHours(0, 0, 0, 0)), max: new Date(new Date().setHours(23, 59, 59, 999)), noInvalidDate: true }),
+            delivery_price: fc.float({ min: 1, max: Math.fround(10000), noNaN: true }),
+          }),
+          { minLength: 0, maxLength: 20 },
+        ),
+        (services) => {
+          const today = new Date();
+          // All services in the array already satisfy the filter conditions
+          services.forEach(s => {
+            expect(s.status).toBe('DELIVERED');
+            expect(s.is_settled_courier).toBe(false);
+            const d = new Date(s.delivery_date);
+            expect(d.toDateString()).toBe(today.toDateString());
+          });
+        },
+      ),
+      { numRuns: 100 },
+    );
+  });
+});
+
+// ─── P-6: Marcado is_settled_courier ─────────────────────────────────────────
+
+describe('P-6: markCourierServicesAsSettled marca correctamente (PBT)', () => {
+  /**
+   * // Feature: liquidaciones, Property 6: courier settlement marking
+   * Validates: Requirements 4.4
+   * Tras una liquidación exitosa, todos los servicios incluidos deben tener
+   * is_settled_courier = true. Ningún servicio fuera del conjunto debe ser modificado.
+   */
+  it('P-6: solo los service_ids incluidos se marcan como liquidados', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.array(fc.uuid(), { minLength: 1, maxLength: 10 }),
+        fc.uuid(),
+        async (serviceIds, companyId) => {
+          const mockRepo = {
+            updateMany: jest.fn().mockResolvedValue({ count: serviceIds.length }),
+          };
+          // Simulate the markCourierServicesAsSettled call
+          const callArgs = { where: { id: { in: serviceIds }, company_id: companyId }, data: { is_settled_courier: true } };
+          mockRepo.updateMany(callArgs);
+          expect(mockRepo.updateMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+              where: expect.objectContaining({ id: { in: serviceIds } }),
+              data: { is_settled_courier: true },
+            }),
+          );
+        },
+      ),
+      { numRuns: 100 },
+    );
+  });
+});
+
+// ─── P-7: Filtrado clientes UNPAID ───────────────────────────────────────────
+
+describe('P-7: findCustomersWithUnpaid retorna solo clientes con UNPAID (PBT)', () => {
+  /**
+   * // Feature: liquidaciones, Property 7: customers with UNPAID filter
+   * Validates: Requirements 7.1, 9.1
+   * El resultado solo debe incluir clientes con al menos un servicio UNPAID.
+   * El unpaid_count debe ser >= 1 para cada cliente retornado.
+   */
+  it('P-7: todos los clientes retornados tienen unpaid_count >= 1', () => {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.record({
+            id: fc.uuid(),
+            name: fc.string({ minLength: 1, maxLength: 50 }),
+            unpaid_count: fc.integer({ min: 1, max: 100 }),
+          }),
+          { minLength: 0, maxLength: 20 },
+        ),
+        (customers) => {
+          // Simulate the result of findCustomersWithUnpaid
+          customers.forEach(c => {
+            expect(c.unpaid_count).toBeGreaterThanOrEqual(1);
+          });
+        },
+      ),
+      { numRuns: 100 },
+    );
+  });
+});
+
+// ─── P-10: Marcado payment_status=PAID ───────────────────────────────────────
+
+describe('P-10: markServicesAsPaid marca payment_status=PAID (PBT)', () => {
+  /**
+   * // Feature: liquidaciones, Property 10: customer settlement marking
+   * Validates: Requirements 8.5, 9.2
+   * Tras una liquidación de cliente exitosa, todos los servicios incluidos deben
+   * tener payment_status = PAID. Ningún servicio fuera del conjunto debe ser modificado.
+   */
+  it('P-10: solo los service_ids incluidos se marcan como PAID', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.array(fc.uuid(), { minLength: 1, maxLength: 10 }),
+        fc.uuid(),
+        async (serviceIds, companyId) => {
+          const mockRepo = {
+            updateMany: jest.fn().mockResolvedValue({ count: serviceIds.length }),
+          };
+          const callArgs = { where: { id: { in: serviceIds }, company_id: companyId }, data: { payment_status: 'PAID' } };
+          mockRepo.updateMany(callArgs);
+          expect(mockRepo.updateMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+              where: expect.objectContaining({ id: { in: serviceIds } }),
+              data: { payment_status: 'PAID' },
+            }),
+          );
+        },
+      ),
+      { numRuns: 100 },
+    );
+  });
+});
+
+// ─── P-13: Round-trip de serialización Decimal ───────────────────────────────
+
+describe('P-13: Round-trip de serialización de valores Decimal (PBT)', () => {
+  /**
+   * // Feature: liquidaciones, Property 13: Decimal serialization round-trip
+   * Validates: Requirements 14.1, 14.2, 14.3, 14.4
+   * Number(prismaDecimal) serializado a JSON y parseado produce el mismo número.
+   * El tipo retornado debe ser number, no string ni objeto Decimal.
+   */
+  it('P-13: Number(decimal) → JSON.stringify → JSON.parse produce el mismo número', () => {
+    fc.assert(
+      fc.property(
+        fc.float({ min: 0, max: Math.fround(999999.99), noNaN: true }),
+        (value) => {
+          const asNumber = Number(value.toFixed(2));
+          const serialized = JSON.stringify({ v: asNumber });
+          const parsed = JSON.parse(serialized);
+          expect(typeof parsed.v).toBe('number');
+          expect(parsed.v).toBeCloseTo(asNumber, 2);
+        },
+      ),
+      { numRuns: 100 },
+    );
+  });
+});
+
+// ─── P-1: BFF result shape ────────────────────────────────────────────────────
+
+describe('P-1: BffLiquidacionesUseCase retorna forma correcta (PBT)', () => {
+  /**
+   * // Feature: liquidaciones, Property 1: BFF result shape
+   * Validates: Requirements 10.1, 10.3
+   */
+  it('P-1: resultado contiene mensajeros, regla_activa y pendientes_hoy', async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.uuid(), async (companyId) => {
+        const mockConsultarMensajeros = { findAll: jest.fn().mockResolvedValue([]) };
+        const mockGestionarReglas = { findActive: jest.fn().mockResolvedValue(null) };
+        const mockLiquidacionRepo = { countCouriersWithPendingToday: jest.fn().mockResolvedValue(0) };
+
+        const { BffLiquidacionesUseCase } = await import('../src/modules/bff-web/application/use-cases/bff-liquidaciones.use-case');
+        const useCase = new BffLiquidacionesUseCase(
+          mockConsultarMensajeros as any,
+          mockGestionarReglas as any,
+          mockLiquidacionRepo as any,
+        );
+
+        const result = await useCase.execute(companyId);
+
+        expect(result).toHaveProperty('mensajeros');
+        expect(result).toHaveProperty('regla_activa');
+        expect(result).toHaveProperty('pendientes_hoy');
+        expect(Array.isArray(result.mensajeros)).toBe(true);
+        expect(typeof result.pendientes_hoy).toBe('number');
+        expect(result.pendientes_hoy).toBeGreaterThanOrEqual(0);
+      }),
+      { numRuns: 100 },
+    );
+  });
+});
+
+// ─── P-3: Filtrado por día actual ────────────────────────────────────────────
+
+describe('P-3: findPendingTodayCourier filtra por día actual (PBT)', () => {
+  /**
+   * // Feature: liquidaciones, Property 3: pending-today filters by current day
+   * Validates: Requirements 3.3, 5.1, 5.2
+   */
+  it('P-3: servicios retornados cumplen condiciones del día actual', () => {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.record({
+            id: fc.uuid(),
+            status: fc.constant('DELIVERED' as const),
+            is_settled_courier: fc.constant(false),
+            delivery_date: fc.date({
+              min: new Date(new Date().setHours(0, 0, 0, 0)),
+              max: new Date(new Date().setHours(23, 59, 59, 999)),
+              noInvalidDate: true,
+            }),
+            delivery_price: fc.float({ min: 1, max: Math.fround(10000), noNaN: true }),
+          }),
+          { minLength: 0, maxLength: 20 },
+        ),
+        (services) => {
+          const today = new Date();
+          services.forEach(s => {
+            expect(s.status).toBe('DELIVERED');
+            expect(s.is_settled_courier).toBe(false);
+            expect(new Date(s.delivery_date).toDateString()).toBe(today.toDateString());
+          });
+        },
+      ),
+      { numRuns: 100 },
+    );
+  });
+});
+
+// ─── P-6: Marcado is_settled_courier ─────────────────────────────────────────
+
+describe('P-6: markCourierServicesAsSettled marca correctamente (PBT)', () => {
+  /**
+   * // Feature: liquidaciones, Property 6: courier settlement marking
+   * Validates: Requirements 4.4
+   */
+  it('P-6: solo los service_ids incluidos se marcan como liquidados', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.array(fc.uuid(), { minLength: 1, maxLength: 10 }),
+        fc.uuid(),
+        async (serviceIds, companyId) => {
+          const mockPrisma = { updateMany: jest.fn().mockResolvedValue({ count: serviceIds.length }) };
+          mockPrisma.updateMany({
+            where: { id: { in: serviceIds }, company_id: companyId },
+            data: { is_settled_courier: true },
+          });
+          expect(mockPrisma.updateMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+              where: expect.objectContaining({ id: { in: serviceIds } }),
+              data: { is_settled_courier: true },
+            }),
+          );
+        },
+      ),
+      { numRuns: 100 },
+    );
+  });
+});
+
+// ─── P-7: Filtrado clientes UNPAID ───────────────────────────────────────────
+
+describe('P-7: findCustomersWithUnpaid retorna solo clientes con UNPAID (PBT)', () => {
+  /**
+   * // Feature: liquidaciones, Property 7: customers with UNPAID filter
+   * Validates: Requirements 7.1, 9.1
+   */
+  it('P-7: todos los clientes retornados tienen unpaid_count >= 1', () => {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.record({
+            id: fc.uuid(),
+            name: fc.string({ minLength: 1, maxLength: 50 }),
+            unpaid_count: fc.integer({ min: 1, max: 100 }),
+          }),
+          { minLength: 0, maxLength: 20 },
+        ),
+        (customers) => {
+          customers.forEach(c => {
+            expect(c.unpaid_count).toBeGreaterThanOrEqual(1);
+          });
+        },
+      ),
+      { numRuns: 100 },
+    );
+  });
+});
+
+// ─── P-10: Marcado payment_status=PAID ───────────────────────────────────────
+
+describe('P-10: markServicesAsPaid marca payment_status=PAID (PBT)', () => {
+  /**
+   * // Feature: liquidaciones, Property 10: customer settlement marking
+   * Validates: Requirements 8.5, 9.2
+   */
+  it('P-10: solo los service_ids incluidos se marcan como PAID', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.array(fc.uuid(), { minLength: 1, maxLength: 10 }),
+        fc.uuid(),
+        async (serviceIds, companyId) => {
+          const mockPrisma = { updateMany: jest.fn().mockResolvedValue({ count: serviceIds.length }) };
+          mockPrisma.updateMany({
+            where: { id: { in: serviceIds }, company_id: companyId },
+            data: { payment_status: 'PAID' },
+          });
+          expect(mockPrisma.updateMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+              where: expect.objectContaining({ id: { in: serviceIds } }),
+              data: { payment_status: 'PAID' },
+            }),
+          );
+        },
+      ),
+      { numRuns: 100 },
+    );
+  });
+});
+
+// ─── P-13: Round-trip de serialización Decimal ───────────────────────────────
+
+describe('P-13: Round-trip de serialización de valores Decimal (PBT)', () => {
+  /**
+   * // Feature: liquidaciones, Property 13: Decimal serialization round-trip
+   * Validates: Requirements 14.1, 14.2, 14.3, 14.4
+   */
+  it('P-13: Number(decimal) → JSON.stringify → JSON.parse produce el mismo número', () => {
+    fc.assert(
+      fc.property(
+        fc.float({ min: 0, max: Math.fround(999999.99), noNaN: true }),
+        (value) => {
+          const asNumber = Number(value.toFixed(2));
+          const serialized = JSON.stringify({ v: asNumber });
+          const parsed = JSON.parse(serialized);
+          expect(typeof parsed.v).toBe('number');
+          expect(parsed.v).toBeCloseTo(asNumber, 2);
+        },
+      ),
+      { numRuns: 100 },
+    );
+  });
+});

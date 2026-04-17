@@ -14,7 +14,7 @@ export function validarReglaActiva(regla: object | null): void {
  */
 export function validarRangoFechas(startDate: Date, endDate: Date): void {
   if (startDate >= endDate) {
-    throw new AppException('start_date debe ser anterior a end_date');
+    throw new AppException('start_date debe ser estrictamente anterior a end_date');
   }
 }
 

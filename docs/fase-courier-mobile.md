@@ -15,10 +15,15 @@ Base: `/api/courier` · Requiere JWT con rol `COURIER`
 | GET | `/api/courier/me` | Mi perfil de mensajero |
 | POST | `/api/courier/jornada/start` | Iniciar jornada (UNAVAILABLE → AVAILABLE) |
 | POST | `/api/courier/jornada/end` | Finalizar jornada (AVAILABLE → UNAVAILABLE) |
-| GET | `/api/courier/services` | Mis servicios asignados |
+| GET | `/api/courier/services` | Mis servicios activos del día |
+| GET | `/api/courier/services/:id` | Detalle de un servicio individual |
+| GET | `/api/courier/services/history` | Historial paginado de servicios |
 | POST | `/api/courier/services/:id/status` | Cambiar estado de un servicio |
 | POST | `/api/courier/services/:id/evidence` | Subir evidencia de entrega |
 | POST | `/api/courier/location` | Registrar ubicación actual |
+| GET | `/api/courier/settlements` | Mis liquidaciones |
+| GET | `/api/courier/settlements/earnings` | Resumen de mis ganancias |
+| GET | `/api/courier/settlements/:id` | Detalle de una liquidación |
 
 ---
 
@@ -48,7 +53,41 @@ Finaliza la jornada. Solo posible desde estado `AVAILABLE` y sin servicios activ
 ---
 
 ### GET /api/courier/services
-Lista todos los servicios asignados al mensajero autenticado, ordenados por fecha de creación descendente.
+Lista los servicios activos del mensajero autenticado: todos los no entregados + los entregados hoy. Ordenados por fecha de creación descendente.
+
+---
+
+### GET /api/courier/services/:id
+Retorna el detalle completo de un servicio que pertenece al mensajero autenticado. Funciona para servicios en cualquier estado (activos e históricos).
+
+**Error 404:** El servicio no existe o no pertenece al mensajero.
+
+---
+
+### GET /api/courier/services/history
+Retorna el historial paginado de servicios del mensajero. Por defecto filtra por `DELIVERED`.
+
+**Query params:**
+| Param | Tipo | Default | Descripción |
+|-------|------|---------|-------------|
+| `page` | number | 1 | Número de página |
+| `limit` | number | 20 | Items por página (máx. 100) |
+| `status` | string | DELIVERED | Estado a filtrar |
+
+**Respuesta 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "data": [ { "id": "uuid", "status": "DELIVERED", ... } ],
+    "total": 87,
+    "page": 1,
+    "limit": 20
+  }
+}
+```
+
+> **Nota técnica:** Los query params `page`, `limit` y `status` se leen individualmente con `@Query('field')` para evitar que `ValidationPipe` con `forbidNonWhitelisted: true` rechace `status` al no estar en `PaginationDto`.
 
 ---
 
@@ -97,19 +136,66 @@ Frecuencia recomendada: cada 15 segundos.
 
 ---
 
+### GET /api/courier/settlements
+Lista todas las liquidaciones generadas para el mensajero autenticado. El `courier_id` se resuelve desde el token — no se envía en la request.
+
+**Respuesta 200:**
+```json
+[
+  {
+    "id": "uuid",
+    "start_date": "2025-01-01T00:00:00.000Z",
+    "end_date": "2025-01-31T00:00:00.000Z",
+    "total_services": 42,
+    "total_earned": 315000,
+    "created_at": "2025-02-01T10:00:00.000Z"
+  }
+]
+```
+
+---
+
+### GET /api/courier/settlements/earnings
+Resumen acumulado de ganancias del mensajero autenticado.
+
+**Respuesta 200:**
+```json
+{
+  "total_settlements": 3,
+  "total_services": 120,
+  "total_earned": 900000,
+  "settlements": [ ... ]
+}
+```
+
+---
+
+### GET /api/courier/settlements/:id
+Detalle completo de una liquidación específica.
+
+**Error 404:** Liquidación no encontrada o no pertenece a la empresa.
+
+---
+
 ## Flujo típico en la app móvil
 
 ```
-1. POST /api/auth/login          → autenticarse
-2. GET  /api/courier/me          → ver perfil y estado actual
-3. POST /api/courier/jornada/start → iniciar jornada
-4. GET  /api/courier/services    → ver servicios asignados
+1. POST /api/auth/login              → autenticarse
+2. GET  /api/courier/me              → ver perfil y estado actual
+3. POST /api/courier/jornada/start   → iniciar jornada
+4. GET  /api/courier/services        → ver servicios activos del día
+4b. GET /api/courier/services/history?page=1&limit=20 → historial paginado
 5. POST /api/courier/services/:id/status  { "status": "ACCEPTED" }
 6. POST /api/courier/services/:id/status  { "status": "IN_TRANSIT" }
-7. POST /api/courier/location    → reportar ubicación (loop cada 15s)
+7. POST /api/courier/location        → reportar ubicación (loop cada 15s)
 8. POST /api/courier/services/:id/evidence  { "image_url": "..." }
 9. POST /api/courier/services/:id/status  { "status": "DELIVERED" }
-10. POST /api/courier/jornada/end → finalizar jornada
+10. POST /api/courier/jornada/end    → finalizar jornada
+
+── Sección de ganancias ──
+11. GET /api/courier/settlements/earnings  → resumen de ganancias
+12. GET /api/courier/settlements           → historial de liquidaciones
+13. GET /api/courier/settlements/:id       → detalle de una liquidación
 ```
 
 ## Archivos
@@ -118,6 +204,8 @@ Frecuencia recomendada: cada 15 segundos.
 |---------|-------------|
 | `src/modules/courier-mobile/courier-mobile.controller.ts` | Controlador HTTP |
 | `src/modules/courier-mobile/courier-mobile.module.ts` | Módulo NestJS |
+| `src/modules/mensajeros/infrastructure/mensajero.repository.ts` | `findMyServicesPaginated()` |
+| `src/modules/mensajeros/application/use-cases/consultar-mensajeros.use-case.ts` | `findMyServicesHistory()` |
 
 ## Dependencias de módulos
 
@@ -126,3 +214,4 @@ El módulo no duplica lógica — reutiliza use cases exportados de:
 - `ServiciosModule` — `CambiarEstadoUseCase` y repositorios
 - `EvidenciasModule` — `SubirEvidenciaUseCase`
 - `TrackingModule` — `RegistrarUbicacionUseCase`
+- `LiquidacionesModule` — `ConsultarLiquidacionesUseCase`

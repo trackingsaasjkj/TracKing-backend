@@ -4,6 +4,7 @@ import { MensajerosModule } from '../mensajeros/mensajeros.module';
 import { ServiciosModule } from '../servicios/servicios.module';
 import { EvidenciasModule } from '../evidencias/evidencias.module';
 import { TrackingModule } from '../tracking/tracking.module';
+import { LiquidacionesModule } from '../liquidaciones/liquidaciones.module';
 import { CambiarEstadoUseCase } from '../servicios/application/use-cases/cambiar-estado.use-case';
 import { CambiarPagoUseCase } from '../servicios/application/use-cases/cambiar-pago.use-case';
 
@@ -13,6 +14,7 @@ import { CambiarPagoUseCase } from '../servicios/application/use-cases/cambiar-p
     ServiciosModule,
     EvidenciasModule,
     TrackingModule,
+    LiquidacionesModule,
   ],
   controllers: [CourierMobileController],
   providers: [CambiarEstadoUseCase, CambiarPagoUseCase],

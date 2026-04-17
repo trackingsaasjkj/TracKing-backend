@@ -47,6 +47,7 @@ export class LoginUseCase {
       email: user.email,
       role: user.role as Role,
       company_id: user.company_id,
+      ...(user.role === Role.AUX && { permissions: user.permissions ?? [] }),
     };
 
     const accessToken = this.tokenService.generateAccessToken(payload);
@@ -64,7 +65,14 @@ export class LoginUseCase {
     return {
       accessToken,
       refreshToken,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role, company_id: user.company_id },
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        company_id: user.company_id,
+        ...(user.role === Role.AUX && { permissions: user.permissions ?? [] }),
+      },
     };
   }
 }

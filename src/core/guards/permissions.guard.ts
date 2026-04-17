@@ -3,14 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 import { Permission } from '../constants/permissions.enum';
 import { Role } from '../constants/roles.enum';
-
-// Role → permissions mapping
-const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
-  [Role.SUPER_ADMIN]: Object.values(Permission),
-  [Role.ADMIN]: Object.values(Permission),
-  [Role.AUX]: [Permission.USERS_READ],
-  [Role.COURIER]: [],
-};
+import { JwtPayload } from '../types/jwt-payload.type';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -23,8 +16,13 @@ export class PermissionsGuard implements CanActivate {
     ]);
     if (!required?.length) return true;
 
-    const user = context.switchToHttp().getRequest().user;
-    const userPermissions = ROLE_PERMISSIONS[user.role as Role] ?? [];
+    const user = context.switchToHttp().getRequest().user as JwtPayload;
+
+    // ADMIN and SUPER_ADMIN have full access
+    if (user.role === Role.ADMIN || user.role === Role.SUPER_ADMIN) return true;
+
+    // AUX: verify permissions from JWT
+    const userPermissions: string[] = user.permissions ?? [];
     const hasAll = required.every((p) => userPermissions.includes(p));
 
     if (!hasAll) throw new ForbiddenException('Permisos insuficientes');

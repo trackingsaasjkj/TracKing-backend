@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Param, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiConsumes, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { RolesGuard } from '../../core/guards/roles.guard';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
@@ -13,9 +13,12 @@ import { CambiarEstadoUseCase } from '../servicios/application/use-cases/cambiar
 import { CambiarPagoUseCase } from '../servicios/application/use-cases/cambiar-pago.use-case';
 import { RegistrarUbicacionUseCase } from '../tracking/application/use-cases/registrar-ubicacion.use-case';
 import { SubirEvidenciaUseCase } from '../evidencias/application/use-cases/subir-evidencia.use-case';
+import { ConsultarLiquidacionesUseCase } from '../liquidaciones/application/use-cases/consultar-liquidaciones.use-case';
 import { CambiarEstadoDto } from '../servicios/application/dto/cambiar-estado.dto';
 import { CambiarPagoDto } from '../servicios/application/dto/cambiar-pago.dto';
 import { RegisterLocationDto } from '../tracking/application/dto/register-location.dto';
+import { PaginationDto } from '../../core/dto/pagination.dto';
+import { ServiceStatus } from '@prisma/client';
 
 @ApiTags('Courier Mobile')
 @ApiBearerAuth('access-token')
@@ -30,6 +33,7 @@ export class CourierMobileController {
     private readonly cambiarPagoUseCase: CambiarPagoUseCase,
     private readonly registrarUbicacionUseCase: RegistrarUbicacionUseCase,
     private readonly subirEvidenciaUseCase: SubirEvidenciaUseCase,
+    private readonly consultarLiquidacionesUseCase: ConsultarLiquidacionesUseCase,
   ) {}
 
   // ── Perfil ───────────────────────────────────────────────────────────────────
@@ -62,13 +66,54 @@ export class CourierMobileController {
   }
 
   // ── Servicios ─────────────────────────────────────────────────────────────────
+  // IMPORTANTE: rutas estáticas ANTES que dinámicas (:id)
 
   @Get('services')
-  @ApiOperation({ summary: 'Mis servicios asignados' })
+  @ApiOperation({ summary: 'Mis servicios activos del día' })
   @ApiResponse({ status: 200, description: 'Lista de servicios del mensajero' })
   async misServicios(@CurrentUser() user: JwtPayload) {
     const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id!);
     return ok(await this.consultarUseCase.findMyServices(courier.id, user.company_id!));
+  }
+
+  @Get('services/history')
+  @ApiOperation({
+    summary: 'Historial de servicios paginado',
+    description: 'Retorna el historial de servicios del mensajero con paginación. Por defecto filtra por DELIVERED.',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items por página (default: 20, max: 100)' })
+  @ApiQuery({ name: 'status', required: false, enum: ['ASSIGNED', 'ACCEPTED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'], description: 'Filtrar por estado (default: DELIVERED)' })
+  @ApiResponse({ status: 200, description: 'Historial paginado de servicios' })
+  async historialServicios(
+    @Query('page') page: string | undefined,
+    @Query('limit') limit: string | undefined,
+    @Query('status') status: ServiceStatus | undefined,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id!);
+    const resolvedStatus: ServiceStatus = status ?? 'DELIVERED';
+    const pagination = new PaginationDto();
+    pagination.page = page ? Math.max(1, parseInt(page, 10)) : 1;
+    pagination.limit = limit ? Math.min(100, Math.max(1, parseInt(limit, 10))) : 20;
+    return ok(
+      await this.consultarUseCase.findMyServicesHistory(
+        courier.id,
+        user.company_id!,
+        { status: resolvedStatus },
+        pagination,
+      ),
+    );
+  }
+
+  @Get('services/:id')
+  @ApiOperation({ summary: 'Detalle de un servicio', description: 'Retorna el detalle completo de un servicio que pertenece al mensajero autenticado.' })
+  @ApiParam({ name: 'id', description: 'UUID del servicio' })
+  @ApiResponse({ status: 200, description: 'Detalle del servicio' })
+  @ApiResponse({ status: 404, description: 'Servicio no encontrado o no pertenece al mensajero' })
+  async detalleServicio(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id!);
+    return ok(await this.consultarUseCase.findMyServiceById(id, courier.id, user.company_id!));
   }
 
   @Post('services/:id/status')
@@ -92,8 +137,7 @@ export class CourierMobileController {
   @Post('services/:id/payment')
   @ApiOperation({
     summary: 'Cambiar estado de pago',
-    description:
-      'PAGADO → payment_method cambia a EFECTIVO. NO_PAGADO → payment_method cambia a CREDITO.',
+    description: 'PAGADO → payment_method cambia a EFECTIVO. NO_PAGADO → payment_method cambia a CREDITO.',
   })
   @ApiParam({ name: 'id', description: 'UUID del servicio' })
   @ApiResponse({ status: 200, description: 'Estado de pago actualizado' })
@@ -106,6 +150,7 @@ export class CourierMobileController {
   }
 
   // ── Evidencia ─────────────────────────────────────────────────────────────────
+
   @Post('services/:id/evidence')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
@@ -142,5 +187,33 @@ export class CourierMobileController {
   ) {
     const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id!);
     return ok(await this.registrarUbicacionUseCase.execute(dto, courier.id, user.company_id!));
+  }
+
+  // ── Liquidaciones ─────────────────────────────────────────────────────────────
+  // IMPORTANTE: settlements/earnings ANTES que settlements/:id
+
+  @Get('settlements')
+  @ApiOperation({ summary: 'Mis liquidaciones', description: 'Lista todas las liquidaciones generadas para el mensajero autenticado.' })
+  @ApiResponse({ status: 200, description: 'Lista de liquidaciones del mensajero' })
+  async misLiquidaciones(@CurrentUser() user: JwtPayload) {
+    const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id!);
+    return ok(await this.consultarLiquidacionesUseCase.findCourierSettlements(user.company_id!, courier.id));
+  }
+
+  @Get('settlements/earnings')
+  @ApiOperation({ summary: 'Resumen de mis ganancias', description: 'Total acumulado de ganancias, servicios y liquidaciones del mensajero autenticado.' })
+  @ApiResponse({ status: 200, description: 'Resumen de ganancias' })
+  async misGanancias(@CurrentUser() user: JwtPayload) {
+    const courier = await this.consultarUseCase.findCourierByUserId(user.sub, user.company_id!);
+    return ok(await this.consultarLiquidacionesUseCase.getEarnings(user.company_id!, courier.id));
+  }
+
+  @Get('settlements/:id')
+  @ApiOperation({ summary: 'Detalle de una liquidación', description: 'Retorna el detalle de una liquidación específica. Solo accesible si pertenece al mensajero autenticado.' })
+  @ApiParam({ name: 'id', description: 'UUID de la liquidación' })
+  @ApiResponse({ status: 200, description: 'Detalle de la liquidación' })
+  @ApiResponse({ status: 404, description: 'Liquidación no encontrada' })
+  async detalleLiquidacion(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return ok(await this.consultarLiquidacionesUseCase.findCourierSettlementById(id, user.company_id!));
   }
 }

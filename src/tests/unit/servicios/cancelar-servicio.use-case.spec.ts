@@ -1,6 +1,15 @@
 import { CancelarServicioUseCase } from '../../../modules/servicios/application/use-cases/cancelar-servicio.use-case';
 import { AppException } from '../../../core/errors/app.exception';
 import { NotFoundException } from '@nestjs/common';
+import { CacheService } from '../../../infrastructure/cache/cache.service';
+
+const makeCache = () => ({
+  get: jest.fn().mockReturnValue(null),
+  set: jest.fn(),
+  delete: jest.fn(),
+  deleteByPrefix: jest.fn(),
+  size: jest.fn(),
+} as unknown as CacheService);
 
 const makeService = (status: string, courier_id: string | null = null) => ({
   id: 'svc-1', company_id: 'co-1', status, courier_id,
@@ -18,6 +27,7 @@ describe('CancelarServicioUseCase', () => {
       mockServicioRepo as any,
       mockHistorialRepo as any,
       mockCourierRepo as any,
+      makeCache(),
     );
     jest.clearAllMocks();
     mockServicioRepo.update.mockResolvedValue({});

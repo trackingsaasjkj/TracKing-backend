@@ -14,8 +14,13 @@ class EnvVars {
   @IsOptional() @IsString() SWAGGER_PASSWORD?: string;
 
   @IsString() @IsNotEmpty() SUPABASE_URL!: string;
-  @IsString() @IsNotEmpty() SUPABASE_SERVICE_ROLE_KEY!: string;
-  @IsString() @IsNotEmpty() SUPABASE_STORAGE_BUCKET!: string;
+  @IsOptional() @IsString() SUPABASE_SERVICE_ROLE_KEY?: string;
+  @IsOptional() @IsString() SUPABASE_STORAGE_BUCKET?: string;
+
+  @IsOptional() @IsString() MAPBOX_ACCESS_TOKEN?: string;
+  @IsOptional() @IsString() MAPBOX_COUNTRY?: string;        // default: 'co'
+  @IsOptional() @IsString() MAPBOX_PROXIMITY_LNG?: string;  // default: -73.122742 (Bucaramanga)
+  @IsOptional() @IsString() MAPBOX_PROXIMITY_LAT?: string;  // default: 7.119349  (Bucaramanga)
 }
 
 export function validate(config: Record<string, unknown>) {

@@ -169,6 +169,37 @@ describe('LoginUseCase', () => {
     expect(mockRepo.resetFailedAttempts).toHaveBeenCalledWith(user.id);
   });
 
+  // 2.1 Rol AUX → JWT payload incluye permissions[] con los permisos del usuario
+  // Validates: Requirements 2.1
+  it('rol AUX → generateAccessToken recibe payload con permissions[]', async () => {
+    const user = makeUser({
+      role: 'AUX',
+      permissions: ['VER_SERVICIOS', 'CREAR_SERVICIOS'],
+    });
+    mockRepo.findUserByEmailWithCompany.mockResolvedValue(user);
+    mockTokenService.comparePassword.mockResolvedValue(true);
+
+    await useCase.execute({ email: user.email, password: 'correct-password' });
+
+    const callArg = mockTokenService.generateAccessToken.mock.calls[0][0];
+    expect(callArg).toHaveProperty('permissions');
+    expect(callArg.permissions).toEqual(['VER_SERVICIOS', 'CREAR_SERVICIOS']);
+  });
+
+  // 2.2 Rol ADMIN → JWT payload NO incluye permissions (o array vacío)
+  // Validates: Requirements 2.2
+  it('rol ADMIN → generateAccessToken recibe payload sin permissions', async () => {
+    const user = makeUser({ role: 'ADMIN' });
+    mockRepo.findUserByEmailWithCompany.mockResolvedValue(user);
+    mockTokenService.comparePassword.mockResolvedValue(true);
+
+    await useCase.execute({ email: user.email, password: 'correct-password' });
+
+    const callArg = mockTokenService.generateAccessToken.mock.calls[0][0];
+    // ADMIN should not have permissions in the payload
+    expect(callArg.permissions).toBeUndefined();
+  });
+
   // 4.13 PBT: fc.string() como password → siempre UnauthorizedException cuando no coincide con hash
   // Validates: Requirements 1.4
   it('P-1: cualquier contraseña incorrecta → siempre UnauthorizedException', async () => {

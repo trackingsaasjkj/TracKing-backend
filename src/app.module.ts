@@ -5,6 +5,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { validate } from './config/env';
 import { PrismaModule } from './infrastructure/database/prisma.module';
 import { StorageModule } from './infrastructure/storage/storage.module';
+import { CacheModule } from './infrastructure/cache/cache.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { CompanyModule } from './modules/company/company.module';
@@ -22,6 +23,7 @@ import { SuperAdminModule } from './modules/super-admin/super-admin.module';
 import { PlanesModule } from './modules/planes/planes.module';
 import { SuscripcionesModule } from './modules/suscripciones/suscripciones.module';
 import { BffWebModule } from './modules/bff-web/bff-web.module';
+import { GeocodingModule } from './modules/geocoding/geocoding.module';
 
 @Module({
   imports: [
@@ -33,6 +35,7 @@ import { BffWebModule } from './modules/bff-web/bff-web.module';
     ]),
     PrismaModule,
     StorageModule,
+    CacheModule,
     AuthModule,
     UsersModule,
     CompanyModule,
@@ -49,6 +52,7 @@ import { BffWebModule } from './modules/bff-web/bff-web.module';
     PlanesModule,
     SuscripcionesModule,
     BffWebModule,
+    GeocodingModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

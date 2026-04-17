@@ -7,7 +7,10 @@ import { UpdateCustomerDto } from '../dto/update-customer.dto';
 export class CustomersUseCases {
   constructor(private readonly repo: CustomersRepository) {}
 
-  findAll(company_id: string) {
+  findAll(company_id: string, pagination?: { page: number; limit: number }) {
+    if (pagination) {
+      return this.repo.findAllPaginated(company_id, pagination);
+    }
     return this.repo.findAll(company_id);
   }
 
@@ -30,5 +33,11 @@ export class CustomersUseCases {
   async deactivate(id: string, company_id: string) {
     await this.findById(id, company_id);
     await this.repo.deactivate(id, company_id);
+  }
+
+  async toggleFavorite(id: string, company_id: string) {
+    const customer = await this.findById(id, company_id);
+    await this.repo.toggleFavorite(id, company_id, !customer!.is_favorite);
+    return this.repo.findById(id, company_id);
   }
 }

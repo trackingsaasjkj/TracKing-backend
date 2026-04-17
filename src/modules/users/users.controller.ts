@@ -61,7 +61,6 @@ export class UsersController {
 
   @Put(':uuid')
   @Roles(Role.ADMIN)
-  @RequirePermissions(Permission.USERS_UPDATE)
   @ApiOperation({ summary: 'Actualizar usuario (ADMIN)' })
   @ApiParam({ name: 'uuid', description: 'UUID del usuario' })
   @ApiResponse({ status: 200, description: 'Usuario actualizado' })
@@ -71,7 +70,6 @@ export class UsersController {
 
   @Delete(':uuid')
   @Roles(Role.ADMIN)
-  @RequirePermissions(Permission.USERS_DELETE)
   @ApiOperation({ summary: 'Eliminar usuario (ADMIN)' })
   @ApiParam({ name: 'uuid', description: 'UUID del usuario' })
   @ApiResponse({ status: 200, description: 'Usuario eliminado' })

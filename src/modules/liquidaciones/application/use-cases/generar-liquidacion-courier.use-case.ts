@@ -13,8 +13,9 @@ export class GenerarLiquidacionCourierUseCase {
   ) {}
 
   async execute(dto: GenerarLiquidacionCourierDto, company_id: string) {
-    const startDate = new Date(dto.start_date);
-    const endDate = new Date(dto.end_date);
+    // Build full-day UTC range from the date string (YYYY-MM-DD)
+    const startDate = new Date(`${dto.start_date}T00:00:00.000Z`);
+    const endDate = new Date(`${dto.end_date}T23:59:59.999Z`);
 
     // Spec: rangoFechasObligatorio
     validarRangoFechas(startDate, endDate);
@@ -47,11 +48,15 @@ export class GenerarLiquidacionCourierUseCase {
       end_date: endDate,
       total_services: totalServices,
       total_earned: totalEarned,
+      status: 'SETTLED',
     });
 
     // Marcar servicios como liquidados (courier)
     await this.liquidacionRepo.markCourierServicesAsSettled(servicios.map(s => s.id), company_id);
 
-    return settlement;
+    return {
+      ...settlement,
+      total_earned: Number(settlement.total_earned),
+    };
   }
 }

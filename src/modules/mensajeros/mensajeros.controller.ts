@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CrearMensajeroUseCase } from './application/use-cases/crear-mensajero.use-case';
 import { ConsultarMensajerosUseCase } from './application/use-cases/consultar-mensajeros.use-case';
 import { UpdateMensajeroUseCase } from './application/use-cases/update-mensajero.use-case';
@@ -35,9 +35,19 @@ export class MensajerosController {
   @Get()
   @Roles(Role.ADMIN, Role.AUX)
   @ApiOperation({ summary: 'Listar todos los mensajeros' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Número de página (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Elementos por página (default: 20, max: 100)' })
   @ApiResponse({ status: 200, description: 'Lista de mensajeros' })
-  async findAll(@CurrentUser() user: JwtPayload) {
-    return ok(await this.consultarUseCase.findAll(user.company_id!));
+  async findAll(
+    @CurrentUser() user: JwtPayload,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const hasPagination = page !== undefined || limit !== undefined;
+    const pagination = hasPagination
+      ? { page: page ? parseInt(page, 10) : 1, limit: limit ? parseInt(limit, 10) : 20 }
+      : undefined;
+    return ok(await this.consultarUseCase.findAll(user.company_id!, pagination));
   }
 
   @Get('activos')

@@ -7,6 +7,7 @@ import { validarTransicion } from '../../domain/rules/validar-transicion.rule';
 import { validarEntrega } from '../../domain/rules/validar-entrega.rule';
 import { ServicioEstado } from '../../domain/state-machine/servicio.machine';
 import { CambiarEstadoDto } from '../dto/cambiar-estado.dto';
+import { CacheService } from '../../../../infrastructure/cache/cache.service';
 
 @Injectable()
 export class CambiarEstadoUseCase {
@@ -15,6 +16,7 @@ export class CambiarEstadoUseCase {
     private readonly historialRepo: HistorialRepository,
     private readonly evidenceRepo: EvidenceRepository,
     private readonly courierRepo: CourierRepository,
+    private readonly cache: CacheService,
   ) {}
 
   async execute(service_id: string, dto: CambiarEstadoDto, company_id: string, user_id: string) {
@@ -32,6 +34,10 @@ export class CambiarEstadoUseCase {
 
     const updateData: any = { status: nuevoEstado };
     if (nuevoEstado === 'DELIVERED') updateData.delivery_date = new Date();
+    // Auto-settle customer if service has settle_immediately = true
+    if (nuevoEstado === 'DELIVERED' && (servicio as any).settle_immediately) {
+      updateData.is_settled_customer = true;
+    }
 
     await this.servicioRepo.update(service_id, company_id, updateData);
 
@@ -47,6 +53,9 @@ export class CambiarEstadoUseCase {
       new_status: nuevoEstado as any,
       user_id,
     });
+
+    this.cache.deleteByPrefix(`bff:dashboard:${company_id}`);
+    this.cache.deleteByPrefix(`bff:active-orders:${company_id}`);
 
     return this.servicioRepo.findById(service_id, company_id);
   }
