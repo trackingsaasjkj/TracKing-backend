@@ -76,10 +76,15 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Tokens renovados' })
   @ApiResponse({ status: 401, description: 'Refresh token inválido o ya utilizado' })
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const token = req.cookies?.refresh_token;
+    // Accept refresh token from cookie (same-origin) or Authorization header (cross-origin)
+    const token =
+      req.cookies?.refresh_token ||
+      (req.headers.authorization?.startsWith('Bearer ')
+        ? req.headers.authorization.slice(7)
+        : undefined)
     const result = await this.refreshTokenUseCase.execute(token);
     res.cookie('access_token', result.accessToken, COOKIE_OPTIONS);
     res.cookie('refresh_token', result.refreshToken, { ...COOKIE_OPTIONS, maxAge: 7 * 24 * 60 * 60 * 1000 });
-    return ok(null);
+    return ok({ accessToken: result.accessToken, refreshToken: result.refreshToken });
   }
 }
