@@ -38,6 +38,10 @@ function makeReporteServicios() {
   return { execute: jest.fn() } as any;
 }
 
+function makeReporteFavoritos() {
+  return { execute: jest.fn().mockResolvedValue([]) } as any;
+}
+
 function makeConsultarLiquidaciones() {
   return { getEarnings: jest.fn() } as any;
 }
@@ -154,19 +158,21 @@ describe('BffReportsUseCase — Property 3: reports result shape', () => {
   let useCase: BffReportsUseCase;
   let reporteServicios: ReturnType<typeof makeReporteServicios>;
   let reporteFinanciero: ReturnType<typeof makeReporteFinanciero>;
+  let reporteFavoritos: ReturnType<typeof makeReporteFavoritos>;
 
   beforeEach(() => {
     reporteServicios = makeReporteServicios();
     reporteFinanciero = makeReporteFinanciero();
+    reporteFavoritos = makeReporteFavoritos();
 
     reporteServicios.execute.mockResolvedValue(stubServicesReport);
     reporteFinanciero.execute.mockResolvedValue(stubFinancial);
 
-    useCase = new BffReportsUseCase(reporteServicios, reporteFinanciero);
+    useCase = new BffReportsUseCase(reporteServicios, reporteFinanciero, reporteFavoritos);
   });
 
   // Validates: Requirements 5.1, 5.2
-  it('retorna services y financial para cualquier par (from, to) válido con from < to', async () => {
+  it('retorna services, financial y customers para cualquier par (from, to) válido con from < to', async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.date({ min: new Date('2020-01-01'), max: new Date('2029-12-30'), noInvalidDate: true }),
@@ -180,6 +186,7 @@ describe('BffReportsUseCase — Property 3: reports result shape', () => {
 
           expect(result).toHaveProperty('services');
           expect(result).toHaveProperty('financial');
+          expect(result).toHaveProperty('customers');
         },
       ),
       { numRuns: 100 },
@@ -246,15 +253,17 @@ describe('BffReportsUseCase — Property 5: missing from/to throws 400', () => {
   let useCase: BffReportsUseCase;
   let reporteServicios: ReturnType<typeof makeReporteServicios>;
   let reporteFinanciero: ReturnType<typeof makeReporteFinanciero>;
+  let reporteFavoritos: ReturnType<typeof makeReporteFavoritos>;
 
   beforeEach(() => {
     reporteServicios = makeReporteServicios();
     reporteFinanciero = makeReporteFinanciero();
+    reporteFavoritos = makeReporteFavoritos();
 
     reporteServicios.execute.mockResolvedValue(stubServicesReport);
     reporteFinanciero.execute.mockResolvedValue(stubFinancial);
 
-    useCase = new BffReportsUseCase(reporteServicios, reporteFinanciero);
+    useCase = new BffReportsUseCase(reporteServicios, reporteFinanciero, reporteFavoritos);
   });
 
   // Validates: Requirements 9.3, 9.4
@@ -281,15 +290,17 @@ describe('BffReportsUseCase — Property 6: from >= to throws 400', () => {
   let useCase: BffReportsUseCase;
   let reporteServicios: ReturnType<typeof makeReporteServicios>;
   let reporteFinanciero: ReturnType<typeof makeReporteFinanciero>;
+  let reporteFavoritos: ReturnType<typeof makeReporteFavoritos>;
 
   beforeEach(() => {
     reporteServicios = makeReporteServicios();
     reporteFinanciero = makeReporteFinanciero();
+    reporteFavoritos = makeReporteFavoritos();
 
     reporteServicios.execute.mockResolvedValue(stubServicesReport);
     reporteFinanciero.execute.mockResolvedValue(stubFinancial);
 
-    useCase = new BffReportsUseCase(reporteServicios, reporteFinanciero);
+    useCase = new BffReportsUseCase(reporteServicios, reporteFinanciero, reporteFavoritos);
   });
 
   // Validates: Requirements 9.3, 9.4
