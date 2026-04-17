@@ -13,10 +13,12 @@ import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { JwtPayload } from '../../core/types/jwt-payload.type';
 import { ok } from '../../core/utils/response.util';
 
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
+  secure: IS_PRODUCTION,
+  sameSite: (IS_PRODUCTION ? 'none' : 'strict') as 'none' | 'strict',
   maxAge: 15 * 60 * 1000,
 };
 

@@ -20,7 +20,11 @@ export interface LocationPayload {
 @WebSocketGateway({
   namespace: '/tracking',
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:3001'],
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:3001',
+      'https://tracking-xi-seven.vercel.app',
+    ],
     credentials: true,
   },
 })
