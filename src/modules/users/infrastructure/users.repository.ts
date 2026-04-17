@@ -3,6 +3,16 @@ import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { Role } from '../../../core/constants/roles.enum';
 import { UserStatus } from '@prisma/client';
 
+const userSelect = {
+  id: true,
+  name: true,
+  email: true,
+  role: true,
+  status: true,
+  created_at: true,
+  permissions: true,
+} as const;
+
 @Injectable()
 export class UsersRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -10,21 +20,21 @@ export class UsersRepository {
   findAll(company_id: string) {
     return this.prisma.user.findMany({
       where: { company_id },
-      select: { id: true, name: true, email: true, role: true, status: true, created_at: true, permissions: true },
+      select: userSelect,
     });
   }
 
   findById(id: string, company_id: string) {
     return this.prisma.user.findFirst({
       where: { id, company_id },
-      select: { id: true, name: true, email: true, role: true, status: true, created_at: true, permissions: true },
+      select: userSelect,
     });
   }
 
   findByEmail(email: string, company_id: string) {
     return this.prisma.user.findFirst({
       where: { email, company_id },
-      select: { id: true, name: true, email: true, role: true, status: true, created_at: true, permissions: true },
+      select: userSelect,
     });
   }
 
@@ -38,7 +48,7 @@ export class UsersRepository {
   }) {
     return this.prisma.user.create({
       data,
-      select: { id: true, name: true, email: true, role: true, status: true, created_at: true, permissions: true },
+      select: userSelect,
     });
   }
 
@@ -46,7 +56,7 @@ export class UsersRepository {
     return this.prisma.user.update({
       where: { id },
       data,
-      select: { id: true, name: true, email: true, role: true, status: true, created_at: true, permissions: true },
+      select: userSelect,
     });
   }
 

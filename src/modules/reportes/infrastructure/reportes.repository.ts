@@ -275,7 +275,6 @@ export class ReportesRepository {
         by: ['customer_id'],
         where: {
           company_id,
-          customer: { is_favorite: true },
           ...customerFilter,
           ...dateFilter,
         },
@@ -288,7 +287,6 @@ export class ReportesRepository {
         by: ['customer_id'],
         where: {
           company_id,
-          customer: { is_favorite: true },
           payment_status: 'PAID',
           ...customerFilter,
           ...dateFilter,
@@ -307,7 +305,6 @@ export class ReportesRepository {
     const customers = await this.prisma.customer.findMany({
       where: {
         company_id,
-        is_favorite: true,
         id: { in: customerIds },
       },
       select: { id: true, name: true },
@@ -317,7 +314,7 @@ export class ReportesRepository {
     const paidMap = new Map(
       paidRows.map((r) => [
         r.customer_id,
-        { count: r._count.id, amount: Number(r._sum.delivery_price ?? 0) },
+        { count: r._count?.id ?? 0, amount: Number(r._sum?.delivery_price ?? 0) },
       ]),
     );
 
@@ -327,8 +324,8 @@ export class ReportesRepository {
     return totalRows
       .filter((r): r is typeof r & { customer_id: string } => r.customer_id !== null)
       .map((r) => {
-        const total_services = r._count.id;
-        const total_amount = Number(r._sum.delivery_price ?? 0);
+        const total_services = r._count?.id ?? 0;
+        const total_amount = Number(r._sum?.delivery_price ?? 0);
 
         const paid = paidMap.get(r.customer_id);
         const paid_services = paid?.count ?? 0;

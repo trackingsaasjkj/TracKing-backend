@@ -75,6 +75,6 @@ export class CustomersRepository {
   }
 
   toggleFavorite(id: string, company_id: string, is_favorite: boolean) {
-    return this.prisma.customer.updateMany({ where: { id, company_id }, data: { is_favorite } });
+    return this.prisma.customer.update({ where: { id }, data: { is_favorite } });
   }
 }

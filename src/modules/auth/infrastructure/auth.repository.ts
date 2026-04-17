@@ -2,6 +2,20 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { TokenType } from '@prisma/client';
 
+export interface UserWithCompany {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  company_id: string | null;
+  password_hash: string;
+  failed_attempts: number;
+  locked_until: Date | null;
+  permissions: string[];
+  company: { id: string; status: boolean } | null;
+}
+
 @Injectable()
 export class AuthRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -13,7 +27,7 @@ export class AuthRepository {
     return this.prisma.user.findFirst({ where: { email } });
   }
 
-  async findUserByEmailWithCompany(email: string) {
+  async findUserByEmailWithCompany(email: string): Promise<UserWithCompany | null> {
     return this.prisma.user.findFirst({
       where: { email },
       select: {
@@ -31,7 +45,7 @@ export class AuthRepository {
           select: { id: true, status: true },
         },
       },
-    });
+    }) as Promise<UserWithCompany | null>;
   }
 
   async findUserById(id: string, company_id: string | null) {
