@@ -3,7 +3,7 @@ services:
     name: tracking-backend
     env: node
     plan: standard
-    buildCommand: npm install && npm run prisma:generate && npm run build
+    buildCommand: rm -rf node_modules/.prisma && npm install && npm run prisma:generate && npm run build
     startCommand: npm run prisma:migrate && npm run start:prod
     envVars:
       - key: NODE_ENV
