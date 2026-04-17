@@ -2,10 +2,9 @@ import { ReporteServiciosUseCase } from '../../../modules/reportes/application/u
 
 const mockRepo = {
   countByStatus: jest.fn(),
-  countByCourier: jest.fn(),
+  getCourierStats: jest.fn(),
   avgDeliveryMinutes: jest.fn(),
   cancellationRate: jest.fn(),
-  findCourierNames: jest.fn(),
 };
 
 describe('ReporteServiciosUseCase', () => {
@@ -19,14 +18,19 @@ describe('ReporteServiciosUseCase', () => {
       { status: 'DELIVERED', _count: { id: 10 } },
       { status: 'CANCELLED', _count: { id: 2 } },
     ]);
-    mockRepo.countByCourier.mockResolvedValue([
-      { courier_id: 'c-1', _count: { id: 8 } },
+    mockRepo.getCourierStats.mockResolvedValue([
+      {
+        courier_id: 'c-1',
+        courier_name: 'Juan',
+        total_services: 8,
+        settled_services: 5,
+        unsettled_services: 3,
+        total_amount: 400,
+        company_earnings: 100,
+      },
     ]);
     mockRepo.avgDeliveryMinutes.mockResolvedValue(45);
     mockRepo.cancellationRate.mockResolvedValue({ total: 12, cancelled: 2, rate: 16.67 });
-    mockRepo.findCourierNames.mockResolvedValue([
-      { id: 'c-1', user: { name: 'Juan' } },
-    ]);
   });
 
   it('returns all metrics scoped to company_id', async () => {
@@ -44,14 +48,13 @@ describe('ReporteServiciosUseCase', () => {
   });
 
   it('handles no couriers gracefully', async () => {
-    mockRepo.countByCourier.mockResolvedValue([]);
+    mockRepo.getCourierStats.mockResolvedValue([]);
     const result = await useCase.execute({}, 'co-1');
-    expect(mockRepo.findCourierNames).not.toHaveBeenCalled();
     expect(result.by_courier).toEqual([]);
   });
 
   it('passes courier_id filter to repo', async () => {
     await useCase.execute({ courier_id: 'c-1' }, 'co-1');
-    expect(mockRepo.countByCourier).toHaveBeenCalledWith('co-1', undefined, undefined, 'c-1');
+    expect(mockRepo.getCourierStats).toHaveBeenCalledWith('co-1', undefined, undefined, 'c-1');
   });
 });
