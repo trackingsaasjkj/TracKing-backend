@@ -71,29 +71,47 @@ export class ServicioRepository {
     return mapService(s);
   }
 
+  async existsInCompany(id: string, company_id: string): Promise<boolean> {
+    const result = await this.prisma.service.findFirst({
+      where: { id, company_id },
+      select: { id: true },
+    });
+    return !!result;
+  }
+
   async findById(id: string, company_id: string) {
     const s = await this.prisma.service.findFirst({
       where: { id, company_id },
-      include: { customer: true, courier: { include: { user: true } }, statusHistory: { orderBy: { change_date: 'desc' } } },
+      select: {
+        ...SERVICE_TABLE_SELECT,
+        statusHistory: { select: { id: true, previous_status: true, new_status: true, change_date: true }, orderBy: { change_date: 'desc' } },
+      },
     });
-    return mapService(s);
+    return mapService(s as any);
   }
 
   async findAllByCompany(
     company_id: string,
-    filters?: { status?: ServiceStatus; courier_id?: string },
+    filters?: { status?: ServiceStatus | ServiceStatus[]; courier_id?: string },
     pagination?: { limit?: number; offset?: number },
   ) {
     const take = pagination?.limit ?? 50;
     const skip = pagination?.offset ?? 0;
+
+    const statusFilter = filters?.status
+      ? Array.isArray(filters.status)
+        ? { status: { in: filters.status } }
+        : { status: filters.status }
+      : {};
+
     const rows = await this.prisma.service.findMany({
-      where: { company_id, ...filters },
-      include: { customer: true, courier: { include: { user: true } } },
+      where: { company_id, ...statusFilter, ...(filters?.courier_id ? { courier_id: filters.courier_id } : {}) },
+      select: SERVICE_TABLE_SELECT,
       orderBy: { created_at: 'desc' },
       take,
       skip,
     });
-    return rows.map(mapService);
+    return rows.map((r) => mapService(r as any));
   }
 
   async findAllByCompanyPaginated(

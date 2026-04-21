@@ -1,6 +1,6 @@
-import { liquidacionSpec } from '../liquidacion-spec.data';
+import { DecimalUtil } from '../../../../core/utils/decimal.util';
 
-export type TipoRegla = (typeof liquidacionSpec.reglas.tiposRegla)[number];
+export type TipoRegla = 'PERCENTAGE' | 'FIXED';
 
 export interface ReglaLiquidacion {
   type: TipoRegla;
@@ -21,14 +21,21 @@ export function calcularGananciaServicio(
   regla: ReglaLiquidacion,
 ): number {
   if (regla.type === 'PERCENTAGE') {
-    return Number(servicio.delivery_price) * (Number(regla.value) / 100);
+    return DecimalUtil.toNumber(
+      DecimalUtil.percentage(servicio.delivery_price, regla.value),
+    );
   }
-  return Number(regla.value); // FIXED
+  return DecimalUtil.toNumber(regla.value);
 }
 
 export function calcularTotalLiquidacion(
   servicios: ServicioParaLiquidar[],
   regla: ReglaLiquidacion,
 ): number {
-  return servicios.reduce((sum, s) => sum + calcularGananciaServicio(s, regla), 0);
+  const total = servicios.reduce((acc, s) => {
+    const ganancia = calcularGananciaServicio(s, regla);
+    return DecimalUtil.add(acc, ganancia);
+  }, DecimalUtil.fromNumber(0));
+
+  return DecimalUtil.toNumber(total);
 }

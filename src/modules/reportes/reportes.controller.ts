@@ -52,6 +52,9 @@ export class ReportesController {
   @ApiResponse({ status: 200, description: 'Servicios agrupados por mensajero' })
   async couriers(@Query() query: ReporteServiciosQueryDto, @CurrentUser() user: JwtPayload) {
     const result = await this.serviciosReport.execute(query, user.company_id!);
+    if (!result) {
+      return ok({ period: null, by_courier: [] });
+    }
     return ok({ period: result.period, by_courier: result.by_courier });
   }
 

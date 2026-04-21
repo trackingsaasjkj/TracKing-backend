@@ -875,17 +875,17 @@ describe('ReporteServiciosUseCase — Property Tests', () => {
             cancellationRate: jest.fn().mockResolvedValue({ total: 0, cancelled: 0, rate: 0 }),
           };
 
-          const useCase = new ReporteServiciosUseCase(mockRepo as unknown as ReportesRepository);
+          const useCase = new ReporteServiciosUseCase(mockRepo as unknown as ReportesRepository, { get: () => null, set: () => {} } as any);
           const result = await useCase.execute(
             { courier_id: targetCourierId },
             'company-test',
           );
 
           // by_courier must contain exactly one element
-          expect(result.by_courier).toHaveLength(1);
+          expect(result!.by_courier).toHaveLength(1);
 
           // That element must have courier_id = targetCourierId
-          expect(result.by_courier[0].courier_id).toBe(targetCourierId);
+          expect(result!.by_courier[0].courier_id).toBe(targetCourierId);
 
           // Verify getCourierStats was called with the correct courier_id
           expect(mockRepo.getCourierStats).toHaveBeenCalledWith(
@@ -931,13 +931,13 @@ describe('ReporteServiciosUseCase — Property Tests', () => {
             cancellationRate: jest.fn().mockResolvedValue({ total: 0, cancelled: 0, rate: 0 }),
           };
 
-          const useCase = new ReporteServiciosUseCase(mockRepo as unknown as ReportesRepository);
+          const useCase = new ReporteServiciosUseCase(mockRepo as unknown as ReportesRepository, { get: () => null, set: () => {} } as any);
           const result = await useCase.execute({}, 'company-test');
 
-          expect(result.by_courier).toHaveLength(uniqueStats.length);
+          expect(result!.by_courier).toHaveLength(uniqueStats.length);
 
-          for (let i = 0; i < result.by_courier.length; i++) {
-            const row = result.by_courier[i];
+          for (let i = 0; i < result!.by_courier.length; i++) {
+            const row = result!.by_courier[i];
             const expected = uniqueStats[i];
 
             // All 7 fields must be present
