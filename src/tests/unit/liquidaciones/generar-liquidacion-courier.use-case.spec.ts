@@ -14,6 +14,7 @@ const mockLiquidacionRepo = {
   markCourierServicesAsSettled: jest.fn().mockResolvedValue(undefined),
 };
 const mockMensajeroRepo = { findById: jest.fn() };
+const mockCache = { get: jest.fn().mockReturnValue(null), set: jest.fn(), deleteByPrefix: jest.fn() };
 
 const dto = { courier_id: 'c-1', start_date: '2025-01-01', end_date: '2025-01-31' };
 
@@ -21,7 +22,7 @@ describe('GenerarLiquidacionCourierUseCase', () => {
   let useCase: GenerarLiquidacionCourierUseCase;
 
   beforeEach(() => {
-    useCase = new GenerarLiquidacionCourierUseCase(mockLiquidacionRepo as any, mockMensajeroRepo as any);
+    useCase = new GenerarLiquidacionCourierUseCase(mockLiquidacionRepo as any, mockMensajeroRepo as any, mockCache as any);
     jest.clearAllMocks();
     mockLiquidacionRepo.createCourierSettlement.mockResolvedValue({ id: 'liq-1' });
   });

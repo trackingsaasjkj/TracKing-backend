@@ -128,6 +128,12 @@ model Service {
 
   @@index([company_id, status])
   @@index([company_id, courier_id])
+  @@index([company_id, status, delivery_date])
+  @@index([company_id, delivery_date])
+  @@index([company_id, is_settled_courier])
+  @@index([company_id, is_settled_customer])
+  @@index([company_id, payment_status])
+  @@index([company_id, created_at(sort: Desc)])
   @@map("service")
 }
 
@@ -201,6 +207,7 @@ model CourierSettlement {
   courier         Courier          @relation(fields: [courier_id], references: [id])
 
   @@index([company_id, courier_id])
+  @@index([company_id, generation_date(sort: Desc)])
   @@map("courier_settlement")
 }
 

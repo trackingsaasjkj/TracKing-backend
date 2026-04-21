@@ -5,9 +5,10 @@ import { ReporteFinancieroUseCase } from './application/use-cases/reporte-financ
 import { ReporteFavoritosUseCase } from './application/use-cases/reporte-favoritos.use-case';
 import { ReportesRepository } from './infrastructure/reportes.repository';
 import { PrismaModule } from '../../infrastructure/database/prisma.module';
+import { CacheModule } from '../../infrastructure/cache/cache.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, CacheModule],
   controllers: [ReportesController],
   providers: [ReporteServiciosUseCase, ReporteFinancieroUseCase, ReporteFavoritosUseCase, ReportesRepository],
   exports: [ReporteServiciosUseCase, ReporteFinancieroUseCase, ReporteFavoritosUseCase],

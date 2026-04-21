@@ -7,14 +7,17 @@ const mockRepo = {
   settlementSummary: jest.fn(),
 };
 
+const mockCache = { get: jest.fn().mockReturnValue(null), set: jest.fn() };
+
 const dto = { from: '2025-01-01', to: '2025-01-31' };
 
 describe('ReporteFinancieroUseCase', () => {
   let useCase: ReporteFinancieroUseCase;
 
   beforeEach(() => {
-    useCase = new ReporteFinancieroUseCase(mockRepo as any);
+    useCase = new ReporteFinancieroUseCase(mockRepo as any, mockCache as any);
     jest.clearAllMocks();
+    mockCache.get.mockReturnValue(null);
 
     mockRepo.totalRevenue.mockResolvedValue({
       _count: { id: 5 },
@@ -33,11 +36,11 @@ describe('ReporteFinancieroUseCase', () => {
   it('returns financial metrics for valid range', async () => {
     const result = await useCase.execute(dto, 'co-1');
 
-    expect(result.revenue.total_services).toBe(5);
-    expect(result.revenue.total_price).toBe(75000);
-    expect(result.by_payment_method).toHaveLength(2);
-    expect(result.settlements.settled.total_earned).toBe(10000);
-    expect(result.settlements.unsettled.total_earned).toBe(5000);
+    expect(result!.revenue.total_services).toBe(5);
+    expect(result!.revenue.total_price).toBe(75000);
+    expect(result!.by_payment_method).toHaveLength(2);
+    expect(result!.settlements.settled.total_earned).toBe(10000);
+    expect(result!.settlements.unsettled.total_earned).toBe(5000);
   });
 
   it('throws AppException when from is missing', async () => {
@@ -62,7 +65,7 @@ describe('ReporteFinancieroUseCase', () => {
   it('defaults missing settlement statuses to 0', async () => {
     mockRepo.settlementSummary.mockResolvedValue([]);
     const result = await useCase.execute(dto, 'co-1');
-    expect(result.settlements.settled.count).toBe(0);
-    expect(result.settlements.unsettled.count).toBe(0);
+    expect(result!.settlements.settled.count).toBe(0);
+    expect(result!.settlements.unsettled.count).toBe(0);
   });
 });

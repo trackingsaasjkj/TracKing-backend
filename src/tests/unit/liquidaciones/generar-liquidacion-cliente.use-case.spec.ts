@@ -15,6 +15,7 @@ const mockLiquidacionRepo = {
   createCustomerSettlement: jest.fn(),
   markServicesAsPaid: jest.fn().mockResolvedValue(undefined),
 };
+const mockCache = { get: jest.fn().mockReturnValue(null), set: jest.fn(), deleteByPrefix: jest.fn() };
 
 const dto = { service_ids: ['s-0', 's-1', 's-2'] };
 
@@ -22,7 +23,7 @@ describe('GenerarLiquidacionClienteUseCase', () => {
   let useCase: GenerarLiquidacionClienteUseCase;
 
   beforeEach(() => {
-    useCase = new GenerarLiquidacionClienteUseCase(mockLiquidacionRepo as any);
+    useCase = new GenerarLiquidacionClienteUseCase(mockLiquidacionRepo as any, mockCache as any);
     jest.clearAllMocks();
     mockLiquidacionRepo.createCustomerSettlement.mockResolvedValue({
       id: 'cs-1',

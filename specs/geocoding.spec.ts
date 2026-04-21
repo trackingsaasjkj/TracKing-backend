@@ -17,7 +17,8 @@ import { CacheService } from '../src/infrastructure/cache/cache.service';
 // ─── Factories ────────────────────────────────────────────────────────────────
 
 function makeCache(): CacheService {
-  return new CacheService();
+  const mockConfig = { get: jest.fn().mockReturnValue('') } as any;
+  return new CacheService(mockConfig);
 }
 
 function makeConfig(token: string | undefined = 'test-token') {

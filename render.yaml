@@ -3,8 +3,88 @@ services:
     name: tracking-backend
     env: node
     plan: standard
+    region: oregon
+    
     buildCommand: npm install && npx prisma generate && npm run build
     startCommand: npx prisma migrate deploy && npm run start:prod
+    
+    healthCheckPath: /api/health
+    healthCheckInterval: 30
+    autoDeploy: true
+    
     envVars:
+      # Base de datos (Supabase)
+      - key: DATABASE_URL
+        sync: false
+      
+      - key: DIRECT_URL
+        sync: false
+      
+      # Redis (Render)
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: tracking-redis
+          property: connectionString
+      
+      # JWT
+      - key: JWT_SECRET
+        sync: false
+      
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      
+      - key: JWT_EXPIRES_IN
+        value: "15m"
+      
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: "7d"
+      
+      # App
+      - key: PORT
+        value: "3000"
+      
       - key: NODE_ENV
-        value: production
+        value: "production"
+      
+      # Swagger
+      - key: SWAGGER_ENABLED
+        value: "true"
+      
+      - key: SWAGGER_USER
+        sync: false
+      
+      - key: SWAGGER_PASSWORD
+        sync: false
+      
+      # Supabase
+      - key: SUPABASE_URL
+        sync: false
+      
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      
+      - key: SUPABASE_STORAGE_BUCKET
+        value: "Evidencias"
+      
+      # Mapbox (Geocoding)
+      - key: MAPBOX_ACCESS_TOKEN
+        sync: false
+      
+      - key: MAPBOX_COUNTRY
+        value: "co"
+      
+      - key: MAPBOX_PROXIMITY_LNG
+        value: "-73.122742"
+      
+      - key: MAPBOX_PROXIMITY_LAT
+        value: "7.119349"
+
+  - type: redis
+    name: tracking-redis
+    plan: standard
+    region: oregon
+    maxmemoryPolicy: allkeys-lru

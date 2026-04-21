@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { LiquidacionRepository } from '../../infrastructure/liquidacion.repository';
 import { MensajeroRepository } from '../../../mensajeros/infrastructure/mensajero.repository';
+import { CacheService } from '../../../../infrastructure/cache/cache.service';
 import { validarReglaActiva, validarRangoFechas, validarResultadoLiquidacion } from '../../domain/rules/validar-liquidacion.rule';
 import { calcularTotalLiquidacion } from '../../domain/rules/calcular-liquidacion.rule';
 import { GenerarLiquidacionCourierDto } from '../dto/generar-liquidacion-courier.dto';
@@ -10,6 +11,7 @@ export class GenerarLiquidacionCourierUseCase {
   constructor(
     private readonly liquidacionRepo: LiquidacionRepository,
     private readonly mensajeroRepo: MensajeroRepository,
+    private readonly cache: CacheService,
   ) {}
 
   async execute(dto: GenerarLiquidacionCourierDto, company_id: string) {
@@ -53,6 +55,10 @@ export class GenerarLiquidacionCourierUseCase {
 
     // Marcar servicios como liquidados (courier)
     await this.liquidacionRepo.markCourierServicesAsSettled(servicios.map(s => s.id), company_id);
+
+    // Invalidar caché de reportes para esta empresa
+    await this.cache.deleteByPrefix(`reporte:financiero:${company_id}`);
+    this.cache.deleteByPrefix(`reporte:couriers:${company_id}`);
 
     return {
       ...settlement,

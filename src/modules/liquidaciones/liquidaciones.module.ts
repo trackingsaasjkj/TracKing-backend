@@ -7,9 +7,10 @@ import { GestionarReglasUseCase } from './application/use-cases/gestionar-reglas
 import { LiquidacionRepository } from './infrastructure/liquidacion.repository';
 import { MensajerosModule } from '../mensajeros/mensajeros.module';
 import { PrismaModule } from '../../infrastructure/database/prisma.module';
+import { CacheModule } from '../../infrastructure/cache/cache.module';
 
 @Module({
-  imports: [PrismaModule, MensajerosModule],
+  imports: [PrismaModule, MensajerosModule, CacheModule],
   controllers: [LiquidacionesController],
   providers: [
     GenerarLiquidacionCourierUseCase,
