@@ -11,6 +11,7 @@ import { BffActiveOrdersUseCase } from './application/use-cases/bff-active-order
 import { BffReportsUseCase } from './application/use-cases/bff-reports.use-case';
 import { BffSettlementsUseCase } from './application/use-cases/bff-settlements.use-case';
 import { BffLiquidacionesUseCase } from './application/use-cases/bff-liquidaciones.use-case';
+import { BffWeeklyStatsUseCase } from './application/use-cases/bff-weekly-stats.use-case';
 import { BffReportsQueryDto, BffSettlementsQueryDto } from './application/dto/bff-query.dto';
 
 @ApiTags('BFF Web')
@@ -24,6 +25,7 @@ export class BffWebController {
     private readonly bffReports: BffReportsUseCase,
     private readonly bffSettlements: BffSettlementsUseCase,
     private readonly bffLiquidaciones: BffLiquidacionesUseCase,
+    private readonly bffWeeklyStats: BffWeeklyStatsUseCase,
   ) {}
 
   @Get('dashboard')
@@ -80,5 +82,16 @@ export class BffWebController {
   @ApiResponse({ status: 200, description: 'Liquidaciones page data' })
   async getLiquidaciones(@CurrentUser() user: JwtPayload) {
     return ok(await this.bffLiquidaciones.execute(user.company_id!));
+  }
+
+  @Get('weekly-stats')
+  @Roles(Role.ADMIN, Role.AUX)
+  @ApiOperation({
+    summary: 'Estadísticas semanales',
+    description: 'Retorna ingresos diarios de los últimos 7 días para las gráficas del dashboard.',
+  })
+  @ApiResponse({ status: 200, description: 'Weekly stats data' })
+  async getWeeklyStats(@CurrentUser() user: JwtPayload) {
+    return ok(await this.bffWeeklyStats.execute(user.company_id!));
   }
 }

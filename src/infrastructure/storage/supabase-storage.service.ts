@@ -30,14 +30,29 @@ export class SupabaseStorageService {
       .from(this.bucket)
       .upload(path, file.buffer, {
         contentType: file.mimetype,
-        upsert: true, // reemplaza si ya existe (mismo comportamiento que el upsert de DB)
+        upsert: true,
       });
 
     if (error) {
       throw new InternalServerErrorException(`Error al subir evidencia: ${error.message}`);
     }
 
-    const { data } = this.client.storage.from(this.bucket).getPublicUrl(path);
-    return data.publicUrl;
+    // Store the storage path (not the public URL) so we can generate signed URLs later
+    return path;
+  }
+
+  /**
+   * Genera una URL firmada temporal (1 hora) para acceder a un archivo privado.
+   */
+  async getSignedUrl(storagePath: string, expiresInSeconds = 3600): Promise<string> {
+    const { data, error } = await this.client.storage
+      .from(this.bucket)
+      .createSignedUrl(storagePath, expiresInSeconds);
+
+    if (error || !data?.signedUrl) {
+      throw new InternalServerErrorException(`Error al generar URL firmada: ${error?.message}`);
+    }
+
+    return data.signedUrl;
   }
 }
