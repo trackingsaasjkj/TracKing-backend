@@ -19,16 +19,42 @@ export class ConsultarEvidenciaUseCase {
     if (!evidencia) throw new NotFoundException('No hay evidencia registrada para este servicio');
 
     // image_url may be a storage path (new uploads) or a legacy full public URL.
-    // If it looks like a path (no "http"), generate a signed URL.
-    // If it's already a full URL, extract the path after the bucket name.
+    // If it looks like a path (no "http"), use it directly.
+    // If it's already a full URL, extract only the path relative to the bucket root.
     let storagePath = evidencia.image_url;
 
     if (storagePath.startsWith('http')) {
-      // Extract path after "/object/public/<bucket>/" or "/object/sign/<bucket>/"
-      const bucketMarker = `/Evidencias/`;
-      const idx = storagePath.indexOf(bucketMarker);
-      if (idx !== -1) {
-        storagePath = storagePath.slice(idx + bucketMarker.length);
+      // Supabase storage URLs have the format:
+      // .../storage/v1/object/public/<bucket>/<path>
+      // .../storage/v1/object/sign/<bucket>/<path>
+      // We need to extract <path> (everything after the bucket name)
+      const bucketName = this.storageService.getBucketName();
+      const markers = [
+        `/object/public/${bucketName}/`,
+        `/object/sign/${bucketName}/`,
+        `/object/authenticated/${bucketName}/`,
+        `/${bucketName}/`,
+      ];
+      let extracted = false;
+      for (const marker of markers) {
+        const idx = storagePath.indexOf(marker);
+        if (idx !== -1) {
+          storagePath = storagePath.slice(idx + marker.length);
+          // Remove any query params (e.g. ?token=...)
+          const qIdx = storagePath.indexOf('?');
+          if (qIdx !== -1) storagePath = storagePath.slice(0, qIdx);
+          extracted = true;
+          break;
+        }
+      }
+      if (!extracted) {
+        // Fallback: try to extract path after last occurrence of bucket name
+        const bucketIdx = storagePath.lastIndexOf(`/${bucketName}/`);
+        if (bucketIdx !== -1) {
+          storagePath = storagePath.slice(bucketIdx + bucketName.length + 2);
+          const qIdx = storagePath.indexOf('?');
+          if (qIdx !== -1) storagePath = storagePath.slice(0, qIdx);
+        }
       }
     }
 

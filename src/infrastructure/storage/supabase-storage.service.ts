@@ -42,6 +42,13 @@ export class SupabaseStorageService {
   }
 
   /**
+   * Returns the configured bucket name.
+   */
+  getBucketName(): string {
+    return this.bucket;
+  }
+
+  /**
    * Genera una URL firmada temporal (1 hora) para acceder a un archivo privado.
    */
   async getSignedUrl(storagePath: string, expiresInSeconds = 3600): Promise<string> {

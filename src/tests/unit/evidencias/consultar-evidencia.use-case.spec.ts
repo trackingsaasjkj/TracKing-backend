@@ -6,7 +6,7 @@ const makeEvidence = () => ({ id: 'ev-1', service_id: 'svc-1', image_url: 'https
 
 const mockEvidenciaRepo = { findByServiceId: jest.fn() };
 const mockServicioRepo = { findById: jest.fn() };
-const mockStorageService = { getSignedUrl: jest.fn().mockResolvedValue('https://signed.example.com/photo.jpg') };
+const mockStorageService = { getSignedUrl: jest.fn().mockResolvedValue('https://signed.example.com/photo.jpg'), getBucketName: jest.fn().mockReturnValue('Evidencias') };
 
 describe('ConsultarEvidenciaUseCase', () => {
   let useCase: ConsultarEvidenciaUseCase;
