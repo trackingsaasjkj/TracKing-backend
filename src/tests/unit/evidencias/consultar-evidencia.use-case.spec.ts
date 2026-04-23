@@ -6,13 +6,15 @@ const makeEvidence = () => ({ id: 'ev-1', service_id: 'svc-1', image_url: 'https
 
 const mockEvidenciaRepo = { findByServiceId: jest.fn() };
 const mockServicioRepo = { findById: jest.fn() };
+const mockStorageService = { getSignedUrl: jest.fn().mockResolvedValue('https://signed.example.com/photo.jpg') };
 
 describe('ConsultarEvidenciaUseCase', () => {
   let useCase: ConsultarEvidenciaUseCase;
 
   beforeEach(() => {
-    useCase = new ConsultarEvidenciaUseCase(mockEvidenciaRepo as any, mockServicioRepo as any);
+    useCase = new ConsultarEvidenciaUseCase(mockEvidenciaRepo as any, mockServicioRepo as any, mockStorageService as any);
     jest.clearAllMocks();
+    mockStorageService.getSignedUrl.mockResolvedValue('https://signed.example.com/photo.jpg');
   });
 
   it('returns evidence when it exists', async () => {
@@ -20,7 +22,7 @@ describe('ConsultarEvidenciaUseCase', () => {
     mockEvidenciaRepo.findByServiceId.mockResolvedValue(makeEvidence());
 
     const result = await useCase.execute('svc-1', 'co-1');
-    expect(result.image_url).toBe('https://cdn.example.com/photo.jpg');
+    expect(result.image_url).toBe('https://signed.example.com/photo.jpg');
   });
 
   it('throws NotFoundException when service not found', async () => {

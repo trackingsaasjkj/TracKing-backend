@@ -124,6 +124,7 @@ describe('ConsultarEvidenciaUseCase', () => {
   let useCase: ConsultarEvidenciaUseCase;
   let evidenciaRepo: { findByServiceId: jest.Mock };
   let servicioRepo: { findById: jest.Mock };
+  let storageService: { getSignedUrl: jest.Mock };
 
   const COMPANY_ID = 'co-1';
   const SERVICE_ID = 'svc-1';
@@ -131,7 +132,8 @@ describe('ConsultarEvidenciaUseCase', () => {
   beforeEach(() => {
     evidenciaRepo = { findByServiceId: jest.fn() };
     servicioRepo = { findById: jest.fn() };
-    useCase = new ConsultarEvidenciaUseCase(evidenciaRepo as any, servicioRepo as any);
+    storageService = { getSignedUrl: jest.fn().mockResolvedValue('https://signed.example.com/photo.jpg') };
+    useCase = new ConsultarEvidenciaUseCase(evidenciaRepo as any, servicioRepo as any, storageService as any);
   });
 
   it('retorna la evidencia cuando existe', async () => {
