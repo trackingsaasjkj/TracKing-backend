@@ -5,6 +5,7 @@ import { BffActiveOrdersUseCase } from './application/use-cases/bff-active-order
 import { BffReportsUseCase } from './application/use-cases/bff-reports.use-case';
 import { BffSettlementsUseCase } from './application/use-cases/bff-settlements.use-case';
 import { BffLiquidacionesUseCase } from './application/use-cases/bff-liquidaciones.use-case';
+import { BffWeeklyStatsUseCase } from './application/use-cases/bff-weekly-stats.use-case';
 import { ServiciosModule } from '../servicios/servicios.module';
 import { MensajerosModule } from '../mensajeros/mensajeros.module';
 import { ReportesModule } from '../reportes/reportes.module';
@@ -19,6 +20,7 @@ import { LiquidacionesModule } from '../liquidaciones/liquidaciones.module';
     BffReportsUseCase,
     BffSettlementsUseCase,
     BffLiquidacionesUseCase,
+    BffWeeklyStatsUseCase,
   ],
 })
 export class BffWebModule {}
