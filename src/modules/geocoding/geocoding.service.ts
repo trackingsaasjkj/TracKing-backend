@@ -27,7 +27,7 @@ export class GeocodingService {
     const normalized = this.normalizeAddress(address);
     const cacheKey = `geocoding:${normalized}`;
 
-    const cached = this.cache.get<GeocodingResult>(cacheKey);
+    const cached = await this.cache.get<GeocodingResult>(cacheKey);
     if (cached) return cached;
 
     const token = this.config.get<string>('MAPBOX_ACCESS_TOKEN');
@@ -75,7 +75,7 @@ export class GeocodingService {
       display_name: data.features[0].place_name as string,
     };
 
-    this.cache.set(cacheKey, result, CACHE_TTL_SECONDS);
+    await this.cache.set(cacheKey, result, CACHE_TTL_SECONDS);
     return result;
   }
 }

@@ -11,7 +11,7 @@ export class ConsultarServiciosUseCase {
     private readonly historialRepo: HistorialRepository,
   ) {}
 
-  async findAll(company_id: string, filters?: { status?: ServiceStatus; courier_id?: string }) {
+  async findAll(company_id: string, filters?: { status?: ServiceStatus | ServiceStatus[]; courier_id?: string }) {
     return this.servicioRepo.findAllByCompany(company_id, filters);
   }
 
@@ -33,9 +33,8 @@ export class ConsultarServiciosUseCase {
   }
 
   async findHistorial(service_id: string, company_id: string) {
-    // Ensure service belongs to company first
-    const servicio = await this.servicioRepo.findById(service_id, company_id);
-    if (!servicio) throw new NotFoundException('Servicio no encontrado');
+    const exists = await this.servicioRepo.existsInCompany(service_id, company_id);
+    if (!exists) throw new NotFoundException('Servicio no encontrado');
     return this.historialRepo.findByService(service_id, company_id);
   }
 }

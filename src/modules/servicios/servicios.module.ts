@@ -6,12 +6,15 @@ import { CambiarEstadoUseCase } from './application/use-cases/cambiar-estado.use
 import { CambiarPagoUseCase } from './application/use-cases/cambiar-pago.use-case';
 import { CancelarServicioUseCase } from './application/use-cases/cancelar-servicio.use-case';
 import { ConsultarServiciosUseCase } from './application/use-cases/consultar-servicios.use-case';
+import { EditarServicioUseCase } from './application/use-cases/editar-servicio.use-case';
 import { ServicioRepository } from './infrastructure/repositories/servicio.repository';
 import { CourierRepository } from './infrastructure/repositories/courier.repository';
 import { HistorialRepository } from './infrastructure/repositories/historial.repository';
 import { EvidenceRepository } from './infrastructure/repositories/evidence.repository';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
+  imports: [NotificationsModule],
   controllers: [ServiciosController],
   providers: [
     CrearServicioUseCase,
@@ -20,6 +23,7 @@ import { EvidenceRepository } from './infrastructure/repositories/evidence.repos
     CambiarPagoUseCase,
     CancelarServicioUseCase,
     ConsultarServiciosUseCase,
+    EditarServicioUseCase,
     ServicioRepository,
     CourierRepository,
     HistorialRepository,

@@ -7,12 +7,15 @@ const mockRepo = {
   cancellationRate: jest.fn(),
 };
 
+const mockCache = { get: jest.fn().mockReturnValue(null), set: jest.fn() };
+
 describe('ReporteServiciosUseCase', () => {
   let useCase: ReporteServiciosUseCase;
 
   beforeEach(() => {
-    useCase = new ReporteServiciosUseCase(mockRepo as any);
+    useCase = new ReporteServiciosUseCase(mockRepo as any, mockCache as any);
     jest.clearAllMocks();
+    mockCache.get.mockReturnValue(null);
 
     mockRepo.countByStatus.mockResolvedValue([
       { status: 'DELIVERED', _count: { id: 10 } },
@@ -37,20 +40,20 @@ describe('ReporteServiciosUseCase', () => {
     const result = await useCase.execute({ from: '2025-01-01', to: '2025-01-31' }, 'co-1');
 
     expect(mockRepo.countByStatus).toHaveBeenCalledWith('co-1', expect.any(Date), expect.any(Date));
-    expect(result.by_status).toHaveLength(2);
-    expect(result.avg_delivery_minutes).toBe(45);
-    expect(result.cancellation.rate).toBe(16.67);
+    expect(result!.by_status).toHaveLength(2);
+    expect(result!.avg_delivery_minutes).toBe(45);
+    expect(result!.cancellation.rate).toBe(16.67);
   });
 
   it('enriches courier data with names', async () => {
     const result = await useCase.execute({}, 'co-1');
-    expect(result.by_courier[0]).toMatchObject({ courier_id: 'c-1', courier_name: 'Juan', total_services: 8 });
+    expect(result!.by_courier[0]).toMatchObject({ courier_id: 'c-1', courier_name: 'Juan', total_services: 8 });
   });
 
   it('handles no couriers gracefully', async () => {
     mockRepo.getCourierStats.mockResolvedValue([]);
     const result = await useCase.execute({}, 'co-1');
-    expect(result.by_courier).toEqual([]);
+    expect(result!.by_courier).toEqual([]);
   });
 
   it('passes courier_id filter to repo', async () => {

@@ -5,6 +5,7 @@ import { CourierRepository } from '../../infrastructure/repositories/courier.rep
 import { ServicioStateMachine } from '../../domain/state-machine/servicio.machine';
 import { AppException } from '../../../../core/errors/app.exception';
 import { CacheService } from '../../../../infrastructure/cache/cache.service';
+import { NotificationsUseCases } from '../../../notifications/application/use-cases/notifications.use-cases';
 
 @Injectable()
 export class CancelarServicioUseCase {
@@ -13,6 +14,7 @@ export class CancelarServicioUseCase {
     private readonly historialRepo: HistorialRepository,
     private readonly courierRepo: CourierRepository,
     private readonly cache: CacheService,
+    private readonly notifications: NotificationsUseCases,
   ) {}
 
   async execute(service_id: string, company_id: string, user_id: string) {
@@ -23,11 +25,14 @@ export class CancelarServicioUseCase {
       throw new AppException(`No se puede cancelar un servicio en estado ${servicio.status}`);
     }
 
+    // Guardar courier_id antes de cancelar para notificar después
+    const courierId = servicio.courier_id;
+
     await this.servicioRepo.update(service_id, company_id, { status: 'CANCELLED' });
 
     // Free courier if one was assigned
-    if (servicio.courier_id) {
-      await this.courierRepo.updateStatus(servicio.courier_id, company_id, 'AVAILABLE');
+    if (courierId) {
+      await this.courierRepo.updateStatus(courierId, company_id, 'AVAILABLE');
     }
 
     await this.historialRepo.create({
@@ -40,6 +45,16 @@ export class CancelarServicioUseCase {
 
     this.cache.deleteByPrefix(`bff:dashboard:${company_id}`);
     this.cache.deleteByPrefix(`bff:active-orders:${company_id}`);
+
+    // Caso 2: notificar al mensajero que tenía asignado el servicio
+    if (courierId) {
+      await this.notifications.notifyServiceUpdate(
+        courierId,
+        service_id,
+        company_id,
+        'Un servicio que tenías asignado ha sido cancelado.',
+      );
+    }
 
     return this.servicioRepo.findById(service_id, company_id);
   }

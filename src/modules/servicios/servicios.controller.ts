@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CrearServicioUseCase } from './application/use-cases/crear-servicio.use-case';
 import { AsignarServicioUseCase } from './application/use-cases/asignar-servicio.use-case';
@@ -6,10 +6,12 @@ import { CambiarEstadoUseCase } from './application/use-cases/cambiar-estado.use
 import { CambiarPagoUseCase } from './application/use-cases/cambiar-pago.use-case';
 import { CancelarServicioUseCase } from './application/use-cases/cancelar-servicio.use-case';
 import { ConsultarServiciosUseCase } from './application/use-cases/consultar-servicios.use-case';
+import { EditarServicioUseCase } from './application/use-cases/editar-servicio.use-case';
 import { CrearServicioDto } from './application/dto/crear-servicio.dto';
 import { AsignarServicioDto } from './application/dto/asignar-servicio.dto';
 import { CambiarEstadoDto } from './application/dto/cambiar-estado.dto';
 import { CambiarPagoDto } from './application/dto/cambiar-pago.dto';
+import { EditarServicioDto } from './application/dto/editar-servicio.dto';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { RolesGuard } from '../../core/guards/roles.guard';
@@ -30,6 +32,7 @@ export class ServiciosController {
     private readonly cambiarPagoUseCase: CambiarPagoUseCase,
     private readonly cancelarUseCase: CancelarServicioUseCase,
     private readonly consultarUseCase: ConsultarServiciosUseCase,
+    private readonly editarUseCase: EditarServicioUseCase,
   ) {}
 
   @Post()
@@ -43,7 +46,7 @@ export class ServiciosController {
 
   @Post(':id/assign')
   @Roles(Role.ADMIN, Role.AUX)
-  @ApiOperation({ summary: 'Asignar mensajero', description: 'Transición PENDING → ASSIGNED. El mensajero debe estar AVAILABLE.' })
+  @ApiOperation({ summary: 'Asignar mensajero', description: 'Transición PENDING → ASSIGNED. El mensajero debe estar AVAILABLE. Envía notificación push al mensajero asignado.' })
   @ApiParam({ name: 'id', description: 'UUID del servicio' })
   @ApiResponse({ status: 200, description: 'Servicio asignado' })
   @ApiResponse({ status: 400, description: 'Mensajero no disponible o transición inválida' })
@@ -66,12 +69,26 @@ export class ServiciosController {
 
   @Post(':id/cancel')
   @Roles(Role.ADMIN, Role.AUX)
-  @ApiOperation({ summary: 'Cancelar servicio', description: 'Cancela el servicio si está en PENDING, ASSIGNED o ACCEPTED. Libera al mensajero.' })
+  @ApiOperation({ summary: 'Cancelar servicio', description: 'Cancela el servicio si está en PENDING, ASSIGNED o ACCEPTED. Libera al mensajero y le envía notificación push.' })
   @ApiParam({ name: 'id', description: 'UUID del servicio' })
   @ApiResponse({ status: 200, description: 'Servicio cancelado' })
   @ApiResponse({ status: 400, description: 'No se puede cancelar en el estado actual' })
   async cancelar(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return ok(await this.cancelarUseCase.execute(id, user.company_id!, user.sub));
+  }
+
+  @Put(':id')
+  @Roles(Role.ADMIN, Role.AUX)
+  @ApiOperation({
+    summary: 'Editar servicio',
+    description: 'Actualiza campos del servicio. No permitido en estado DELIVERED o CANCELLED. Si el servicio tiene mensajero asignado, le envía notificación push.',
+  })
+  @ApiParam({ name: 'id', description: 'UUID del servicio' })
+  @ApiResponse({ status: 200, description: 'Servicio actualizado' })
+  @ApiResponse({ status: 400, description: 'No se puede editar en el estado actual' })
+  @ApiResponse({ status: 404, description: 'Servicio no encontrado' })
+  async editar(@Param('id') id: string, @Body() dto: EditarServicioDto, @CurrentUser() user: JwtPayload) {
+    return ok(await this.editarUseCase.execute(id, dto, user.company_id!));
   }
 
   @Post(':id/payment')

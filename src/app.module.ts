@@ -24,6 +24,7 @@ import { PlanesModule } from './modules/planes/planes.module';
 import { SuscripcionesModule } from './modules/suscripciones/suscripciones.module';
 import { BffWebModule } from './modules/bff-web/bff-web.module';
 import { GeocodingModule } from './modules/geocoding/geocoding.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { GeocodingModule } from './modules/geocoding/geocoding.module';
     SuscripcionesModule,
     BffWebModule,
     GeocodingModule,
+    NotificationsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

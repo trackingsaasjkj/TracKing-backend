@@ -19,6 +19,7 @@
 - [Tracking](#tracking)
 - [Liquidaciones](#liquidaciones)
 - [Reportes](#reportes)
+- [Notifications](#notifications)
 - [BFF Web](#bff-web)
 - [Super Admin](#super-admin)
 - [Health](#health)
@@ -759,6 +760,68 @@ Rendimiento agrupado por mensajero.
 
 ---
 
+## Notifications
+
+Base: `/api/notifications` · Requiere JWT
+
+> Módulo de notificaciones push via Firebase Cloud Messaging (FCM). El token FCM se registra automáticamente desde la app móvil al autenticarse.
+
+### POST /api/notifications/fcm-token
+**Roles:** `COURIER`
+
+Registra o actualiza el FCM token del mensajero autenticado. Se llama automáticamente desde el hook `useFCM` de la app móvil.
+
+**Body:**
+```json
+{ "token": "dGhpcyBpcyBhIHNhbXBsZSBGQ00gdG9rZW4..." }
+```
+
+**Respuesta 200:**
+```json
+{ "success": true, "data": { "message": "FCM token registrado" } }
+```
+
+---
+
+### DELETE /api/notifications/fcm-token
+**Roles:** `COURIER`
+
+Elimina el FCM token del mensajero al cerrar sesión. Evita que reciba notificaciones en dispositivos donde hizo logout.
+
+**Respuesta 200:**
+```json
+{ "success": true, "data": { "message": "FCM token eliminado" } }
+```
+
+---
+
+### POST /api/notifications/send
+**Roles:** `ADMIN`, `AUX`
+
+Envía una notificación push a un mensajero específico de la empresa.
+
+**Body:**
+```json
+{
+  "courierId": "uuid-mensajero",
+  "title": "📦 Nuevo servicio asignado",
+  "body": "Tienes un nuevo servicio en Calle 10 #5-20",
+  "type": "new_service",
+  "data": { "serviceId": "uuid-servicio" }
+}
+```
+
+**Tipos válidos:** `new_service` · `service_update` · `settlement_ready` · `general`
+
+**Respuesta 201:**
+```json
+{ "success": true, "data": { "sent": true } }
+```
+
+> `sent: false` cuando el mensajero no tiene token FCM registrado.
+
+---
+
 ## BFF Web
 
 Base: `/api/bff` · Requiere JWT · Roles: `ADMIN`, `AUX`
@@ -1084,6 +1147,9 @@ Verifica el estado del servidor y la conexión a la base de datos.
 | GET /api/tracking/:id/last | ✅ | ✅ | ✅ | — | — |
 | GET /api/liquidations/* | ✅ | ✅ | — | — | — |
 | GET /api/reports/* | ✅ | ✅ | ✅* | — | — |
+| POST /api/notifications/fcm-token | — | — | — | ✅ | — |
+| DELETE /api/notifications/fcm-token | — | — | — | ✅ | — |
+| POST /api/notifications/send | ✅ | ✅ | ✅ | — | — |
 | GET /api/bff/dashboard | ✅ | ✅ | ✅ | — | — |
 | GET /api/bff/active-orders | ✅ | ✅ | ✅ | — | — |
 | GET /api/bff/reports | ✅ | ✅ | ✅ | — | — |
