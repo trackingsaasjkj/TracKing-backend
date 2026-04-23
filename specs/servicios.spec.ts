@@ -157,7 +157,7 @@ describe('AsignarServicioUseCase', () => {
     servicioRepo = makeServicioRepo();
     courierRepo = makeCourierRepo();
     historialRepo = makeHistorialRepo();
-    useCase = new AsignarServicioUseCase(servicioRepo, courierRepo, historialRepo);
+    useCase = new AsignarServicioUseCase(servicioRepo, courierRepo, historialRepo, { notifyNewService: jest.fn().mockResolvedValue(undefined) } as any);
   });
 
   // 5.4 Unit test: transición PENDING→ASSIGNED con mensajero AVAILABLE → OK
@@ -320,7 +320,7 @@ describe('CancelarServicioUseCase', () => {
     servicioRepo = makeServicioRepo();
     historialRepo = makeHistorialRepo();
     courierRepo = makeCourierRepo();
-    useCase = new CancelarServicioUseCase(servicioRepo, historialRepo, courierRepo, makeCache());
+    useCase = new CancelarServicioUseCase(servicioRepo, historialRepo, courierRepo, makeCache(), { notifyServiceUpdate: jest.fn().mockResolvedValue(undefined) } as any);
   });
 
   // 5.10 Unit test: cancelar desde PENDING → OK, libera mensajero si había

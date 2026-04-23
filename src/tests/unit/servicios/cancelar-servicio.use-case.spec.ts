@@ -28,6 +28,7 @@ describe('CancelarServicioUseCase', () => {
       mockHistorialRepo as any,
       mockCourierRepo as any,
       makeCache(),
+      { notifyServiceUpdate: jest.fn().mockResolvedValue(undefined) } as any,
     );
     jest.clearAllMocks();
     mockServicioRepo.update.mockResolvedValue({});

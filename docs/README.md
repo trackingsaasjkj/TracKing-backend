@@ -25,13 +25,18 @@ Para autenticarse en Swagger:
 | 5 — Geolocalización | ✅ Completada | [fase-5-geolocalizacion.md](./fase-5-geolocalizacion.md) |
 | 6 — Liquidaciones | ✅ Completada | [fase-6-liquidaciones.md](./fase-6-liquidaciones.md) |
 | 7 — Reportes | 🔜 Pendiente | [fase-7-reportes.md](./fase-7-reportes.md) |
+| 8 — Notificaciones Push (FCM) | ✅ Completada | [fase-notificaciones.md](./fase-notificaciones.md) |
 
 ## Stack
 
 - **Framework:** NestJS 10
 - **ORM:** Prisma 5
-- **DB:** PostgreSQL
+- **DB:** PostgreSQL (Supabase)
 - **Auth:** JWT (access 15m + refresh 7d, single-use rotation)
+- **Notificaciones:** Firebase Admin SDK (FCM)
+- **Cache:** Redis (opcional, fallback en memoria)
+- **Storage:** Supabase Storage
+- **Geocoding:** Mapbox
 - **Validación:** class-validator + class-transformer
 - **Docs:** @nestjs/swagger
 

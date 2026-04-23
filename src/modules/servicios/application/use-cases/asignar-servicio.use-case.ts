@@ -5,6 +5,7 @@ import { HistorialRepository } from '../../infrastructure/repositories/historial
 import { validarAsignacion } from '../../domain/rules/validar-asignacion.rule';
 import { validarTransicion } from '../../domain/rules/validar-transicion.rule';
 import { AsignarServicioDto } from '../dto/asignar-servicio.dto';
+import { NotificationsUseCases } from '../../../notifications/application/use-cases/notifications.use-cases';
 
 @Injectable()
 export class AsignarServicioUseCase {
@@ -12,6 +13,7 @@ export class AsignarServicioUseCase {
     private readonly servicioRepo: ServicioRepository,
     private readonly courierRepo: CourierRepository,
     private readonly historialRepo: HistorialRepository,
+    private readonly notifications: NotificationsUseCases,
   ) {}
 
   async execute(service_id: string, dto: AsignarServicioDto, company_id: string, user_id: string) {
@@ -40,6 +42,9 @@ export class AsignarServicioUseCase {
       new_status: 'ASSIGNED',
       user_id,
     });
+
+    // Caso 1: notificar al mensajero asignado
+    await this.notifications.notifyNewService(dto.courier_id, service_id, company_id);
 
     return this.servicioRepo.findById(service_id, company_id);
   }

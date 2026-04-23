@@ -9,6 +9,10 @@ dist/
 .env.local
 .env.*.local
 
+# Firebase service account credentials
+*firebase-adminsdk*.json
+*service-account*.json
+
 # Prisma
 prisma/migrations/
 
