@@ -23,6 +23,9 @@ class EnvVars {
   @IsOptional() @IsString() MAPBOX_PROXIMITY_LAT?: string;  // default: 7.119349  (Bucaramanga)
 
   // Firebase Admin SDK (notificaciones push FCM)
+  // Opción recomendada para Render: JSON del service account en base64
+  @IsOptional() @IsString() FIREBASE_SERVICE_ACCOUNT_BASE64?: string;
+  // Opción alternativa (dev local): variables individuales
   @IsOptional() @IsString() FIREBASE_PROJECT_ID?: string;
   @IsOptional() @IsString() FIREBASE_CLIENT_EMAIL?: string;
   @IsOptional() @IsString() FIREBASE_PRIVATE_KEY?: string;
