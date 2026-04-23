@@ -23,6 +23,31 @@ export class FirebaseService implements OnModuleInit {
   constructor(private readonly config: ConfigService) {}
 
   onModuleInit() {
+    // Evitar inicializar múltiples veces (hot reload en dev)
+    if (admin.apps.length > 0) {
+      this.app = admin.apps[0]!;
+      return;
+    }
+
+    // Opción 1: service account completo en base64 (recomendado para Render)
+    // Genera el valor con: base64 -w 0 serviceAccountKey.json
+    const serviceAccountBase64 = this.config.get<string>('FIREBASE_SERVICE_ACCOUNT_BASE64');
+    if (serviceAccountBase64) {
+      try {
+        const json = Buffer.from(serviceAccountBase64, 'base64').toString('utf-8');
+        const serviceAccount = JSON.parse(json);
+        this.app = admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+        });
+        this.logger.log('Firebase Admin SDK inicializado correctamente (base64)');
+        return;
+      } catch (e: any) {
+        this.logger.error(`[FCM] Error parseando FIREBASE_SERVICE_ACCOUNT_BASE64: ${e.message}`);
+        return;
+      }
+    }
+
+    // Opción 2: variables individuales (dev local con .env)
     const projectId = this.config.get<string>('FIREBASE_PROJECT_ID');
     const clientEmail = this.config.get<string>('FIREBASE_CLIENT_EMAIL');
     const privateKey = this.config.get<string>('FIREBASE_PRIVATE_KEY');
@@ -30,23 +55,24 @@ export class FirebaseService implements OnModuleInit {
     if (!projectId || !clientEmail || !privateKey) {
       this.logger.warn(
         'Firebase no configurado — las notificaciones push están deshabilitadas. ' +
-        'Configura FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL y FIREBASE_PRIVATE_KEY en .env',
+        'Configura FIREBASE_SERVICE_ACCOUNT_BASE64 (recomendado) o las variables individuales en .env',
       );
       return;
     }
 
-    // Evitar inicializar múltiples veces (hot reload en dev)
-    if (admin.apps.length > 0) {
-      this.app = admin.apps[0]!;
-      return;
-    }
+    // Normalizar la private key:
+    // - En .env local viene con \n literales → replace los convierte en saltos reales
+    // - En Render puede venir con saltos reales ya → replace no hace daño
+    // - Quitar comillas envolventes si las hay
+    const normalizedKey = privateKey
+      .replace(/^["']|["']$/g, '')
+      .replace(/\\n/g, '\n');
 
     this.app = admin.initializeApp({
       credential: admin.credential.cert({
         projectId,
         clientEmail,
-        // Las private keys en .env tienen \n como literal — hay que convertirlos
-        privateKey: privateKey.replace(/\\n/g, '\n'),
+        privateKey: normalizedKey,
       }),
     });
 
