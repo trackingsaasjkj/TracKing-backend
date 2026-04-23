@@ -253,8 +253,8 @@ export class ReportesRepository {
 
   /**
    * Returns favorite customer report for the given company and optional date range.
-   * Executes three Prisma queries in parallel and crosses results in memory.
-   * When customer_id is provided, filters to that customer (only if is_favorite=true).
+   * Only includes customers with is_favorite = true.
+   * Executes queries in parallel and crosses results in memory.
    */
   async getFavoriteCustomersReport(
     company_id: string,
@@ -267,7 +267,20 @@ export class ReportesRepository {
         ? { created_at: { ...(from && { gte: from }), ...(to && { lte: to }) } }
         : {};
 
-    const customerFilter = customer_id ? { customer_id } : {};
+    // Step 1: get all favorite customer ids for this company
+    const favoriteCustomers = await this.prisma.customer.findMany({
+      where: {
+        company_id,
+        is_favorite: true,
+        ...(customer_id ? { id: customer_id } : {}),
+      },
+      select: { id: true, name: true },
+    });
+
+    if (favoriteCustomers.length === 0) return [];
+
+    const favoriteIds = favoriteCustomers.map((c) => c.id);
+    const nameMap = new Map(favoriteCustomers.map((c) => [c.id, c.name]));
 
     const [totalRows, paidRows] = await Promise.all([
       // Query 1: total_services + total_amount (all services of favorite customers)
@@ -275,7 +288,7 @@ export class ReportesRepository {
         by: ['customer_id'],
         where: {
           company_id,
-          ...customerFilter,
+          customer_id: { in: favoriteIds },
           ...dateFilter,
         },
         _count: { id: true },
@@ -287,8 +300,8 @@ export class ReportesRepository {
         by: ['customer_id'],
         where: {
           company_id,
+          customer_id: { in: favoriteIds },
           payment_status: 'PAID',
-          ...customerFilter,
           ...dateFilter,
         },
         _count: { id: true },
@@ -296,21 +309,7 @@ export class ReportesRepository {
       }),
     ]);
 
-    // Collect customer ids from total rows to fetch names
-    const customerIds = totalRows
-      .map((r) => r.customer_id)
-      .filter((id): id is string => id !== null);
-
-    // Query 3: customer names (only for customers that appear in results)
-    const customers = await this.prisma.customer.findMany({
-      where: {
-        company_id,
-        id: { in: customerIds },
-      },
-      select: { id: true, name: true },
-    });
-
-    // Build lookup maps for O(n) cross-join
+    // Build lookup map for paid rows
     const paidMap = new Map(
       paidRows.map((r) => [
         r.customer_id,
@@ -318,32 +317,26 @@ export class ReportesRepository {
       ]),
     );
 
-    const nameMap = new Map(customers.map((c) => [c.id, c.name]));
+    // Build result — include all favorite customers, even those with 0 services
+    return favoriteCustomers.map((customer) => {
+      const totalRow = totalRows.find((r) => r.customer_id === customer.id);
+      const total_services = totalRow?._count?.id ?? 0;
+      const total_amount = Number(totalRow?._sum?.delivery_price ?? 0);
 
-    // Cross results in memory
-    return totalRows
-      .filter((r): r is typeof r & { customer_id: string } => r.customer_id !== null)
-      .map((r) => {
-        const total_services = r._count?.id ?? 0;
-        const total_amount = Number(r._sum?.delivery_price ?? 0);
+      const paid = paidMap.get(customer.id);
+      const paid_services = paid?.count ?? 0;
+      const paid_amount = paid?.amount ?? 0;
 
-        const paid = paidMap.get(r.customer_id);
-        const paid_services = paid?.count ?? 0;
-        const paid_amount = paid?.amount ?? 0;
-
-        const unpaid_services = total_services - paid_services;
-        const unpaid_amount = total_amount - paid_amount;
-
-        return {
-          customer_id: r.customer_id,
-          customer_name: nameMap.get(r.customer_id) ?? '',
-          total_services,
-          total_amount,
-          paid_services,
-          paid_amount,
-          unpaid_services,
-          unpaid_amount,
-        };
-      });
+      return {
+        customer_id: customer.id,
+        customer_name: nameMap.get(customer.id) ?? '',
+        total_services,
+        total_amount,
+        paid_services,
+        paid_amount,
+        unpaid_services: total_services - paid_services,
+        unpaid_amount: total_amount - paid_amount,
+      };
+    });
   }
 }

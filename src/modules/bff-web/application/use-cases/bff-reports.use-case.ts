@@ -18,7 +18,14 @@ export class BffReportsUseCase {
       throw new AppException('Los parámetros from y to son obligatorios');
     }
 
-    if (query.from >= query.to) {
+    const fromDate = new Date(query.from);
+    const toDate = new Date(query.to);
+
+    if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+      throw new AppException('Las fechas proporcionadas no son válidas');
+    }
+
+    if (fromDate >= toDate) {
       throw new AppException('El parámetro from debe ser anterior a to');
     }
 
