@@ -5,7 +5,7 @@ services:
     plan: standard
     region: oregon
     
-    buildCommand: npm install && rm -rf node_modules/.prisma && npx prisma generate && npm run build
+    buildCommand: npm install && rm -rf node_modules/.prisma && npx prisma generate && NODE_OPTIONS="--max-old-space-size=400" npm run build
     startCommand: npx prisma migrate deploy && npm run start:prod
     
     healthCheckPath: /api/health
@@ -47,9 +47,12 @@ services:
       - key: NODE_ENV
         value: "production"
       
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=256"
+      
       # Swagger
       - key: SWAGGER_ENABLED
-        value: "true"
+        value: "false"
       
       - key: SWAGGER_USER
         sync: false
