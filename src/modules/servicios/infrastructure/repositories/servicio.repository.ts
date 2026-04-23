@@ -152,6 +152,25 @@ export class ServicioRepository {
     payment_status: PaymentStatus;
     is_settled_courier: boolean;
     is_settled_customer: boolean;
+    // campos editables de contenido
+    origin_address: string;
+    origin_apartment_office: string | null;
+    origin_contact_phone: string;
+    destination_address: string;
+    destination_apartment_office: string | null;
+    destination_contact_number: string;
+    destination_name: string;
+    package_details: string;
+    delivery_price: number;
+    product_price: number;
+    total_price: number;
+    notes_observations: string | null;
+    origin_lat: number | null;
+    origin_lng: number | null;
+    origin_verified: boolean;
+    destination_lat: number | null;
+    destination_lng: number | null;
+    destination_verified: boolean;
   }>) {
     return this.prisma.service.updateMany({ where: { id, company_id }, data });
   }

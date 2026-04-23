@@ -59,6 +59,7 @@ model Courier {
   document_id        String?             @db.VarChar(50)
   phone              String?             @db.VarChar(20)
   operational_status CourierStatus       @default(UNAVAILABLE)
+  fcm_token          String?             @db.VarChar(255)
   created_at         DateTime            @default(now())
   company            Company             @relation(fields: [company_id], references: [id], onDelete: Cascade)
   user               User                @relation(fields: [user_id], references: [id], onDelete: Cascade)

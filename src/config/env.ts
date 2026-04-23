@@ -21,6 +21,11 @@ class EnvVars {
   @IsOptional() @IsString() MAPBOX_COUNTRY?: string;        // default: 'co'
   @IsOptional() @IsString() MAPBOX_PROXIMITY_LNG?: string;  // default: -73.122742 (Bucaramanga)
   @IsOptional() @IsString() MAPBOX_PROXIMITY_LAT?: string;  // default: 7.119349  (Bucaramanga)
+
+  // Firebase Admin SDK (notificaciones push FCM)
+  @IsOptional() @IsString() FIREBASE_PROJECT_ID?: string;
+  @IsOptional() @IsString() FIREBASE_CLIENT_EMAIL?: string;
+  @IsOptional() @IsString() FIREBASE_PRIVATE_KEY?: string;
 }
 
 export function validate(config: Record<string, unknown>) {
