@@ -124,7 +124,7 @@ describe('ConsultarEvidenciaUseCase', () => {
   let useCase: ConsultarEvidenciaUseCase;
   let evidenciaRepo: { findByServiceId: jest.Mock };
   let servicioRepo: { findById: jest.Mock };
-  let storageService: { getSignedUrl: jest.Mock };
+  let storageService: { getSignedUrl: jest.Mock; getBucketName: jest.Mock };
 
   const COMPANY_ID = 'co-1';
   const SERVICE_ID = 'svc-1';
@@ -132,7 +132,7 @@ describe('ConsultarEvidenciaUseCase', () => {
   beforeEach(() => {
     evidenciaRepo = { findByServiceId: jest.fn() };
     servicioRepo = { findById: jest.fn() };
-    storageService = { getSignedUrl: jest.fn().mockResolvedValue('https://signed.example.com/photo.jpg') };
+    storageService = { getSignedUrl: jest.fn().mockResolvedValue('https://signed.example.com/photo.jpg'), getBucketName: jest.fn().mockReturnValue('Evidencias') };
     useCase = new ConsultarEvidenciaUseCase(evidenciaRepo as any, servicioRepo as any, storageService as any);
   });
 
