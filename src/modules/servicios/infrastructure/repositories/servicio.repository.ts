@@ -92,7 +92,7 @@ export class ServicioRepository {
 
   async findAllByCompany(
     company_id: string,
-    filters?: { status?: ServiceStatus | ServiceStatus[]; courier_id?: string },
+    filters?: { status?: ServiceStatus | ServiceStatus[]; courier_id?: string; createdFrom?: Date; createdTo?: Date },
     pagination?: { limit?: number; offset?: number },
   ) {
     const take = pagination?.limit ?? 50;
@@ -104,8 +104,12 @@ export class ServicioRepository {
         : { status: filters.status }
       : {};
 
+    const dateFilter = (filters?.createdFrom || filters?.createdTo)
+      ? { created_at: { ...(filters.createdFrom && { gte: filters.createdFrom }), ...(filters.createdTo && { lte: filters.createdTo }) } }
+      : {};
+
     const rows = await this.prisma.service.findMany({
-      where: { company_id, ...statusFilter, ...(filters?.courier_id ? { courier_id: filters.courier_id } : {}) },
+      where: { company_id, ...statusFilter, ...dateFilter, ...(filters?.courier_id ? { courier_id: filters.courier_id } : {}) },
       select: SERVICE_TABLE_SELECT,
       orderBy: { created_at: 'desc' },
       take,
