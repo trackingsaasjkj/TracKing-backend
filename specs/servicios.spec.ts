@@ -228,7 +228,7 @@ describe('CambiarEstadoUseCase', () => {
     historialRepo = makeHistorialRepo();
     evidenceRepo = makeEvidenceRepo();
     courierRepo = makeCourierRepo();
-    useCase = new CambiarEstadoUseCase(servicioRepo, historialRepo, evidenceRepo, courierRepo, makeCache());
+    useCase = new CambiarEstadoUseCase(servicioRepo, historialRepo, evidenceRepo, courierRepo, makeCache(), null as any, null as any);
   });
 
   function setupTransition(fromStatus: string, toStatus: string, extraOverrides: Record<string, unknown> = {}) {
