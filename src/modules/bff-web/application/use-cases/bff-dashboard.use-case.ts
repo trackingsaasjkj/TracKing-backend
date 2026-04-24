@@ -12,6 +12,11 @@ const ACTIVE_STATUSES: ServiceStatus[] = [
   ServiceStatus.IN_TRANSIT,
 ];
 
+const TERMINAL_STATUSES: ServiceStatus[] = [
+  ServiceStatus.DELIVERED,
+  ServiceStatus.CANCELLED,
+];
+
 @Injectable()
 export class BffDashboardUseCase {
   constructor(
@@ -29,19 +34,25 @@ export class BffDashboardUseCase {
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-    const [allServices, activeCouriers, financial] = await Promise.all([
+    const [allServices, activeCouriers, financial, todayTerminal] = await Promise.all([
       this.consultarServicios.findAll(company_id, { status: ACTIVE_STATUSES }),
       this.consultarMensajeros.findAvailableAndInService(company_id),
       this.reporteFinanciero.execute(
         { from: today, to: `${today}T23:59:59` },
         company_id,
       ),
+      this.consultarServicios.findAll(company_id, {
+        status: TERMINAL_STATUSES,
+        createdFrom: new Date(`${today}T00:00:00`),
+        createdTo: new Date(`${today}T23:59:59`),
+      }),
     ]);
 
     const result = {
       pending_services: allServices,
       active_couriers: activeCouriers,
       today_financial: financial,
+      today_terminal_services: todayTerminal,
     };
 
     await this.cache.set(cacheKey, result, 30);
