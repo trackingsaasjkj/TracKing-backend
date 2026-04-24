@@ -167,6 +167,7 @@ describe('BffDashboardUseCase — Cache Integration', () => {
       pending_services: services,
       active_couriers: couriers,
       today_financial: financial,
+      today_terminal_services: services,
     });
     expect(mockCache.set).toHaveBeenCalledWith(
       `bff:dashboard:active:${companyId}`,

@@ -11,7 +11,7 @@ export class ConsultarServiciosUseCase {
     private readonly historialRepo: HistorialRepository,
   ) {}
 
-  async findAll(company_id: string, filters?: { status?: ServiceStatus | ServiceStatus[]; courier_id?: string }) {
+  async findAll(company_id: string, filters?: { status?: ServiceStatus | ServiceStatus[]; courier_id?: string; createdFrom?: Date; createdTo?: Date }) {
     return this.servicioRepo.findAllByCompany(company_id, filters);
   }
 
