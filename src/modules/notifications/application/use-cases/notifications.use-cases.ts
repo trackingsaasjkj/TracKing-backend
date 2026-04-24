@@ -124,4 +124,51 @@ export class NotificationsUseCases {
       companyId,
     );
   }
+
+  /**
+   * Envía notificación FCM silenciosa con el payload completo del servicio.
+   * Usada por CambiarEstadoUseCase para actualizar el store mobile en background/killed state.
+   * El campo `data.payload` contiene el servicio serializado para evitar un fetch adicional.
+   */
+  async notifyServiceStatusChange(
+    courierId: string,
+    companyId: string,
+    service: Record<string, unknown>,
+  ): Promise<void> {
+    const token = await this.repo.getFcmTokenByCourierId(courierId, companyId);
+    if (!token) return;
+
+    const status = service['status'] as string ?? '';
+    const serviceId = service['id'] as string ?? '';
+    const shortId = serviceId.slice(-6);
+
+    let payloadStr: string;
+    try {
+      payloadStr = JSON.stringify(service);
+    } catch {
+      payloadStr = '{}';
+    }
+
+    await this.firebase.sendToDevice({
+      token,
+      title: this.getStatusTitle(status),
+      body: `Servicio #${shortId} actualizado`,
+      data: {
+        type: 'SERVICE_UPDATE',
+        serviceId,
+        status,
+        payload: payloadStr,
+      },
+    });
+  }
+
+  private getStatusTitle(status: string): string {
+    const titles: Record<string, string> = {
+      ACCEPTED: '✅ Servicio aceptado',
+      IN_TRANSIT: '🚚 Servicio en tránsito',
+      DELIVERED: '📦 Servicio entregado',
+      CANCELLED: '❌ Servicio cancelado',
+    };
+    return titles[status] ?? '🔄 Actualización de servicio';
+  }
 }

@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ServiciosController } from './servicios.controller';
 import { CrearServicioUseCase } from './application/use-cases/crear-servicio.use-case';
 import { AsignarServicioUseCase } from './application/use-cases/asignar-servicio.use-case';
@@ -12,9 +14,19 @@ import { CourierRepository } from './infrastructure/repositories/courier.reposit
 import { HistorialRepository } from './infrastructure/repositories/historial.repository';
 import { EvidenceRepository } from './infrastructure/repositories/evidence.repository';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { ServiceUpdatesGateway } from './services-updates.gateway';
 
 @Module({
-  imports: [NotificationsModule],
+  imports: [
+    NotificationsModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET'),
+      }),
+    }),
+  ],
   controllers: [ServiciosController],
   providers: [
     CrearServicioUseCase,
@@ -28,7 +40,8 @@ import { NotificationsModule } from '../notifications/notifications.module';
     CourierRepository,
     HistorialRepository,
     EvidenceRepository,
+    ServiceUpdatesGateway,
   ],
-  exports: [ServicioRepository, CourierRepository, EvidenceRepository, HistorialRepository, ConsultarServiciosUseCase, CambiarPagoUseCase],
+  exports: [ServicioRepository, CourierRepository, EvidenceRepository, HistorialRepository, ConsultarServiciosUseCase, CambiarPagoUseCase, ServiceUpdatesGateway],
 })
 export class ServiciosModule {}

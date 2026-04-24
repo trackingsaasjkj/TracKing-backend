@@ -27,6 +27,8 @@ export interface LocationPayload {
     ],
     credentials: true,
   },
+  pingInterval: 25_000,
+  pingTimeout: 10_000,
 })
 export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server!: Server;
