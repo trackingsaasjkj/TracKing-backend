@@ -157,7 +157,7 @@ describe('AsignarServicioUseCase', () => {
     servicioRepo = makeServicioRepo();
     courierRepo = makeCourierRepo();
     historialRepo = makeHistorialRepo();
-    useCase = new AsignarServicioUseCase(servicioRepo, courierRepo, historialRepo, { notifyNewService: jest.fn().mockResolvedValue(undefined) } as any);
+    useCase = new AsignarServicioUseCase(servicioRepo, courierRepo, historialRepo, { notifyNewService: jest.fn().mockResolvedValue(undefined) } as any, makeCache());
   });
 
   // 5.4 Unit test: transición PENDING→ASSIGNED con mensajero AVAILABLE → OK

@@ -92,7 +92,7 @@ export class ServicioRepository {
 
   async findAllByCompany(
     company_id: string,
-    filters?: { status?: ServiceStatus | ServiceStatus[]; courier_id?: string; createdFrom?: Date; createdTo?: Date },
+    filters?: { status?: ServiceStatus | ServiceStatus[]; courier_id?: string; createdFrom?: Date; createdTo?: Date; deliveryFrom?: Date; deliveryTo?: Date },
     pagination?: { limit?: number; offset?: number },
   ) {
     const take = pagination?.limit ?? 50;
@@ -104,9 +104,13 @@ export class ServicioRepository {
         : { status: filters.status }
       : {};
 
-    const dateFilter = (filters?.createdFrom || filters?.createdTo)
-      ? { created_at: { ...(filters.createdFrom && { gte: filters.createdFrom }), ...(filters.createdTo && { lte: filters.createdTo }) } }
-      : {};
+    const dateFilter: any = {};
+    if (filters?.createdFrom || filters?.createdTo) {
+      dateFilter.created_at = { ...(filters.createdFrom && { gte: filters.createdFrom }), ...(filters.createdTo && { lte: filters.createdTo }) };
+    }
+    if (filters?.deliveryFrom || filters?.deliveryTo) {
+      dateFilter.delivery_date = { ...(filters.deliveryFrom && { gte: filters.deliveryFrom }), ...(filters.deliveryTo && { lte: filters.deliveryTo }) };
+    }
 
     const rows = await this.prisma.service.findMany({
       where: { company_id, ...statusFilter, ...dateFilter, ...(filters?.courier_id ? { courier_id: filters.courier_id } : {}) },
@@ -128,11 +132,15 @@ export class ServicioRepository {
     const skip = (page - 1) * limit;
     const where = { company_id, ...filters };
 
+    const orderBy = filters.status === 'DELIVERED' 
+      ? { delivery_date: 'desc' as const } 
+      : { created_at: 'desc' as const };
+
     const [rows, total] = await Promise.all([
       this.prisma.service.findMany({
         where,
         select: SERVICE_TABLE_SELECT,
-        orderBy: { created_at: 'desc' },
+        orderBy,
         take,
         skip,
       }),

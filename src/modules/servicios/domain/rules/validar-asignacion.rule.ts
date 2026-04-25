@@ -1,6 +1,9 @@
 import { AppException } from '../../../../core/errors/app.exception';
 import { ServicioEstado } from '../state-machine/servicio.machine';
 
+const ASSIGNABLE_STATUSES = ['AVAILABLE', 'IN_SERVICE'];
+const ASSIGNABLE_SERVICE_STATUSES = ['PENDING', 'ASSIGNED', 'ACCEPTED'];
+
 export function validarAsignacion(params: {
   courier: { operational_status: string } | null;
   estado: ServicioEstado;
@@ -8,10 +11,10 @@ export function validarAsignacion(params: {
   if (!params.courier) {
     throw new AppException('El mensajero no existe');
   }
-  if (params.courier.operational_status !== 'AVAILABLE') {
-    throw new AppException('El mensajero no está disponible');
+  if (!ASSIGNABLE_STATUSES.includes(params.courier.operational_status)) {
+    throw new AppException('El mensajero no está disponible (está No Disponible)');
   }
-  if (params.estado !== 'PENDING') {
-    throw new AppException('Solo servicios PENDING pueden asignarse');
+  if (!ASSIGNABLE_SERVICE_STATUSES.includes(params.estado)) {
+    throw new AppException('Solo servicios PENDING, ASSIGNED o ACCEPTED pueden (re)asignarse');
   }
 }

@@ -42,9 +42,16 @@ export class BffDashboardUseCase {
         company_id,
       ),
       this.consultarServicios.findAll(company_id, {
-        status: TERMINAL_STATUSES,
-        createdFrom: new Date(`${today}T00:00:00`),
-        createdTo: new Date(`${today}T23:59:59`),
+        status: ServiceStatus.DELIVERED,
+        deliveryFrom: new Date(`${today}T00:00:00`),
+        deliveryTo: new Date(`${today}T23:59:59`),
+      }).then(async (delivered) => {
+        const cancelled = await this.consultarServicios.findAll(company_id, {
+          status: ServiceStatus.CANCELLED,
+          createdFrom: new Date(`${today}T00:00:00`),
+          createdTo: new Date(`${today}T23:59:59`),
+        });
+        return [...delivered, ...cancelled];
       }),
     ]);
 

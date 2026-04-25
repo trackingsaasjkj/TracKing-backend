@@ -62,6 +62,7 @@ describe('Caso 1 — AsignarServicioUseCase: notifica al mensajero asignado', ()
   let courierRepo: ReturnType<typeof makeCourierRepo>;
   let historialRepo: ReturnType<typeof makeHistorialRepo>;
   let notifications: ReturnType<typeof makeNotifications>;
+  let cache: ReturnType<typeof makeCache>;
   let useCase: AsignarServicioUseCase;
 
   beforeEach(() => {
@@ -69,7 +70,8 @@ describe('Caso 1 — AsignarServicioUseCase: notifica al mensajero asignado', ()
     courierRepo = makeCourierRepo();
     historialRepo = makeHistorialRepo();
     notifications = makeNotifications();
-    useCase = new AsignarServicioUseCase(servicioRepo, courierRepo, historialRepo, notifications);
+    cache = makeCache();
+    useCase = new AsignarServicioUseCase(servicioRepo, courierRepo, historialRepo, notifications, cache);
   });
 
   it('llama notifyNewService con courierId, serviceId y companyId correctos', async () => {
