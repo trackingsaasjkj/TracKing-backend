@@ -22,7 +22,12 @@ describe('validarAsignacion', () => {
     expect(() => validarAsignacion({ courier: unavailableCourier, estado: 'PENDING' })).toThrow(AppException);
   });
 
-  it('throws when service is not PENDING', () => {
-    expect(() => validarAsignacion({ courier: availableCourier, estado: 'ASSIGNED' })).toThrow(AppException);
+  it('throws when service is in an invalid state for assignment (e.g. DELIVERED)', () => {
+    expect(() => validarAsignacion({ courier: availableCourier, estado: 'DELIVERED' })).toThrow(AppException);
+  });
+
+  it('passes when service is ASSIGNED or ACCEPTED (reassignment)', () => {
+    expect(() => validarAsignacion({ courier: availableCourier, estado: 'ASSIGNED' })).not.toThrow();
+    expect(() => validarAsignacion({ courier: availableCourier, estado: 'ACCEPTED' })).not.toThrow();
   });
 });

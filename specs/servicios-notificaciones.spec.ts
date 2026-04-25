@@ -24,6 +24,7 @@ function makeCourierRepo() {
   return {
     findById: jest.fn(),
     updateStatus: jest.fn().mockResolvedValue(undefined),
+    countActiveServices: jest.fn().mockResolvedValue(0),
   } as any;
 }
 
@@ -32,7 +33,7 @@ function makeHistorialRepo() {
 }
 
 function makeCache() {
-  return { deleteByPrefix: jest.fn() } as any;
+  return { deleteByPrefix: jest.fn(), delete: jest.fn() } as any;
 }
 
 function makeNotifications() {

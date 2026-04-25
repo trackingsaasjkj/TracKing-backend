@@ -17,7 +17,7 @@ const makeService = (status: string, courier_id: string | null = null) => ({
 
 const mockServicioRepo = { findById: jest.fn(), update: jest.fn() };
 const mockHistorialRepo = { create: jest.fn() };
-const mockCourierRepo = { updateStatus: jest.fn() };
+const mockCourierRepo = { updateStatus: jest.fn(), countActiveServices: jest.fn() };
 
 describe('CancelarServicioUseCase', () => {
   let useCase: CancelarServicioUseCase;
@@ -35,6 +35,7 @@ describe('CancelarServicioUseCase', () => {
     mockServicioRepo.findById.mockResolvedValue(makeService('PENDING'));
     mockHistorialRepo.create.mockResolvedValue({});
     mockCourierRepo.updateStatus.mockResolvedValue({});
+    mockCourierRepo.countActiveServices.mockResolvedValue(0);
   });
 
   it('cancels a PENDING service', async () => {
