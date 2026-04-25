@@ -18,7 +18,7 @@ const makeService = (status: string, courier_id = 'courier-1') => ({
 const mockServicioRepo = { findById: jest.fn(), update: jest.fn() };
 const mockHistorialRepo = { create: jest.fn() };
 const mockEvidenceRepo = { findByServiceId: jest.fn() };
-const mockCourierRepo = { updateStatus: jest.fn() };
+const mockCourierRepo = { updateStatus: jest.fn(), countActiveServices: jest.fn() };
 const mockGateway = { emitServiceUpdate: jest.fn(), emitServiceAssigned: jest.fn() };
 const mockNotifications = { notifyServiceStatusChange: jest.fn().mockResolvedValue(undefined) };
 
@@ -39,6 +39,7 @@ describe('CambiarEstadoUseCase', () => {
     mockServicioRepo.update.mockResolvedValue({});
     mockHistorialRepo.create.mockResolvedValue({});
     mockCourierRepo.updateStatus.mockResolvedValue({});
+    mockCourierRepo.countActiveServices.mockResolvedValue(0);
   });
 
   it('transitions ASSIGNED → ACCEPTED', async () => {

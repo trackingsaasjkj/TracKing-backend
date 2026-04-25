@@ -30,9 +30,12 @@ export class CancelarServicioUseCase {
 
     await this.servicioRepo.update(service_id, company_id, { status: 'CANCELLED' });
 
-    // Free courier if one was assigned
+    // Free courier if one was assigned, ONLY if they have no other active services
     if (courierId) {
-      await this.courierRepo.updateStatus(courierId, company_id, 'AVAILABLE');
+      const activeCount = await this.courierRepo.countActiveServices(courierId, company_id);
+      if (activeCount === 0) {
+        await this.courierRepo.updateStatus(courierId, company_id, 'AVAILABLE');
+      }
     }
 
     await this.historialRepo.create({
@@ -43,8 +46,9 @@ export class CancelarServicioUseCase {
       user_id,
     });
 
-    this.cache.deleteByPrefix(`bff:dashboard:${company_id}`);
-    this.cache.deleteByPrefix(`bff:active-orders:${company_id}`);
+    this.cache.delete(`bff:dashboard:active:${company_id}`);
+    this.cache.delete(`bff:active-orders:active:${company_id}`);
+    this.cache.deleteByPrefix(`reporte:financiero:${company_id}`);
 
     // Caso 2: notificar al mensajero que tenía asignado el servicio
     if (courierId) {

@@ -59,6 +59,7 @@ function makeCourierRepo() {
   return {
     findById: jest.fn(),
     updateStatus: jest.fn(),
+    countActiveServices: jest.fn().mockResolvedValue(0),
   } as any;
 }
 
@@ -157,7 +158,7 @@ describe('AsignarServicioUseCase', () => {
     servicioRepo = makeServicioRepo();
     courierRepo = makeCourierRepo();
     historialRepo = makeHistorialRepo();
-    useCase = new AsignarServicioUseCase(servicioRepo, courierRepo, historialRepo, { notifyNewService: jest.fn().mockResolvedValue(undefined) } as any);
+    useCase = new AsignarServicioUseCase(servicioRepo, courierRepo, historialRepo, { notifyNewService: jest.fn().mockResolvedValue(undefined) } as any, makeCache());
   });
 
   // 5.4 Unit test: transición PENDING→ASSIGNED con mensajero AVAILABLE → OK
@@ -179,16 +180,14 @@ describe('AsignarServicioUseCase', () => {
   });
 
   // 5.5 Unit test: transición PENDING→ASSIGNED con mensajero IN_SERVICE → error
-  it('PENDING→ASSIGNED con mensajero IN_SERVICE → AppException', async () => {
-    const servicio = makeServicio({ status: 'PENDING' });
+  it('AsignarServicioUseCase › PENDING→ASSIGNED con mensajero IN_SERVICE ahora es VÁLIDO (soporte multi-pedido)', async () => {
     const courier = { id: 'courier-1', operational_status: 'IN_SERVICE' };
-
-    servicioRepo.findById.mockResolvedValue(servicio);
+    servicioRepo.findById.mockResolvedValue(makeServicio({ status: 'PENDING' }));
     courierRepo.findById.mockResolvedValue(courier);
 
     await expect(
       useCase.execute('svc-1', { courier_id: 'courier-1' }, 'co-1', 'user-1'),
-    ).rejects.toThrow(AppException);
+    ).resolves.toBeDefined();
   });
 });
 
@@ -207,10 +206,10 @@ describe('validarAsignacion', () => {
     ).toThrow(AppException);
   });
 
-  it('lanza cuando courier IN_SERVICE', () => {
+  it('validarAsignacion › NO lanza cuando courier IN_SERVICE (soporte multi-pedido)', () => {
     expect(() =>
-      validarAsignacion({ courier: { operational_status: 'IN_SERVICE' }, estado: 'PENDING' }),
-    ).toThrow(AppException);
+      validarAsignacion({ courier: { operational_status: 'IN_SERVICE' } as any, estado: 'PENDING' }),
+    ).not.toThrow();
   });
 });
 

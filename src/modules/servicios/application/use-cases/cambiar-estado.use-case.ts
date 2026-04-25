@@ -45,9 +45,12 @@ export class CambiarEstadoUseCase {
 
     await this.servicioRepo.update(service_id, company_id, updateData);
 
-    // Free courier when service reaches a final state
+    // Free courier when service reaches a final state, ONLY if they have no other active services
     if ((nuevoEstado === 'DELIVERED' || nuevoEstado === 'CANCELLED') && servicio.courier_id) {
-      await this.courierRepo.updateStatus(servicio.courier_id, company_id, 'AVAILABLE');
+      const activeCount = await this.courierRepo.countActiveServices(servicio.courier_id, company_id);
+      if (activeCount === 0) {
+        await this.courierRepo.updateStatus(servicio.courier_id, company_id, 'AVAILABLE');
+      }
     }
 
     await this.historialRepo.create({
@@ -58,8 +61,9 @@ export class CambiarEstadoUseCase {
       user_id,
     });
 
-    this.cache.deleteByPrefix(`bff:dashboard:${company_id}`);
-    this.cache.deleteByPrefix(`bff:active-orders:${company_id}`);
+    this.cache.delete(`bff:dashboard:active:${company_id}`);
+    this.cache.delete(`bff:active-orders:active:${company_id}`);
+    this.cache.deleteByPrefix(`reporte:financiero:${company_id}`);
 
     const updatedService = await this.servicioRepo.findById(service_id, company_id);
 
