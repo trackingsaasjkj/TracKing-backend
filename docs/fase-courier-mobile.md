@@ -35,11 +35,14 @@ Retorna el perfil completo del mensajero autenticado, incluyendo estado operacio
 ---
 
 ### POST /api/courier/jornada/start
-Inicia la jornada. Solo posible desde estado `UNAVAILABLE`.
+Inicia la jornada. Posible desde estado `UNAVAILABLE` o `IN_SERVICE`.
 
-**Respuesta 200:** Perfil actualizado con `operational_status: AVAILABLE`
+- Desde `UNAVAILABLE`: transiciona a `AVAILABLE`
+- Desde `IN_SERVICE`: no cambia el estado (el mensajero ya está activo con pedidos de una sesión anterior)
 
-**Error 400:** Estado actual no permite iniciar jornada
+**Respuesta 200:** Perfil actualizado
+
+**Error 400:** Estado actual no permite iniciar jornada (solo bloquea si el estado es `AVAILABLE`)
 
 ---
 
