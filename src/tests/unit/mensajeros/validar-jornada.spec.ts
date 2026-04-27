@@ -10,8 +10,8 @@ describe('validarInicioJornada', () => {
     expect(() => validarInicioJornada('AVAILABLE')).toThrow(AppException);
   });
 
-  it('throws when IN_SERVICE', () => {
-    expect(() => validarInicioJornada('IN_SERVICE')).toThrow(AppException);
+  it('allows IN_SERVICE (pedidos activos de sesión anterior) → no lanza error', () => {
+    expect(() => validarInicioJornada('IN_SERVICE')).not.toThrow();
   });
 });
 
