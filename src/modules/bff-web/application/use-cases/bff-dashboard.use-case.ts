@@ -31,25 +31,32 @@ export class BffDashboardUseCase {
     const cached = await this.cache.get(cacheKey);
     if (cached !== null) return cached;
 
+    // Get today's date in Colombia timezone (America/Bogota = UTC-5)
     const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const bogotaFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' });
+    const today = bogotaFormatter.format(now); // YYYY-MM-DD in Bogota time
+
+    // Build UTC range: Bogota midnight (UTC+5) to Bogota 23:59:59 (UTC+5)
+    const todayStartUTC = new Date(`${today}T05:00:00.000Z`);
+    const todayEndUTC = new Date(`${today}T04:59:59.999Z`);
+    todayEndUTC.setUTCDate(todayEndUTC.getUTCDate() + 1);
 
     const [allServices, activeCouriers, financial, todayTerminal] = await Promise.all([
       this.consultarServicios.findAll(company_id, { status: ACTIVE_STATUSES }),
       this.consultarMensajeros.findAvailableAndInService(company_id),
       this.reporteFinanciero.execute(
-        { from: today, to: `${today}T23:59:59` },
+        { from: todayStartUTC.toISOString(), to: todayEndUTC.toISOString() },
         company_id,
       ),
       this.consultarServicios.findAll(company_id, {
         status: ServiceStatus.DELIVERED,
-        deliveryFrom: new Date(`${today}T00:00:00`),
-        deliveryTo: new Date(`${today}T23:59:59`),
+        deliveryFrom: todayStartUTC,
+        deliveryTo: todayEndUTC,
       }).then(async (delivered) => {
         const cancelled = await this.consultarServicios.findAll(company_id, {
           status: ServiceStatus.CANCELLED,
-          createdFrom: new Date(`${today}T00:00:00`),
-          createdTo: new Date(`${today}T23:59:59`),
+          createdFrom: todayStartUTC,
+          createdTo: todayEndUTC,
         });
         return [...delivered, ...cancelled];
       }),

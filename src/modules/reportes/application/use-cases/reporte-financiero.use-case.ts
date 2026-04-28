@@ -55,13 +55,13 @@ export class ReporteFinancieroUseCase {
       period: { from: query.from, to: query.to },
       revenue: {
         total_services: revenue._count.id,
-        total_price: Number(revenue._sum.total_price ?? 0),
+        total_price: Number(revenue._sum.delivery_price ?? 0),
         total_delivery: Number(revenue._sum.delivery_price ?? 0),
-        total_product: Number(revenue._sum.product_price ?? 0),
+        total_product: 0,
       },
       by_payment_method: byPayment.map(r => ({
         method: r.payment_method,
-        total: Number(r._sum.total_price ?? 0),
+        total: Number(r._sum.delivery_price ?? 0),
         count: r._count.id,
       })),
       settlements: {

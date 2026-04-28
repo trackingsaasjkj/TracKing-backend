@@ -27,26 +27,29 @@ export class BffWeeklyStatsUseCase {
     const cached = await this.cache.get<BffWeeklyStatsResponse>(cacheKey);
     if (cached !== null) return cached;
 
+    // Get today's date in Colombia timezone (America/Bogota = UTC-5)
     const now = new Date();
-    const todayStr = this.toDateStr(now);
+    const bogotaFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' });
+    const todayStr = bogotaFormatter.format(now); // YYYY-MM-DD in Bogota time
 
-    // Build last 7 days (today + 6 previous days), ordered Mon→Sun
-    const days: { date: Date; label: string; dateStr: string }[] = [];
+    // Build last 7 days using Bogota local dates
+    const days: { label: string; dateStr: string }[] = [];
     for (let i = 6; i >= 0; i--) {
+      // Subtract i days from today in UTC, then format in Bogota time
       const d = new Date(now);
-      d.setDate(now.getDate() - i);
-      days.push({
-        date: d,
-        label: DAY_LABELS[d.getDay()],
-        dateStr: this.toDateStr(d),
-      });
+      d.setUTCDate(d.getUTCDate() - i);
+      const dateStr = bogotaFormatter.format(d);
+      days.push({ label: DAY_LABELS[new Date(`${dateStr}T12:00:00`).getDay()], dateStr });
     }
 
-    // Fetch revenue for each day in parallel
+    // Fetch revenue for each day using UTC-adjusted ranges (Bogota UTC-5: midnight = UTC 05:00)
     const revenues = await Promise.all(
-      days.map(({ date, dateStr }) => {
-        const from = `${dateStr}T00:00:00`;
-        const to = `${dateStr}T23:59:59`;
+      days.map(({ dateStr }) => {
+        const from = `${dateStr}T05:00:00.000Z`;
+        const toDate = new Date(`${dateStr}T05:00:00.000Z`);
+        toDate.setUTCDate(toDate.getUTCDate() + 1);
+        toDate.setUTCMilliseconds(toDate.getUTCMilliseconds() - 1);
+        const to = toDate.toISOString();
         return this.reporteFinanciero
           .execute({ from, to }, company_id)
           .then(r => r.revenue.total_price)
@@ -62,7 +65,7 @@ export class BffWeeklyStatsUseCase {
     }));
 
     const result: BffWeeklyStatsResponse = { weekly_revenue };
-    await this.cache.set(cacheKey, result, 300); // 5 min cache
+    await this.cache.set(cacheKey, result, 300);
     return result;
   }
 

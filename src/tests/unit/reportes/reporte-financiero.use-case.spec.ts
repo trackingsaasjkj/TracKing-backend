@@ -21,11 +21,11 @@ describe('ReporteFinancieroUseCase', () => {
 
     mockRepo.totalRevenue.mockResolvedValue({
       _count: { id: 5 },
-      _sum: { total_price: 75000, delivery_price: 50000, product_price: 25000 },
+      _sum: { delivery_price: 50000 },
     });
     mockRepo.revenueByPaymentMethod.mockResolvedValue([
-      { payment_method: 'CASH', _sum: { total_price: 40000 }, _count: { id: 3 } },
-      { payment_method: 'TRANSFER', _sum: { total_price: 35000 }, _count: { id: 2 } },
+      { payment_method: 'CASH', _sum: { delivery_price: 30000 }, _count: { id: 3 } },
+      { payment_method: 'TRANSFER', _sum: { delivery_price: 20000 }, _count: { id: 2 } },
     ]);
     mockRepo.settlementSummary.mockResolvedValue([
       { status: 'SETTLED', _sum: { total_earned: 10000 }, _count: { id: 2 } },
@@ -37,7 +37,7 @@ describe('ReporteFinancieroUseCase', () => {
     const result = await useCase.execute(dto, 'co-1');
 
     expect(result!.revenue.total_services).toBe(5);
-    expect(result!.revenue.total_price).toBe(75000);
+    expect(result!.revenue.total_price).toBe(50000);
     expect(result!.by_payment_method).toHaveLength(2);
     expect(result!.settlements.settled.total_earned).toBe(10000);
     expect(result!.settlements.unsettled.total_earned).toBe(5000);

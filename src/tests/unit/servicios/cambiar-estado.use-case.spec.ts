@@ -33,6 +33,7 @@ describe('CambiarEstadoUseCase', () => {
       mockCourierRepo as any,
       makeCache(),
       mockGateway as any,
+      null as any,
       mockNotifications as any,
     );
     jest.clearAllMocks();
@@ -110,6 +111,7 @@ describe('CambiarEstadoUseCase', () => {
       mockEvidenceRepo as any,
       mockCourierRepo as any,
       makeCache(),
+      null as any,
       null as any,
       null as any,
     );

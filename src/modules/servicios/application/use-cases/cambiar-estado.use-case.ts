@@ -9,6 +9,7 @@ import { ServicioEstado } from '../../domain/state-machine/servicio.machine';
 import { CambiarEstadoDto } from '../dto/cambiar-estado.dto';
 import { CacheService } from '../../../../infrastructure/cache/cache.service';
 import { ServiceUpdatesGateway } from '../../services-updates.gateway';
+import { DashboardUpdatesGateway } from '../../dashboard-updates.gateway';
 import { NotificationsUseCases } from '../../../notifications/application/use-cases/notifications.use-cases';
 
 @Injectable()
@@ -20,6 +21,7 @@ export class CambiarEstadoUseCase {
     private readonly courierRepo: CourierRepository,
     private readonly cache: CacheService,
     @Optional() private readonly gateway: ServiceUpdatesGateway,
+    @Optional() private readonly dashboardGateway: DashboardUpdatesGateway,
     @Optional() private readonly notificationsUseCases: NotificationsUseCases,
   ) {}
 
@@ -70,6 +72,12 @@ export class CambiarEstadoUseCase {
     // Broadcast WebSocket update to the courier (non-blocking)
     if (servicio.courier_id && this.gateway && updatedService) {
       this.gateway.emitServiceUpdate(servicio.courier_id, updatedService as Record<string, unknown>);
+    }
+
+    // Broadcast to admin/aux dashboard in real-time
+    if (this.dashboardGateway && updatedService) {
+      this.dashboardGateway.emitServiceUpdated(company_id, updatedService as Record<string, unknown>);
+      this.dashboardGateway.emitDashboardRefresh(company_id);
     }
 
     // FCM push for background/killed state (fire-and-forget)

@@ -99,7 +99,7 @@ describe('CrearServicioUseCase', () => {
 
   beforeEach(() => {
     mockPrisma = makePrisma();
-    useCase = new CrearServicioUseCase(mockPrisma, makeCache());
+    useCase = new CrearServicioUseCase(mockPrisma, makeCache(), null as any);
   });
 
   // 5.3 Unit test: crear servicio → total_price = delivery_price + product_price
@@ -227,7 +227,7 @@ describe('CambiarEstadoUseCase', () => {
     historialRepo = makeHistorialRepo();
     evidenceRepo = makeEvidenceRepo();
     courierRepo = makeCourierRepo();
-    useCase = new CambiarEstadoUseCase(servicioRepo, historialRepo, evidenceRepo, courierRepo, makeCache(), null as any, null as any);
+    useCase = new CambiarEstadoUseCase(servicioRepo, historialRepo, evidenceRepo, courierRepo, makeCache(), null as any, null as any, null as any);
   });
 
   function setupTransition(fromStatus: string, toStatus: string, extraOverrides: Record<string, unknown> = {}) {
