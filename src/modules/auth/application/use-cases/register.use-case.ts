@@ -29,6 +29,7 @@ export class RegisterUseCase {
         company_id: dto.company_id,
         name: dto.name,
         email: dto.email,
+        phone: dto.phone,
         password_hash,
         role: dto.role,
       },
@@ -56,7 +57,7 @@ export class RegisterUseCase {
     return {
       accessToken,
       refreshToken,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role, company_id: user.company_id },
+      user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role, company_id: user.company_id },
     };
   }
 }

@@ -1,4 +1,4 @@
-import { IsArray, IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsArray, IsEmail, IsEnum, IsOptional, IsString, MinLength, MaxLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Role } from '../../../../core/constants/roles.enum';
 import { UserStatus } from '@prisma/client';
@@ -14,6 +14,12 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEmail()
   email?: string;
+
+  @ApiPropertyOptional({ example: '+573001234567', maxLength: 20 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  phone?: string;
 
   @ApiPropertyOptional({ enum: Role })
   @IsOptional()

@@ -1,5 +1,5 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsString, IsUUID, MinLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsEnum, IsNotEmpty, IsString, IsUUID, MinLength, IsOptional, MaxLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Role } from '../../../../core/constants/roles.enum';
 
 export class RegisterDto {
@@ -24,4 +24,10 @@ export class RegisterDto {
   @ApiProperty({ enum: Role, example: Role.AUX })
   @IsEnum(Role)
   role!: Role;
+
+  @ApiPropertyOptional({ example: '+573001234567', maxLength: 20 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  phone?: string;
 }

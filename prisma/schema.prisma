@@ -11,6 +11,10 @@ datasource db {
 model Company {
   id                   String                 @id @default(uuid())
   name                 String                 @db.VarChar(150)
+  nit                  String?                @db.VarChar(50)
+  email_corporativo    String?                @db.VarChar(150)
+  telefono             String?                @db.VarChar(20)
+  direccion            String?
   status               Boolean                @default(true)
   created_at           DateTime               @default(now())
   couriers             Courier[]
@@ -34,6 +38,7 @@ model User {
   company_id           String?
   name                 String                 @db.VarChar(100)
   email                String                 @db.VarChar(150)
+  phone                String?                @db.VarChar(20)
   password_hash        String
   role                 UserRole
   status               UserStatus             @default(ACTIVE)
