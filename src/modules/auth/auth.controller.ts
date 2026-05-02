@@ -34,7 +34,7 @@ export class AuthController {
 
   @Public()
   @Post('login')
-  @Throttle({ auth: { ttl: 60_000, limit: 5 } })
+  @Throttle({ auth: { ttl: 60_000, limit: 50 } })
   @ApiOperation({ summary: 'Iniciar sesión', description: 'Retorna datos del usuario y establece cookies httpOnly con access_token y refresh_token.' })
   @ApiResponse({ status: 200, description: 'Login exitoso' })
   @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
@@ -70,7 +70,7 @@ export class AuthController {
 
   @Public()
   @Post('refresh')
-  @Throttle({ auth: { ttl: 60_000, limit: 10 } })
+  @Throttle({ auth: { ttl: 60_000, limit: 50 } })
   @ApiCookieAuth('access_token')
   @ApiOperation({ summary: 'Renovar tokens', description: 'Usa el refresh_token de la cookie para emitir nuevos tokens. El refresh token es de un solo uso.' })
   @ApiResponse({ status: 200, description: 'Tokens renovados' })
