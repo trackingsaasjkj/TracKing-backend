@@ -15,6 +15,7 @@ import { HistorialRepository } from './infrastructure/repositories/historial.rep
 import { EvidenceRepository } from './infrastructure/repositories/evidence.repository';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ServiceUpdatesGateway } from './services-updates.gateway';
+import { DashboardUpdatesGateway } from './dashboard-updates.gateway';
 
 @Module({
   imports: [
@@ -41,7 +42,8 @@ import { ServiceUpdatesGateway } from './services-updates.gateway';
     HistorialRepository,
     EvidenceRepository,
     ServiceUpdatesGateway,
+    DashboardUpdatesGateway,
   ],
-  exports: [ServicioRepository, CourierRepository, EvidenceRepository, HistorialRepository, ConsultarServiciosUseCase, CambiarPagoUseCase, ServiceUpdatesGateway],
+  exports: [ServicioRepository, CourierRepository, EvidenceRepository, HistorialRepository, ConsultarServiciosUseCase, CambiarPagoUseCase, ServiceUpdatesGateway, DashboardUpdatesGateway],
 })
 export class ServiciosModule {}

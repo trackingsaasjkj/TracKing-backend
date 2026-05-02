@@ -13,7 +13,13 @@ export class JornadaUseCase {
 
     validarInicioJornada(mensajero.operational_status as MensajeroEstado);
 
-    await this.mensajeroRepo.updateStatus(courier_id, company_id, 'AVAILABLE');
+    // If already IN_SERVICE (active orders from a previous session), keep that
+    // state — the courier is already working. Only transition to AVAILABLE when
+    // coming from UNAVAILABLE.
+    if (mensajero.operational_status === 'UNAVAILABLE') {
+      await this.mensajeroRepo.updateStatus(courier_id, company_id, 'AVAILABLE');
+    }
+
     return this.mensajeroRepo.findById(courier_id, company_id);
   }
 

@@ -7,6 +7,7 @@ const userSelect = {
   id: true,
   name: true,
   email: true,
+  phone: true,
   role: true,
   status: true,
   created_at: true,
@@ -44,6 +45,7 @@ export class UsersRepository {
     email: string;
     password_hash: string;
     role: Role;
+    phone?: string;
     permissions?: string[];
   }) {
     return this.prisma.user.create({
@@ -52,7 +54,7 @@ export class UsersRepository {
     });
   }
 
-  update(id: string, company_id: string, data: { name?: string; email?: string; role?: Role; status?: UserStatus; password_hash?: string; permissions?: string[] }) {
+  update(id: string, company_id: string, data: { name?: string; email?: string; phone?: string; role?: Role; status?: UserStatus; password_hash?: string; permissions?: string[] }) {
     return this.prisma.user.update({
       where: { id },
       data,

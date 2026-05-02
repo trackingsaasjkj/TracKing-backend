@@ -210,7 +210,7 @@ export class ReportesRepository {
 
   // ── Financial ───────────────────────────────────────────────
 
-  /** Total revenue from delivered services in range */
+  /** Total revenue from delivered services in range — based on delivery_price only */
   async totalRevenue(company_id: string, from: Date, to: Date) {
     const result = await this.prisma.service.aggregate({
       where: {
@@ -218,13 +218,13 @@ export class ReportesRepository {
         status: 'DELIVERED',
         delivery_date: { gte: from, lte: to },
       },
-      _sum: { total_price: true, delivery_price: true, product_price: true },
+      _sum: { delivery_price: true },
       _count: { id: true },
     });
     return result;
   }
 
-  /** Revenue grouped by payment method */
+  /** Revenue grouped by payment method — based on delivery_price only */
   async revenueByPaymentMethod(company_id: string, from: Date, to: Date) {
     return this.prisma.service.groupBy({
       by: ['payment_method'],
@@ -233,7 +233,7 @@ export class ReportesRepository {
         status: 'DELIVERED',
         delivery_date: { gte: from, lte: to },
       },
-      _sum: { total_price: true },
+      _sum: { delivery_price: true },
       _count: { id: true },
     });
   }

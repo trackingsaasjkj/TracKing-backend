@@ -1,15 +1,17 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { CacheService } from '../../../../infrastructure/cache/cache.service';
 import { validarPrecio } from '../../domain/rules/validar-precio.rule';
 import { calcularPaymentStatusInicial } from '../../domain/rules/validar-pago.rule';
 import { CrearServicioDto } from '../dto/crear-servicio.dto';
+import { DashboardUpdatesGateway } from '../../dashboard-updates.gateway';
 
 @Injectable()
 export class CrearServicioUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
+    @Optional() private readonly dashboardGateway: DashboardUpdatesGateway,
   ) {}
 
   async execute(dto: CrearServicioDto, company_id: string, user_id: string) {
@@ -53,6 +55,12 @@ export class CrearServicioUseCase {
 
     this.cache.deleteByPrefix(`bff:dashboard:${company_id}`);
     this.cache.deleteByPrefix(`bff:active-orders:${company_id}`);
+
+    // Notify admin/aux in real-time
+    if (this.dashboardGateway) {
+      this.dashboardGateway.emitServiceUpdated(company_id, servicio as Record<string, unknown>);
+      this.dashboardGateway.emitDashboardRefresh(company_id);
+    }
 
     return servicio;
   }

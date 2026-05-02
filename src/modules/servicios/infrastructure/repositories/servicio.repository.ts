@@ -124,16 +124,26 @@ export class ServicioRepository {
 
   async findAllByCompanyPaginated(
     company_id: string,
-    filters: { status?: ServiceStatus; courier_id?: string },
+    filters: { status?: ServiceStatus; courier_id?: string; createdFrom?: Date; createdTo?: Date },
     pagination: { page: number; limit: number },
   ): Promise<PaginatedResponse<ReturnType<typeof mapService>>> {
     const { page, limit } = pagination;
     const take = limit;
     const skip = (page - 1) * limit;
-    const where = { company_id, ...filters };
 
-    const orderBy = filters.status === 'DELIVERED' 
-      ? { delivery_date: 'desc' as const } 
+    const dateFilter: any = {};
+    if (filters.createdFrom || filters.createdTo) {
+      dateFilter.created_at = {
+        ...(filters.createdFrom && { gte: filters.createdFrom }),
+        ...(filters.createdTo && { lte: filters.createdTo }),
+      };
+    }
+
+    const { createdFrom, createdTo, ...baseFilters } = filters;
+    const where = { company_id, ...baseFilters, ...dateFilter };
+
+    const orderBy = filters.status === 'DELIVERED'
+      ? { delivery_date: 'desc' as const }
       : { created_at: 'desc' as const };
 
     const [rows, total] = await Promise.all([

@@ -61,11 +61,16 @@ describe('JornadaUseCase.iniciar', () => {
     await expect(useCase.iniciar('courier-1', 'co-1')).rejects.toThrow(AppException);
   });
 
-  it('iniciar desde IN_SERVICE → AppException', async () => {
+  // Nuevo comportamiento: IN_SERVICE permite iniciar jornada (pedidos activos de sesión anterior)
+  it('iniciar desde IN_SERVICE → no cambia estado, retorna mensajero actual', async () => {
     const mensajero = makeMensajero('IN_SERVICE');
     repo.findById.mockResolvedValue(mensajero);
 
-    await expect(useCase.iniciar('courier-1', 'co-1')).rejects.toThrow(AppException);
+    const result = await useCase.iniciar('courier-1', 'co-1');
+
+    // No debe llamar updateStatus — el mensajero ya está activo
+    expect(repo.updateStatus).not.toHaveBeenCalled();
+    expect(result!.operational_status).toBe('IN_SERVICE');
   });
 });
 

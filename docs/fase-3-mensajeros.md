@@ -59,6 +59,34 @@ UNAVAILABLE ──→ AVAILABLE ──→ IN_SERVICE
 - No se puede finalizar jornada desde `IN_SERVICE` directamente
 - El mensajero solo ve sus propios servicios (`GET /me/services`)
 - Un usuario solo puede tener un perfil de mensajero
+- Se puede iniciar jornada desde `IN_SERVICE` (pedidos activos de sesión anterior) — el estado no cambia, el mensajero ya está operativo
+
+## Cambios recientes
+
+### Inicio de jornada desde IN_SERVICE (Abril 2026)
+
+**Problema:** Si un mensajero tenía pedidos activos de una sesión anterior, su estado era `IN_SERVICE`. Al intentar iniciar jornada, el backend rechazaba con `400` porque la regla solo permitía `UNAVAILABLE`.
+
+**Solución:**
+
+`validar-jornada.rule.ts` — `validarInicioJornada` ahora acepta `UNAVAILABLE` e `IN_SERVICE`:
+
+```ts
+export function validarInicioJornada(estado: MensajeroEstado): void {
+  if (estado !== 'UNAVAILABLE' && estado !== 'IN_SERVICE') {
+    throw new AppException(`No se puede iniciar jornada desde estado ${estado}`);
+  }
+}
+```
+
+`jornada.use-case.ts` — `iniciar()` solo transiciona a `AVAILABLE` si viene de `UNAVAILABLE`. Si ya está `IN_SERVICE`, retorna el perfil sin cambiar el estado:
+
+```ts
+if (mensajero.operational_status === 'UNAVAILABLE') {
+  await this.mensajeroRepo.updateStatus(courier_id, company_id, 'AVAILABLE');
+}
+return this.mensajeroRepo.findById(courier_id, company_id);
+```
 
 ## Flujo de prueba (Swagger)
 

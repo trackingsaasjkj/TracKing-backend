@@ -17,7 +17,7 @@ export class ConsultarServiciosUseCase {
 
   async findAllPaginated(
     company_id: string,
-    filters: { status?: ServiceStatus; courier_id?: string },
+    filters: { status?: ServiceStatus; courier_id?: string; createdFrom?: Date; createdTo?: Date },
     pagination: PaginationDto,
   ) {
     return this.servicioRepo.findAllByCompanyPaginated(company_id, filters, {

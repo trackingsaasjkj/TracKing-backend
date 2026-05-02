@@ -109,6 +109,8 @@ export class ServiciosController {
   @ApiOperation({ summary: 'Listar servicios', description: 'Filtra por status y/o courier_id. Siempre scoped a la empresa del token. Soporta paginación con page y limit.' })
   @ApiQuery({ name: 'status', required: false, enum: ServiceStatus })
   @ApiQuery({ name: 'courier_id', required: false, type: String })
+  @ApiQuery({ name: 'from', required: false, type: String, description: 'Fecha inicio (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'to', required: false, type: String, description: 'Fecha fin (YYYY-MM-DD)' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Número de página (default: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Resultados por página (default: 20, max: 100)' })
   @ApiResponse({ status: 200, description: 'Lista de servicios' })
@@ -116,10 +118,14 @@ export class ServiciosController {
     @CurrentUser() user: JwtPayload,
     @Query('status') status?: ServiceStatus,
     @Query('courier_id') courier_id?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    const filters = { status, courier_id };
+    const fromDate = from ? new Date(`${from}T00:00:00.000Z`) : undefined;
+    const toDate = to ? new Date(`${to}T23:59:59.999Z`) : undefined;
+    const filters = { status, courier_id, createdFrom: fromDate, createdTo: toDate };
     if (page !== undefined || limit !== undefined) {
       const pagination = { page: page ? parseInt(page, 10) : 1, limit: limit ? parseInt(limit, 10) : 20 };
       return ok(await this.consultarUseCase.findAllPaginated(user.company_id!, filters, pagination));
