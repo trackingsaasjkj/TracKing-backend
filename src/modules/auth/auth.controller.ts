@@ -15,10 +15,10 @@ import { ok } from '../../core/utils/response.util';
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
-const COOKIE_OPTIONS = {
+const COOKIE_OPTIONS: { httpOnly: boolean; secure: boolean; sameSite: 'lax' | 'strict' | 'none'; maxAge: number } = {
   httpOnly: true,
   secure: IS_PRODUCTION,
-  sameSite: IS_PRODUCTION ? 'lax' : 'lax',
+  sameSite: 'lax',
   maxAge: 15 * 60 * 1000,
 };
 
