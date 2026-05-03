@@ -14,8 +14,8 @@ export interface FinancieroReportResult {
   };
   by_payment_method: { method: string; total: number; count: number }[];
   settlements: {
-    settled: { count: number; total_earned: number };
-    unsettled: { count: number; total_earned: number };
+    settled: { count: number; company_commission: number };
+    unsettled: { count: number; company_commission: number };
   };
 }
 
@@ -65,8 +65,8 @@ export class ReporteFinancieroUseCase {
         count: r._count.id,
       })),
       settlements: {
-        settled: { count: settled?._count.id ?? 0, total_earned: Number(settled?._sum.total_earned ?? 0) },
-        unsettled: { count: unsettled?._count.id ?? 0, total_earned: Number(unsettled?._sum.total_earned ?? 0) },
+        settled: { count: settled?._count?.id ?? 0, company_commission: Number(settled?._sum?.company_commission ?? 0) },
+        unsettled: { count: unsettled?._count?.id ?? 0, company_commission: Number(unsettled?._sum?.company_commission ?? 0) },
       },
     };
 

@@ -82,7 +82,9 @@ export class LiquidacionRepository {
         start_date: data.start_date,
         end_date: data.end_date,
         total_services: data.total_services,
-        total_earned: data.company_commission, // Mapear company_commission a total_earned temporalmente
+        total_collected: data.total_collected,
+        company_commission: data.company_commission,
+        courier_payment: data.courier_payment,
         status: data.status ?? 'SETTLED'
       } 
     });
