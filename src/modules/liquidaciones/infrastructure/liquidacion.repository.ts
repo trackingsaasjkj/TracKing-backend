@@ -70,10 +70,22 @@ export class LiquidacionRepository {
     start_date: Date;
     end_date: Date;
     total_services: number;
-    total_earned: number;
+    total_collected: number;
+    company_commission: number;
+    courier_payment: number;
     status?: 'SETTLED' | 'UNSETTLED';
   }) {
-    return this.prisma.courierSettlement.create({ data: { ...data, status: data.status ?? 'SETTLED' } });
+    return this.prisma.courierSettlement.create({ 
+      data: { 
+        company_id: data.company_id,
+        courier_id: data.courier_id,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        total_services: data.total_services,
+        total_earned: data.company_commission, // Mapear company_commission a total_earned temporalmente
+        status: data.status ?? 'SETTLED'
+      } 
+    });
   }
 
   async findCourierSettlements(company_id: string, courier_id?: string) {

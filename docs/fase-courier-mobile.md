@@ -150,7 +150,9 @@ Lista todas las liquidaciones generadas para el mensajero autenticado. El `couri
     "start_date": "2025-01-01T00:00:00.000Z",
     "end_date": "2025-01-31T00:00:00.000Z",
     "total_services": 42,
-    "total_earned": 315000,
+    "total_collected": 1575000,
+    "company_commission": 315000,
+    "courier_payment": 1260000,
     "created_at": "2025-02-01T10:00:00.000Z"
   }
 ]
@@ -166,7 +168,7 @@ Resumen acumulado de ganancias del mensajero autenticado.
 {
   "total_settlements": 3,
   "total_services": 120,
-  "total_earned": 900000,
+  "courier_payment": 3600000,
   "settlements": [ ... ]
 }
 ```

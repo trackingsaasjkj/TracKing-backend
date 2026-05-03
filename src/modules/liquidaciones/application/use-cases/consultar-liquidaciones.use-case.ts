@@ -19,15 +19,18 @@ export class ConsultarLiquidacionesUseCase {
     return this.liquidacionRepo.findCustomerSettlements(company_id, customer_id);
   }
 
-  /** Earnings summary: total earned across all courier settlements for the company */
+  /** Earnings summary: total payment to courier across all settlements */
   async getEarnings(company_id: string, courier_id?: string) {
     const settlements = await this.liquidacionRepo.findCourierSettlements(company_id, courier_id);
-    const totalEarned = settlements.reduce((sum, s) => sum + Number(s.total_earned), 0);
+    // Sumar courier_payment de cada settlement
+    const courierPayment = settlements.reduce((sum, s) => {
+      return sum + Number(s.courier_payment || 0);
+    }, 0);
     const totalServices = settlements.reduce((sum, s) => sum + s.total_services, 0);
     return {
       total_settlements: settlements.length,
       total_services: totalServices,
-      total_earned: totalEarned,
+      courier_payment: courierPayment,
       settlements,
     };
   }

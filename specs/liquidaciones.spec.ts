@@ -154,7 +154,12 @@ describe('GenerarLiquidacionCourierUseCase — servicios ya liquidados', () => {
     const result = await useCase.execute(makeDto(), 'co-1');
 
     expect(liquidacionRepo.createCourierSettlement).toHaveBeenCalledWith(
-      expect.objectContaining({ total_services: 2, total_earned: 60 }),
+      expect.objectContaining({ 
+        total_services: 2, 
+        company_commission: 60,
+        total_collected: 300,
+        courier_payment: 240
+      }),
     );
     expect(result.total_services).toBe(2);
   });
