@@ -601,7 +601,7 @@ describe('ReportesRepository.getCourierStats — Property Tests', () => {
             .filter((c) => c.has_settlements)
             .map((c) => ({
               courier_id: c.courier_id,
-              _sum: { total_earned: c.total_earned },
+              _sum: { company_commission: c.total_earned },
             }));
 
           // Courier name lookup
