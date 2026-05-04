@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ReporteFinancieroUseCase } from '../../../reportes/application/use-cases/reporte-financiero.use-case';
+import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { CacheService } from '../../../../infrastructure/cache/cache.service';
 
 export interface DailyRevenue {
@@ -15,10 +15,30 @@ export interface BffWeeklyStatsResponse {
 
 const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
+// Colombia = UTC-5 siempre (no tiene horario de verano)
+const COLOMBIA_OFFSET_MS = 5 * 60 * 60 * 1000;
+
+/** Retorna la fecha local de Colombia como string YYYY-MM-DD para un Date UTC */
+function toBogotaDateStr(utcDate: Date): string {
+  const local = new Date(utcDate.getTime() - COLOMBIA_OFFSET_MS);
+  const y = local.getUTCFullYear();
+  const m = String(local.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(local.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/** Convierte una fecha YYYY-MM-DD Colombia a rango UTC [inicio, fin] del día */
+function bogotaDayToUtcRange(dateStr: string): { from: Date; to: Date } {
+  // Medianoche Colombia = 05:00 UTC
+  const from = new Date(`${dateStr}T05:00:00.000Z`);
+  const to = new Date(from.getTime() + 24 * 60 * 60 * 1000 - 1);
+  return { from, to };
+}
+
 @Injectable()
 export class BffWeeklyStatsUseCase {
   constructor(
-    private readonly reporteFinanciero: ReporteFinancieroUseCase,
+    private readonly prisma: PrismaService,
     private readonly cache: CacheService,
   ) {}
 
@@ -27,33 +47,31 @@ export class BffWeeklyStatsUseCase {
     const cached = await this.cache.get<BffWeeklyStatsResponse>(cacheKey);
     if (cached !== null) return cached;
 
-    // Get today's date in Colombia timezone (America/Bogota = UTC-5)
     const now = new Date();
-    const bogotaFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' });
-    const todayStr = bogotaFormatter.format(now); // YYYY-MM-DD in Bogota time
+    const todayStr = toBogotaDateStr(now);
 
-    // Build last 7 days using Bogota local dates
+    // Construir los últimos 7 días en hora Colombia
     const days: { label: string; dateStr: string }[] = [];
     for (let i = 6; i >= 0; i--) {
-      // Subtract i days from today in UTC, then format in Bogota time
-      const d = new Date(now);
-      d.setUTCDate(d.getUTCDate() - i);
-      const dateStr = bogotaFormatter.format(d);
-      days.push({ label: DAY_LABELS[new Date(`${dateStr}T12:00:00`).getDay()], dateStr });
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const dateStr = toBogotaDateStr(d);
+      const dayOfWeek = new Date(`${dateStr}T12:00:00.000Z`).getUTCDay();
+      days.push({ label: DAY_LABELS[dayOfWeek], dateStr });
     }
 
-    // Fetch revenue for each day using UTC-adjusted ranges (Bogota UTC-5: midnight = UTC 05:00)
+    // Query directa a Prisma — suma delivery_price de servicios DELIVERED por día
     const revenues = await Promise.all(
-      days.map(({ dateStr }) => {
-        const from = `${dateStr}T05:00:00.000Z`;
-        const toDate = new Date(`${dateStr}T05:00:00.000Z`);
-        toDate.setUTCDate(toDate.getUTCDate() + 1);
-        toDate.setUTCMilliseconds(toDate.getUTCMilliseconds() - 1);
-        const to = toDate.toISOString();
-        return this.reporteFinanciero
-          .execute({ from, to }, company_id)
-          .then(r => r.revenue.total_delivery)
-          .catch(() => 0);
+      days.map(async ({ dateStr }) => {
+        const { from, to } = bogotaDayToUtcRange(dateStr);
+        const result = await this.prisma.service.aggregate({
+          where: {
+            company_id,
+            status: 'DELIVERED',
+            created_at: { gte: from, lte: to },
+          },
+          _sum: { delivery_price: true },
+        });
+        return Number(result._sum.delivery_price ?? 0);
       }),
     );
 
@@ -65,11 +83,7 @@ export class BffWeeklyStatsUseCase {
     }));
 
     const result: BffWeeklyStatsResponse = { weekly_revenue };
-    await this.cache.set(cacheKey, result, 300);
+    await this.cache.set(cacheKey, result, 60); // caché de 1 minuto para datos frescos
     return result;
-  }
-
-  private toDateStr(d: Date): string {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 }
