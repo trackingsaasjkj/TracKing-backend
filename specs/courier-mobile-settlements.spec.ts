@@ -20,7 +20,9 @@ function makeSettlement(overrides: Record<string, unknown> = {}) {
     start_date: new Date('2025-01-01'),
     end_date: new Date('2025-01-31'),
     total_services: 10,
-    total_earned: 300,
+    total_collected: 1500,
+    company_commission: 300,
+    courier_payment: 1200,
     created_at: new Date('2025-02-01'),
     ...overrides,
   };
@@ -115,8 +117,8 @@ describe('ConsultarLiquidacionesUseCase.getEarnings', () => {
 
   it('calcula correctamente el resumen de ganancias', async () => {
     const settlements = [
-      makeSettlement({ total_earned: 300, total_services: 10 }),
-      makeSettlement({ id: 'settlement-2', total_earned: 500, total_services: 15 }),
+      makeSettlement({ total_collected: 1500, company_commission: 300, courier_payment: 1200, total_services: 10 }),
+      makeSettlement({ id: 'settlement-2', total_collected: 2500, company_commission: 500, courier_payment: 2000, total_services: 15 }),
     ];
     repo.findCourierSettlements.mockResolvedValue(settlements);
 
@@ -124,7 +126,7 @@ describe('ConsultarLiquidacionesUseCase.getEarnings', () => {
 
     expect(result.total_settlements).toBe(2);
     expect(result.total_services).toBe(25);
-    expect(result.total_earned).toBeCloseTo(800);
+    expect(result.courier_payment).toBeCloseTo(3200);
     expect(result.settlements).toHaveLength(2);
   });
 
@@ -135,7 +137,7 @@ describe('ConsultarLiquidacionesUseCase.getEarnings', () => {
 
     expect(result.total_settlements).toBe(0);
     expect(result.total_services).toBe(0);
-    expect(result.total_earned).toBe(0);
+    expect(result.courier_payment).toBe(0);
     expect(result.settlements).toEqual([]);
   });
 
@@ -148,20 +150,20 @@ describe('ConsultarLiquidacionesUseCase.getEarnings', () => {
   });
 });
 
-// ─── PBT: getEarnings — total_earned siempre es la suma de settlements ────────
+// ─── PBT: getEarnings — courier_payment siempre es la suma de settlements ────────
 
-describe('P-CM-1: getEarnings total_earned = suma de total_earned de cada settlement (PBT)', () => {
+describe('P-CM-1: getEarnings courier_payment = suma de courier_payment de cada settlement (PBT)', () => {
   /**
-   * Para cualquier array de settlements, total_earned debe ser exactamente
-   * la suma de todos los total_earned individuales.
+   * Para cualquier array de settlements, courier_payment debe ser exactamente
+   * la suma de todos los courier_payment individuales.
    */
-  it('P-CM-1: total_earned acumulado es siempre la suma correcta', async () => {
+  it('P-CM-1: courier_payment acumulado es siempre la suma correcta', async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.array(
           fc.record({
             id: fc.uuid(),
-            total_earned: fc.float({ min: 0, max: Math.fround(100000), noNaN: true }),
+            courier_payment: fc.float({ min: 0, max: Math.fround(100000), noNaN: true }),
             total_services: fc.integer({ min: 0, max: 500 }),
           }),
           { minLength: 0, maxLength: 20 },
@@ -173,8 +175,8 @@ describe('P-CM-1: getEarnings total_earned = suma de total_earned de cada settle
 
           const result = await useCase.getEarnings('co-1', 'courier-1');
 
-          const expectedTotal = settlements.reduce((sum, s) => sum + Number(s.total_earned), 0);
-          expect(result.total_earned).toBeCloseTo(expectedTotal, 4);
+          const expectedTotal = settlements.reduce((sum, s) => sum + Number(s.courier_payment), 0);
+          expect(result.courier_payment).toBeCloseTo(expectedTotal, 4);
           expect(result.total_settlements).toBe(settlements.length);
         },
       ),

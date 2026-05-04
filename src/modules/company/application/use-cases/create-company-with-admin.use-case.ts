@@ -10,9 +10,15 @@ export class CreateCompanyWithAdminUseCase {
 
   async execute(dto: CreateCompanyWithAdminDto) {
     return this.prisma.$transaction(async (tx) => {
-      // 1. Crear empresa
+      // 1. Crear empresa con datos adicionales
       const company = await tx.company.create({
-        data: { name: dto.company.name },
+        data: {
+          name: dto.company.name,
+          nit: dto.company.nit,
+          email_corporativo: dto.company.email_corporativo,
+          telefono: dto.company.telefono,
+          direccion: dto.company.direccion,
+        },
       });
 
       // 2. Verificar email único dentro de la empresa (por si acaso)
@@ -28,6 +34,7 @@ export class CreateCompanyWithAdminUseCase {
           company_id: company.id,
           name: dto.admin.name,
           email: dto.admin.email,
+          phone: dto.admin.phone,
           password_hash,
           role: UserRole.ADMIN,
         },
@@ -37,6 +44,10 @@ export class CreateCompanyWithAdminUseCase {
         company: {
           id: company.id,
           name: company.name,
+          nit: company.nit,
+          email_corporativo: company.email_corporativo,
+          telefono: company.telefono,
+          direccion: company.direccion,
           status: company.status,
           created_at: company.created_at,
         },
@@ -44,6 +55,7 @@ export class CreateCompanyWithAdminUseCase {
           id: user.id,
           name: user.name,
           email: user.email,
+          phone: user.phone,
           role: user.role,
           company_id: user.company_id,
           created_at: user.created_at,

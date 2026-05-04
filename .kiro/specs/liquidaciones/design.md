@@ -247,7 +247,9 @@ export interface LiquidacionCourierResult {
   id: string
   courier_id: string
   total_services: number
-  total_earned: number
+  total_collected: number
+  company_commission: number
+  courier_payment: number
   start_date: string
   end_date: string
   generation_date: string
@@ -334,15 +336,16 @@ markServicesAsPaid(service_ids)  → payment_status = PAID
 ### Cálculo de comisión
 
 ```
-PERCENTAGE: total_earned = Σ(delivery_price_i * value / 100)
-FIXED:      total_earned = Σ(value)  = value * total_services
+PERCENTAGE: company_commission = Σ(delivery_price_i * value / 100)
+FIXED:      company_commission = Σ(value)  = value * total_services
 
-total_a_pagar = Σ(delivery_price_i) - total_earned
+total_collected = Σ(delivery_price_i)
+courier_payment = total_collected - company_commission
 ```
 
 ### Serialización de Decimales
 
-Todos los campos `Decimal` de Prisma (`delivery_price`, `total_earned`, `total_invoiced`) se convierten a `number` de JavaScript antes de retornar al frontend usando `Number(prismaDecimal)`. Esto garantiza que el frontend recibe `number`, no `string` ni objeto `Decimal`.
+Todos los campos `Decimal` de Prisma (`delivery_price`, `total_collected`, `company_commission`, `courier_payment`, `total_invoiced`) se convierten a `number` de JavaScript antes de retornar al frontend usando `Number(prismaDecimal)`. Esto garantiza que el frontend recibe `number`, no `string` ni objeto `Decimal`.
 
 ---
 

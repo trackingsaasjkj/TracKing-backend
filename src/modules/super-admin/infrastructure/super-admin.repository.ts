@@ -188,14 +188,14 @@ export class SuperAdminRepository {
       this.prisma.courier.count({ where: { company_id: tenantId, operational_status: { not: CourierStatus.UNAVAILABLE } } }),
       this.prisma.courierSettlement.aggregate({
         where: { company_id: tenantId, generation_date: { gte: from, lte: to } },
-        _sum: { total_earned: true },
+        _sum: { company_commission: true },
       }),
     ]);
 
     return {
       servicesByStatus: { PENDING: pending, ASSIGNED: assigned, DELIVERED: delivered, CANCELLED: cancelled },
       activeCouriers,
-      totalSettled: settlements._sum.total_earned ?? 0,
+      totalSettled: settlements._sum?.company_commission ?? 0,
     };
   }
 

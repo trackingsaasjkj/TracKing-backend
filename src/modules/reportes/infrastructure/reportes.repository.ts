@@ -111,7 +111,7 @@ export class ReportesRepository {
         _sum: { delivery_price: true },
       }),
 
-      // Query 3: total_earned per courier from settlements in range
+      // Query 3: company_commission per courier from settlements in range
       this.prisma.courierSettlement.groupBy({
         by: ['courier_id'],
         where: {
@@ -119,7 +119,7 @@ export class ReportesRepository {
           ...(courier_id ? { courier_id } : {}),
           ...settlementDateFilter,
         },
-        _sum: { total_earned: true },
+        _sum: { company_commission: true },
       }),
     ]);
 
@@ -132,7 +132,7 @@ export class ReportesRepository {
     );
 
     const settlementMap = new Map(
-      settlementRows.map((r) => [r.courier_id, Number(r._sum.total_earned ?? 0)]),
+      settlementRows.map((r) => [r.courier_id, Number(r._sum.company_commission ?? 0)]),
     );
 
     // Collect all courier ids from total rows
@@ -246,8 +246,20 @@ export class ReportesRepository {
         company_id,
         generation_date: { gte: from, lte: to },
       },
-      _sum: { total_earned: true },
+      _sum: { company_commission: true },
       _count: { id: true },
+    });
+  }
+
+  /** Count services pending settlement (is_settled_courier = false) */
+  async countPendingSettlement(company_id: string, from: Date, to: Date) {
+    return this.prisma.service.count({
+      where: {
+        company_id,
+        status: 'DELIVERED',
+        is_settled_courier: false,
+        delivery_date: { gte: from, lte: to },
+      },
     });
   }
 

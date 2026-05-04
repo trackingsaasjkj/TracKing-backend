@@ -1,4 +1,4 @@
-import { IsArray, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsArray, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Role } from '../../../../core/constants/roles.enum';
 import { Permission } from '../../../../core/constants/permissions.enum';
@@ -21,6 +21,12 @@ export class CreateUserDto {
   @ApiProperty({ enum: Role, example: Role.AUX })
   @IsEnum(Role)
   role!: Role;
+
+  @ApiPropertyOptional({ example: '+573001234567', maxLength: 20 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  phone?: string;
 
   @ApiPropertyOptional({ enum: Permission, isArray: true })
   @IsOptional()

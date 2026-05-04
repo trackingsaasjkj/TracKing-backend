@@ -675,7 +675,7 @@ Genera la liquidación de un mensajero por servicios `DELIVERED` en el rango de 
 }
 ```
 
-**Respuesta 201:** Liquidación generada con `total_earned`.
+**Respuesta 201:** Liquidación generada con `total_collected`, `company_commission` y `courier_payment`.
 
 **Errores:** `400` Sin servicios en el rango, total inválido o sin regla activa · `404` Mensajero no encontrado
 

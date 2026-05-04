@@ -29,11 +29,12 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate }),
-    ThrottlerModule.forRoot([
-      { name: 'short',       ttl: 60_000, limit: 20 },   // 20 req/min por defecto
-      { name: 'auth',        ttl: 60_000, limit: 10 },   // 10 req/min para auth
-      { name: 'super-admin', ttl: 60_000, limit: 30 },   // 30 req/min para super-admin
-    ]),
+    // ThrottlerModule deshabilitado temporalmente - causa problemas con rate limiting
+    // ThrottlerModule.forRoot([
+    //   { name: 'short',       ttl: 60_000, limit: 100 },   // 100 req/min por defecto
+    //   { name: 'auth',        ttl: 60_000, limit: 50 },    // 50 req/min para auth
+    //   { name: 'super-admin', ttl: 60_000, limit: 100 },   // 100 req/min para super-admin
+    // ]),
     PrismaModule,
     StorageModule,
     CacheModule,
@@ -58,7 +59,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // ThrottlerGuard deshabilitado temporalmente
+    // { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule {}

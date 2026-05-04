@@ -35,7 +35,12 @@ describe('GenerarLiquidacionCourierUseCase', () => {
     await useCase.execute(dto, 'co-1');
 
     expect(mockLiquidacionRepo.createCourierSettlement).toHaveBeenCalledWith(
-      expect.objectContaining({ total_services: 3, total_earned: 4500 }),
+      expect.objectContaining({ 
+        total_services: 3, 
+        company_commission: 4500,
+        total_collected: 30000,
+        courier_payment: 25500
+      }),
     );
   });
 
@@ -47,7 +52,12 @@ describe('GenerarLiquidacionCourierUseCase', () => {
     await useCase.execute(dto, 'co-1');
 
     expect(mockLiquidacionRepo.createCourierSettlement).toHaveBeenCalledWith(
-      expect.objectContaining({ total_services: 2, total_earned: 6000 }),
+      expect.objectContaining({ 
+        total_services: 2, 
+        company_commission: 6000,
+        total_collected: 20000,
+        courier_payment: 14000
+      }),
     );
   });
 
