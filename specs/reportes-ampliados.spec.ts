@@ -517,7 +517,7 @@ describe('ReportesRepository.getCourierStats — Property Tests', () => {
           // No settlements in this test — company_earnings will be 0
           const settlementGroupByRows: Array<{
             courier_id: string;
-            _sum: { total_earned: number };
+            _sum: { company_commission: number };
           }> = [];
 
           // Courier name lookup
@@ -537,7 +537,7 @@ describe('ReportesRepository.getCourierStats — Property Tests', () => {
                 .mockResolvedValueOnce(settledGroupByRows),
             },
             courierSettlement: {
-              groupBy: jest.fn().mockResolvedValueOnce(settlementGroupByRows),
+              groupBy: jest.fn().mockResolvedValueOnce(settlementGroupByRows).mockResolvedValueOnce(settlementGroupByRows),
             },
             courier: {
               findMany: jest.fn().mockResolvedValueOnce(courierFindManyRows),
@@ -604,6 +604,19 @@ describe('ReportesRepository.getCourierStats — Property Tests', () => {
               _sum: { company_commission: c.total_earned },
             }));
 
+          // Query 4 mock: courier_payment + company_commission per courier
+          // company_earnings = settled_amount - total_earned (when has_settlements)
+          // company_earnings = 0 (when no settlements, settlementPaymentMap returns undefined → 0)
+          const settlementPaymentRows = uniqueCouriers
+            .filter((c) => c.has_settlements)
+            .map((c) => ({
+              courier_id: c.courier_id,
+              _sum: {
+                courier_payment: c.settled_amount,
+                company_commission: c.settled_amount - c.total_earned,
+              },
+            }));
+
           // Courier name lookup
           const courierFindManyRows = uniqueCouriers.map((c) => ({
             id: c.courier_id,
@@ -618,7 +631,9 @@ describe('ReportesRepository.getCourierStats — Property Tests', () => {
                 .mockResolvedValueOnce(settledGroupByRows),
             },
             courierSettlement: {
-              groupBy: jest.fn().mockResolvedValueOnce(settlementGroupByRows),
+              groupBy: jest.fn()
+                .mockResolvedValueOnce(settlementGroupByRows)
+                .mockResolvedValueOnce(settlementPaymentRows),
             },
             courier: {
               findMany: jest.fn().mockResolvedValueOnce(courierFindManyRows),
@@ -630,9 +645,10 @@ describe('ReportesRepository.getCourierStats — Property Tests', () => {
 
           for (const row of result) {
             const courier = uniqueCouriers.find((c) => c.courier_id === row.courier_id)!;
+            // company_earnings comes from settlementPaymentMap.company_commission
             const expectedEarnings = courier.has_settlements
               ? courier.settled_amount - courier.total_earned
-              : courier.settled_amount; // no settlements → total_earned = 0
+              : 0; // no settlements → settlementPaymentMap has no entry → 0
 
             expect(row.company_earnings).toBeCloseTo(expectedEarnings, 5);
           }
@@ -678,7 +694,7 @@ describe('ReportesRepository.getCourierStats — Property Tests', () => {
           // No settlements at all
           const settlementGroupByRows: Array<{
             courier_id: string;
-            _sum: { total_earned: number };
+            _sum: { company_commission: number };
           }> = [];
 
           const courierFindManyRows = uniqueCouriers.map((c) => ({
@@ -694,7 +710,9 @@ describe('ReportesRepository.getCourierStats — Property Tests', () => {
                 .mockResolvedValueOnce(settledGroupByRows),
             },
             courierSettlement: {
-              groupBy: jest.fn().mockResolvedValueOnce(settlementGroupByRows),
+              groupBy: jest.fn()
+                .mockResolvedValueOnce(settlementGroupByRows)
+                .mockResolvedValueOnce(settlementGroupByRows),
             },
             courier: {
               findMany: jest.fn().mockResolvedValueOnce(courierFindManyRows),
@@ -705,9 +723,8 @@ describe('ReportesRepository.getCourierStats — Property Tests', () => {
           const result = await repo.getCourierStats('company-test');
 
           for (const row of result) {
-            const courier = uniqueCouriers.find((c) => c.courier_id === row.courier_id)!;
-            // When no settlements: company_earnings = settled_amount - 0 = settled_amount
-            expect(row.company_earnings).toBeCloseTo(courier.settled_amount, 5);
+            // When no settlements: settlementPaymentMap has no entry → company_earnings = 0
+            expect(row.company_earnings).toBeCloseTo(0, 5);
           }
         },
       ),
@@ -789,8 +806,18 @@ describe('ReportesRepository.getCourierStats — Property Tests', () => {
           // Query 3 mock: no settlements
           const settlementGroupByRows: Array<{
             courier_id: string;
-            _sum: { total_earned: number };
+            _sum: { company_commission: number };
           }> = [];
+
+          // Query 4 mock: courier_payment = sum of DELIVERED delivery_price per courier
+          // (so total_amount in result matches the expected delivered sum)
+          const settlementPaymentRows = totalGroupByRows.map((r) => ({
+            courier_id: r.courier_id,
+            _sum: {
+              courier_payment: r._sum.delivery_price,
+              company_commission: 0,
+            },
+          }));
 
           // Courier name lookup
           const courierFindManyRows = totalGroupByRows.map((r) => ({
@@ -806,7 +833,9 @@ describe('ReportesRepository.getCourierStats — Property Tests', () => {
                 .mockResolvedValueOnce(settledGroupByRows),
             },
             courierSettlement: {
-              groupBy: jest.fn().mockResolvedValueOnce(settlementGroupByRows),
+              groupBy: jest.fn()
+                .mockResolvedValueOnce(settlementGroupByRows)
+                .mockResolvedValueOnce(settlementPaymentRows),
             },
             courier: {
               findMany: jest.fn().mockResolvedValueOnce(courierFindManyRows),
@@ -958,3 +987,4 @@ describe('ReporteServiciosUseCase — Property Tests', () => {
     );
   });
 });
+

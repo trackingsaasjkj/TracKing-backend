@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { CrearServicioUseCase } from './application/use-cases/crear-servicio.use-case';
 import { AsignarServicioUseCase } from './application/use-cases/asignar-servicio.use-case';
 import { CambiarEstadoUseCase } from './application/use-cases/cambiar-estado.use-case';
@@ -7,6 +7,7 @@ import { CambiarPagoUseCase } from './application/use-cases/cambiar-pago.use-cas
 import { CancelarServicioUseCase } from './application/use-cases/cancelar-servicio.use-case';
 import { ConsultarServiciosUseCase } from './application/use-cases/consultar-servicios.use-case';
 import { EditarServicioUseCase } from './application/use-cases/editar-servicio.use-case';
+import { ParseMessageUseCase } from './application/use-cases/parse-message.use-case';
 import { CrearServicioDto } from './application/dto/crear-servicio.dto';
 import { AsignarServicioDto } from './application/dto/asignar-servicio.dto';
 import { CambiarEstadoDto } from './application/dto/cambiar-estado.dto';
@@ -33,7 +34,17 @@ export class ServiciosController {
     private readonly cancelarUseCase: CancelarServicioUseCase,
     private readonly consultarUseCase: ConsultarServiciosUseCase,
     private readonly editarUseCase: EditarServicioUseCase,
+    private readonly parseMessageUseCase: ParseMessageUseCase,
   ) {}
+
+  @Post('parse-message')
+  @Roles(Role.ADMIN, Role.AUX)
+  @ApiOperation({ summary: 'Parsear mensaje de WhatsApp con IA', description: 'Extrae los campos del servicio de un mensaje de WhatsApp usando parser + GPT-4o-mini como fallback.' })
+  @ApiBody({ schema: { type: 'object', properties: { message: { type: 'string' } }, required: ['message'] } })
+  @ApiResponse({ status: 200, description: 'Campos extraídos' })
+  async parseMessage(@Body('message') message: string, @CurrentUser() user: JwtPayload) {
+    return ok(await this.parseMessageUseCase.execute(message, user.company_id ?? undefined));
+  }
 
   @Post()
   @Roles(Role.ADMIN, Role.AUX)

@@ -24,6 +24,7 @@ function makeSettlement(overrides: Record<string, unknown> = {}) {
     company_commission: 300,
     courier_payment: 1200,
     created_at: new Date('2025-02-01'),
+    services: [],
     ...overrides,
   };
 }

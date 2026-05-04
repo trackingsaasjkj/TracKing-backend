@@ -43,6 +43,15 @@ function makeAuditLogService() {
   } as any;
 }
 
+function makePrismaService() {
+  return {
+    parserFailureLog: {
+      findMany: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0),
+    },
+  } as any;
+}
+
 const mockUser: JwtPayload = {
   sub: 'admin-uuid',
   email: 'superadmin@test.com',
@@ -60,7 +69,7 @@ describe('SuperAdminController.createTenant', () => {
   beforeEach(() => {
     repo = makeSuperAdminRepo();
     auditLog = makeAuditLogService();
-    controller = new SuperAdminController(repo, auditLog);
+    controller = new SuperAdminController(repo, auditLog, makePrismaService());
   });
 
   // 9.2 Unit test: nombre válido → retorna tenant con id
@@ -101,7 +110,7 @@ describe('SuperAdminController.suspendTenant', () => {
   beforeEach(() => {
     repo = makeSuperAdminRepo();
     auditLog = makeAuditLogService();
-    controller = new SuperAdminController(repo, auditLog);
+    controller = new SuperAdminController(repo, auditLog, makePrismaService());
   });
 
   // 9.4 Unit test: suspendTenant → status = false
@@ -126,7 +135,7 @@ describe('SuperAdminController.reactivateTenant', () => {
   beforeEach(() => {
     repo = makeSuperAdminRepo();
     auditLog = makeAuditLogService();
-    controller = new SuperAdminController(repo, auditLog);
+    controller = new SuperAdminController(repo, auditLog, makePrismaService());
   });
 
   // 9.5 Unit test: reactivateTenant → status = true
@@ -151,7 +160,7 @@ describe('SuperAdminController.deleteTenant', () => {
   beforeEach(() => {
     repo = makeSuperAdminRepo();
     auditLog = makeAuditLogService();
-    controller = new SuperAdminController(repo, auditLog);
+    controller = new SuperAdminController(repo, auditLog, makePrismaService());
   });
 
   // 9.6 Unit test: deleteTenant → llama auditLogService.log con action: 'DELETE_TENANT'
@@ -185,7 +194,7 @@ describe('P4: createTenant con nombre válido siempre retorna id (PBT)', () => {
         async (name) => {
           const repo = makeSuperAdminRepo();
           const auditLog = makeAuditLogService();
-          const controller = new SuperAdminController(repo, auditLog);
+          const controller = new SuperAdminController(repo, auditLog, makePrismaService());
 
           repo.createTenant.mockResolvedValue({ id: 'tenant-id', name });
 
@@ -214,7 +223,7 @@ describe('P5: nombre duplicado siempre lanza AppException 409 (PBT)', () => {
         async (name) => {
           const repo = makeSuperAdminRepo();
           const auditLog = makeAuditLogService();
-          const controller = new SuperAdminController(repo, auditLog);
+          const controller = new SuperAdminController(repo, auditLog, makePrismaService());
 
           repo.createTenant.mockRejectedValue(
             new AppException('Ya existe un tenant con ese nombre', HttpStatus.CONFLICT),
@@ -248,7 +257,7 @@ describe('P6: round-trip suspend → reactivate → status = true (PBT)', () => 
         async (tenantId) => {
           const repo = makeSuperAdminRepo();
           const auditLog = makeAuditLogService();
-          const controller = new SuperAdminController(repo, auditLog);
+          const controller = new SuperAdminController(repo, auditLog, makePrismaService());
 
           repo.updateTenantStatus
             .mockResolvedValueOnce({ id: tenantId, status: false })

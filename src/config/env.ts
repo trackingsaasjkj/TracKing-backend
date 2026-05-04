@@ -16,6 +16,7 @@ class EnvVars {
   @IsString() @IsNotEmpty() SUPABASE_URL!: string;
   @IsOptional() @IsString() SUPABASE_SERVICE_ROLE_KEY?: string;
   @IsOptional() @IsString() SUPABASE_STORAGE_BUCKET?: string;
+  @IsOptional() @IsString() OPENAI_API_KEY?: string;
 
   @IsOptional() @IsString() MAPBOX_ACCESS_TOKEN?: string;
   @IsOptional() @IsString() MAPBOX_COUNTRY?: string;        // default: 'co'
