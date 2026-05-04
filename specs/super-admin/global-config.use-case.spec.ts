@@ -42,6 +42,15 @@ function makeAuditLogService() {
   } as any;
 }
 
+function makePrismaService() {
+  return {
+    parserFailureLog: {
+      findMany: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0),
+    },
+  } as any;
+}
+
 // ─── 11.2 CreateConfig con key válida → retorna config con id ────────────────
 
 describe('SuperAdminController.createConfig — key válida', () => {
@@ -52,7 +61,7 @@ describe('SuperAdminController.createConfig — key válida', () => {
   beforeEach(() => {
     repo = makeSuperAdminRepo();
     auditLog = makeAuditLogService();
-    controller = new SuperAdminController(repo, auditLog);
+    controller = new SuperAdminController(repo, auditLog, makePrismaService());
   });
 
   it('11.2: key válida → retorna config con id', async () => {
@@ -78,7 +87,7 @@ describe('SuperAdminController.createConfig — key duplicada', () => {
   beforeEach(() => {
     repo = makeSuperAdminRepo();
     auditLog = makeAuditLogService();
-    controller = new SuperAdminController(repo, auditLog);
+    controller = new SuperAdminController(repo, auditLog, makePrismaService());
   });
 
   it('11.3: key duplicada → AppException 409', async () => {
@@ -108,7 +117,7 @@ describe('SuperAdminController.updateConfig — key existente', () => {
   beforeEach(() => {
     repo = makeSuperAdminRepo();
     auditLog = makeAuditLogService();
-    controller = new SuperAdminController(repo, auditLog);
+    controller = new SuperAdminController(repo, auditLog, makePrismaService());
   });
 
   it('11.4: key existente → persiste nuevo valor', async () => {
@@ -136,7 +145,7 @@ describe('SuperAdminController.updateConfig — key inexistente', () => {
   beforeEach(() => {
     repo = makeSuperAdminRepo();
     auditLog = makeAuditLogService();
-    controller = new SuperAdminController(repo, auditLog);
+    controller = new SuperAdminController(repo, auditLog, makePrismaService());
   });
 
   it('11.5: key inexistente → AppException 404', async () => {
@@ -168,7 +177,7 @@ describe('P12: fc.string() como value → update siempre persiste el valor envia
         async (value) => {
           const repo = makeSuperAdminRepo();
           const auditLog = makeAuditLogService();
-          const controller = new SuperAdminController(repo, auditLog);
+          const controller = new SuperAdminController(repo, auditLog, makePrismaService());
 
           const existing = { id: 'config-uuid', key: 'SOME_KEY', value: 'old-value' };
           const updated = { id: 'config-uuid', key: 'SOME_KEY', value };
@@ -201,7 +210,7 @@ describe('P13: fc.string() como key inexistente → siempre AppException 404 (PB
         async (key) => {
           const repo = makeSuperAdminRepo();
           const auditLog = makeAuditLogService();
-          const controller = new SuperAdminController(repo, auditLog);
+          const controller = new SuperAdminController(repo, auditLog, makePrismaService());
 
           repo.findConfigByKey.mockResolvedValue(null);
 
@@ -236,7 +245,7 @@ describe('P14: key duplicada → siempre AppException 409 (PBT)', () => {
         async (key, value) => {
           const repo = makeSuperAdminRepo();
           const auditLog = makeAuditLogService();
-          const controller = new SuperAdminController(repo, auditLog);
+          const controller = new SuperAdminController(repo, auditLog, makePrismaService());
 
           repo.createConfig.mockRejectedValue(
             new AppException('Ya existe una configuración con esa clave', HttpStatus.CONFLICT),

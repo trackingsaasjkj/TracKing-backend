@@ -5,6 +5,7 @@ const mockRepo = {
   totalRevenue: jest.fn(),
   revenueByPaymentMethod: jest.fn(),
   settlementSummary: jest.fn(),
+  countPendingSettlement: jest.fn(),
 };
 
 const mockCache = { get: jest.fn().mockReturnValue(null), set: jest.fn() };
@@ -31,6 +32,7 @@ describe('ReporteFinancieroUseCase', () => {
       { status: 'SETTLED', _sum: { company_commission: 10000 }, _count: { id: 2 } },
       { status: 'UNSETTLED', _sum: { company_commission: 5000 }, _count: { id: 1 } },
     ]);
+    mockRepo.countPendingSettlement.mockResolvedValue(3);
   });
 
   it('returns financial metrics for valid range', async () => {

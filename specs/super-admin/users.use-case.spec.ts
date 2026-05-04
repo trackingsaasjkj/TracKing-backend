@@ -44,6 +44,15 @@ function makeAuditLogService() {
   } as any;
 }
 
+function makePrismaService() {
+  return {
+    parserFailureLog: {
+      findMany: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0),
+    },
+  } as any;
+}
+
 const mockAdminUser: JwtPayload = {
   sub: 'super-admin-uuid',
   email: 'superadmin@test.com',
@@ -61,7 +70,7 @@ describe('SuperAdminController.suspendUser', () => {
   beforeEach(() => {
     repo = makeSuperAdminRepo();
     auditLog = makeAuditLogService();
-    controller = new SuperAdminController(repo, auditLog);
+    controller = new SuperAdminController(repo, auditLog, makePrismaService());
   });
 
   it('10.2: suspendUser → status = SUSPENDED', async () => {
@@ -85,7 +94,7 @@ describe('SuperAdminController.reactivateUser', () => {
   beforeEach(() => {
     repo = makeSuperAdminRepo();
     auditLog = makeAuditLogService();
-    controller = new SuperAdminController(repo, auditLog);
+    controller = new SuperAdminController(repo, auditLog, makePrismaService());
   });
 
   it('10.3: reactivateUser → status = ACTIVE', async () => {
@@ -109,7 +118,7 @@ describe('SuperAdminController.changeUserRole — rol válido', () => {
   beforeEach(() => {
     repo = makeSuperAdminRepo();
     auditLog = makeAuditLogService();
-    controller = new SuperAdminController(repo, auditLog);
+    controller = new SuperAdminController(repo, auditLog, makePrismaService());
   });
 
   it('10.4: rol válido con company_id = null → persiste nuevo rol', async () => {
@@ -136,7 +145,7 @@ describe('SuperAdminController.changeUserRole — SUPER_ADMIN con company_id', (
   beforeEach(() => {
     repo = makeSuperAdminRepo();
     auditLog = makeAuditLogService();
-    controller = new SuperAdminController(repo, auditLog);
+    controller = new SuperAdminController(repo, auditLog, makePrismaService());
   });
 
   it('10.5: SUPER_ADMIN + company_id != null → AppException 422', async () => {
@@ -165,7 +174,7 @@ describe('SuperAdminController.deleteUser', () => {
   beforeEach(() => {
     repo = makeSuperAdminRepo();
     auditLog = makeAuditLogService();
-    controller = new SuperAdminController(repo, auditLog);
+    controller = new SuperAdminController(repo, auditLog, makePrismaService());
   });
 
   it('10.6: deleteUser → llama auditLog.log con action DELETE_USER', async () => {
@@ -198,7 +207,7 @@ describe('P9: round-trip suspend → reactivate → status = ACTIVE (PBT)', () =
         async (userId) => {
           const repo = makeSuperAdminRepo();
           const auditLog = makeAuditLogService();
-          const controller = new SuperAdminController(repo, auditLog);
+          const controller = new SuperAdminController(repo, auditLog, makePrismaService());
 
           repo.updateUserStatus
             .mockResolvedValueOnce({ id: userId, status: UserStatus.SUSPENDED })
@@ -231,7 +240,7 @@ describe('P10: fc.constantFrom(ADMIN, AUX, COURIER) → rol persiste (PBT)', () 
         async (userId, role) => {
           const repo = makeSuperAdminRepo();
           const auditLog = makeAuditLogService();
-          const controller = new SuperAdminController(repo, auditLog);
+          const controller = new SuperAdminController(repo, auditLog, makePrismaService());
 
           repo.findUserById.mockResolvedValue({ id: userId, role: Role.AUX, company_id: null });
           repo.updateUserRole.mockResolvedValue({ id: userId, role });
@@ -262,7 +271,7 @@ describe('P11: fc.uuid() como company_id + SUPER_ADMIN → AppException 422 (PBT
         async (userId, companyId) => {
           const repo = makeSuperAdminRepo();
           const auditLog = makeAuditLogService();
-          const controller = new SuperAdminController(repo, auditLog);
+          const controller = new SuperAdminController(repo, auditLog, makePrismaService());
 
           repo.findUserById.mockResolvedValue({ id: userId, role: Role.ADMIN, company_id: companyId });
 
