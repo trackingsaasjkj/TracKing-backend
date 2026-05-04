@@ -14,6 +14,7 @@ import { CourierRepository } from './infrastructure/repositories/courier.reposit
 import { HistorialRepository } from './infrastructure/repositories/historial.repository';
 import { EvidenceRepository } from './infrastructure/repositories/evidence.repository';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { ParseMessageUseCase } from './application/use-cases/parse-message.use-case';
 import { ServiceUpdatesGateway } from './services-updates.gateway';
 import { DashboardUpdatesGateway } from './dashboard-updates.gateway';
 
@@ -43,6 +44,7 @@ import { DashboardUpdatesGateway } from './dashboard-updates.gateway';
     EvidenceRepository,
     ServiceUpdatesGateway,
     DashboardUpdatesGateway,
+    ParseMessageUseCase,
   ],
   exports: [ServicioRepository, CourierRepository, EvidenceRepository, HistorialRepository, ConsultarServiciosUseCase, CambiarPagoUseCase, ServiceUpdatesGateway, DashboardUpdatesGateway],
 })

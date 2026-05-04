@@ -261,6 +261,20 @@ model AuditLog {
   @@map("audit_log")
 }
 
+model ParserFailureLog {
+  id             String   @id @default(uuid())
+  company_id     String?
+  raw_message    String
+  parser_result  Json
+  ai_result      Json
+  missing_fields String[]
+  ai_diagnosis   Json
+  created_at     DateTime @default(now())
+
+  @@index([created_at(sort: Desc)])
+  @@map("parser_failure_log")
+}
+
 model GlobalConfig {
   id          String   @id @default(uuid())
   key         String   @unique @db.VarChar(100)

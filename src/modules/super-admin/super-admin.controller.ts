@@ -11,12 +11,13 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { UserStatus } from '@prisma/client';
 import { SuperAdminGuard } from '../../core/guards/super-admin.guard';
 import { SuperAdminRepository } from './infrastructure/super-admin.repository';
 import { AuditLogService } from './domain/audit-log.service';
+import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { PaginationDto } from './application/dto/pagination.dto';
 import { CreateTenantDto } from './application/dto/create-tenant.dto';
 import { UpdateUserRoleDto } from './application/dto/update-user-role.dto';
@@ -38,6 +39,7 @@ export class SuperAdminController {
   constructor(
     protected readonly repo: SuperAdminRepository,
     protected readonly auditLog: AuditLogService,
+    protected readonly prisma: PrismaService,
   ) {}
 
   @Get('health')
@@ -230,5 +232,84 @@ export class SuperAdminController {
   async getAuditLog(@Query() filters: AuditLogFilterDto) {
     const result = await this.repo.findAuditLogs(filters, filters.page ?? 1, filters.limit ?? 20);
     return ok(result);
+  }
+
+  // ─── Parser Failure Report ───────────────────────────────────────────────────
+
+  @Get('parser-report')
+  @ApiOperation({
+    summary: 'Informe de fallos del parser de WhatsApp',
+    description: 'Muestra los casos donde el parser no detectó campos y la IA tuvo que intervenir. Útil para mejorar el parser.',
+  })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Resultados por página (default: 50)' })
+  @ApiQuery({ name: 'offset', required: false, type: Number, description: 'Offset para paginación' })
+  @ApiQuery({ name: 'company_id', required: false, type: String, description: 'Filtrar por empresa' })
+  @ApiResponse({ status: 200, description: 'Informe de fallos del parser' })
+  async getParserReport(
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+    @Query('company_id') companyId?: string,
+  ) {
+    const take = limit ? parseInt(limit, 10) : 50;
+    const skip = offset ? parseInt(offset, 10) : 0;
+
+    const [logs, total] = await Promise.all([
+      this.prisma.parserFailureLog.findMany({
+        where: companyId ? { company_id: companyId } : {},
+        orderBy: { created_at: 'desc' },
+        take,
+        skip,
+      }),
+      this.prisma.parserFailureLog.count({
+        where: companyId ? { company_id: companyId } : {},
+      }),
+    ]);
+
+    // Aggregate field failure stats
+    const fieldStats: Record<string, number> = {};
+    const patternStats: Record<string, number> = {};
+
+    for (const log of logs) {
+      for (const field of log.missing_fields) {
+        fieldStats[field] = (fieldStats[field] ?? 0) + 1;
+      }
+      const diagnosis = log.ai_diagnosis as any[];
+      if (Array.isArray(diagnosis)) {
+        for (const d of diagnosis) {
+          if (d.pattern_found) {
+            patternStats[d.pattern_found] = (patternStats[d.pattern_found] ?? 0) + 1;
+          }
+        }
+      }
+    }
+
+    // Sort stats
+    const topFailingFields = Object.entries(fieldStats)
+      .sort(([, a], [, b]) => b - a)
+      .map(([field, count]) => ({ field, count }));
+
+    const topPatterns = Object.entries(patternStats)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 20)
+      .map(([pattern, count]) => ({ pattern, count }));
+
+    return ok({
+      summary: {
+        total_cases: total,
+        top_failing_fields: topFailingFields,
+        top_unrecognized_patterns: topPatterns,
+      },
+      cases: logs.map(log => ({
+        id: log.id,
+        company_id: log.company_id,
+        created_at: log.created_at,
+        raw_message: log.raw_message,
+        missing_fields: log.missing_fields,
+        parser_detected: log.parser_result,
+        ai_completed: log.ai_result,
+        diagnosis: log.ai_diagnosis,
+      })),
+      pagination: { total, limit: take, offset: skip },
+    });
   }
 }
