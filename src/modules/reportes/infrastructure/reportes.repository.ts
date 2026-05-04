@@ -83,7 +83,7 @@ export class ReportesRepository {
 
     const courierFilter = courier_id ? courier_id : { not: null as unknown as string };
 
-    const [totalRows, settledRows, settlementRows] = await Promise.all([
+    const [totalRows, settledRows, settlementRows, courierSettlements] = await Promise.all([
       // Query 1: total_services + total_amount (DELIVERED)
       this.prisma.service.groupBy({
         by: ['courier_id'],
@@ -121,6 +121,17 @@ export class ReportesRepository {
         },
         _sum: { company_commission: true },
       }),
+
+      // Query 4: courier_payment and company_commission from settlements
+      this.prisma.courierSettlement.groupBy({
+        by: ['courier_id'],
+        where: {
+          company_id,
+          ...(courier_id ? { courier_id } : {}),
+          ...settlementDateFilter,
+        },
+        _sum: { courier_payment: true, company_commission: true },
+      }),
     ]);
 
     // Build lookup maps for O(n) cross-join
@@ -133,6 +144,16 @@ export class ReportesRepository {
 
     const settlementMap = new Map(
       settlementRows.map((r) => [r.courier_id, Number(r._sum.company_commission ?? 0)]),
+    );
+
+    const settlementPaymentMap = new Map(
+      courierSettlements.map((r) => [
+        r.courier_id,
+        {
+          courier_payment: Number(r._sum.courier_payment ?? 0),
+          company_commission: Number(r._sum.company_commission ?? 0),
+        },
+      ]),
     );
 
     // Collect all courier ids from total rows
@@ -157,8 +178,10 @@ export class ReportesRepository {
 
         const unsettled_services = total_services - settled_services;
 
-        const total_earned = settlementMap.get(r.courier_id) ?? 0;
-        const company_earnings = settled_amount - total_earned;
+        // Use settlement data for total_amount and company_earnings
+        const settlementPayment = settlementPaymentMap.get(r.courier_id);
+        const total_facturado = settlementPayment?.courier_payment ?? 0;
+        const company_earnings = settlementPayment?.company_commission ?? 0;
 
         return {
           courier_id: r.courier_id,
@@ -166,7 +189,7 @@ export class ReportesRepository {
           total_services,
           settled_services,
           unsettled_services,
-          total_amount,
+          total_amount: total_facturado,
           company_earnings,
         };
       });
@@ -238,7 +261,7 @@ export class ReportesRepository {
     });
   }
 
-  /** Total settled vs unsettled courier settlements */
+  /** Total settled vs unsettled courier settlements with service counts */
   async settlementSummary(company_id: string, from: Date, to: Date) {
     return this.prisma.courierSettlement.groupBy({
       by: ['status'],
@@ -246,7 +269,7 @@ export class ReportesRepository {
         company_id,
         generation_date: { gte: from, lte: to },
       },
-      _sum: { company_commission: true },
+      _sum: { company_commission: true, total_services: true },
       _count: { id: true },
     });
   }
