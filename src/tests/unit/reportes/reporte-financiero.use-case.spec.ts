@@ -28,8 +28,8 @@ describe('ReporteFinancieroUseCase', () => {
       { payment_method: 'TRANSFER', _sum: { delivery_price: 20000 }, _count: { id: 2 } },
     ]);
     mockRepo.settlementSummary.mockResolvedValue([
-      { status: 'SETTLED', _sum: { total_earned: 10000 }, _count: { id: 2 } },
-      { status: 'UNSETTLED', _sum: { total_earned: 5000 }, _count: { id: 1 } },
+      { status: 'SETTLED', _sum: { company_commission: 10000 }, _count: { id: 2 } },
+      { status: 'UNSETTLED', _sum: { company_commission: 5000 }, _count: { id: 1 } },
     ]);
   });
 
@@ -39,8 +39,8 @@ describe('ReporteFinancieroUseCase', () => {
     expect(result!.revenue.total_services).toBe(5);
     expect(result!.revenue.total_price).toBe(50000);
     expect(result!.by_payment_method).toHaveLength(2);
-    expect(result!.settlements.settled.total_earned).toBe(10000);
-    expect(result!.settlements.unsettled.total_earned).toBe(5000);
+    expect(result!.settlements.settled.company_commission).toBe(10000);
+    expect(result!.settlements.unsettled.company_commission).toBe(5000);
   });
 
   it('throws AppException when from is missing', async () => {

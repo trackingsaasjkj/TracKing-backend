@@ -36,12 +36,14 @@ export class GenerarLiquidacionCourierUseCase {
     );
 
     const totalServices = servicios.length;
-    const totalEarned = calcularTotalLiquidacion(
+    const companyCommission = calcularTotalLiquidacion(
       servicios.map(s => ({ delivery_price: Number(s.delivery_price) })),
       { type: regla!.type as any, value: Number(regla!.value) },
     );
+    const totalCollected = servicios.reduce((sum, s) => sum + Number(s.delivery_price), 0);
+    const courierPayment = totalCollected - companyCommission;
 
-    validarResultadoLiquidacion(totalServices, totalEarned);
+    validarResultadoLiquidacion(totalServices, companyCommission);
 
     const settlement = await this.liquidacionRepo.createCourierSettlement({
       company_id,
@@ -49,8 +51,11 @@ export class GenerarLiquidacionCourierUseCase {
       start_date: startDate,
       end_date: endDate,
       total_services: totalServices,
-      total_earned: totalEarned,
+      total_collected: totalCollected,
+      company_commission: companyCommission,
+      courier_payment: courierPayment,
       status: 'SETTLED',
+      service_ids: servicios.map(s => s.id),
     });
 
     // Marcar servicios como liquidados (courier)
@@ -61,8 +66,15 @@ export class GenerarLiquidacionCourierUseCase {
     this.cache.deleteByPrefix(`reporte:couriers:${company_id}`);
 
     return {
-      ...settlement,
-      total_earned: Number(settlement.total_earned),
+      id: settlement.id,
+      courier_id: settlement.courier_id,
+      total_services: settlement.total_services,
+      total_collected: totalCollected,
+      company_commission: companyCommission,
+      courier_payment: courierPayment,
+      start_date: settlement.start_date,
+      end_date: settlement.end_date,
+      generation_date: settlement.generation_date,
     };
   }
 }

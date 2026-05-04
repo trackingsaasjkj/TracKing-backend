@@ -75,11 +75,13 @@ POST /api/liquidations/generate/customer
 ```
 ── Liquidación de mensajero ──────────────────────────────────
 Para cada servicio DELIVERED del courier en el rango:
-  Si regla es PERCENTAGE: ganancia = delivery_price * (value / 100)
-  Si regla es FIXED:      ganancia = value
+  Si regla es PERCENTAGE: comisión = delivery_price * (value / 100)
+  Si regla es FIXED:      comisión = value
 
-total_earned    = suma de ganancias de todos los servicios
-total_services  = count de servicios en el rango
+total_collected     = suma de delivery_price de todos los servicios
+company_commission  = suma de comisiones de todos los servicios
+courier_payment     = total_collected - company_commission
+total_services      = count de servicios en el rango
 
 ── Liquidación de cliente ────────────────────────────────────
 Para cada servicio DELIVERED del customer en el rango:
