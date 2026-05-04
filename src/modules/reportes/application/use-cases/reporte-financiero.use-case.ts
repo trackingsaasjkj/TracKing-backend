@@ -17,6 +17,7 @@ export interface FinancieroReportResult {
     settled: { count: number; company_commission: number };
     unsettled: { count: number; company_commission: number };
   };
+  pending_settlement: number;
 }
 
 @Injectable()
@@ -42,10 +43,11 @@ export class ReporteFinancieroUseCase {
     const cached = await this.cache.get<FinancieroReportResult>(cacheKey);
     if (cached !== null) return cached;
 
-    const [revenue, byPayment, settlements] = await Promise.all([
+    const [revenue, byPayment, settlements, pendingSettlement] = await Promise.all([
       this.repo.totalRevenue(company_id, from, to),
       this.repo.revenueByPaymentMethod(company_id, from, to),
       this.repo.settlementSummary(company_id, from, to),
+      this.repo.countPendingSettlement(company_id, from, to),
     ]);
 
     const settled = settlements.find(s => s.status === 'SETTLED');
@@ -68,6 +70,7 @@ export class ReporteFinancieroUseCase {
         settled: { count: settled?._count?.id ?? 0, company_commission: Number(settled?._sum?.company_commission ?? 0) },
         unsettled: { count: unsettled?._count?.id ?? 0, company_commission: Number(unsettled?._sum?.company_commission ?? 0) },
       },
+      pending_settlement: pendingSettlement,
     };
 
     await this.cache.set(cacheKey, result, 300);

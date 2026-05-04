@@ -251,6 +251,18 @@ export class ReportesRepository {
     });
   }
 
+  /** Count services pending settlement (is_settled_courier = false) */
+  async countPendingSettlement(company_id: string, from: Date, to: Date) {
+    return this.prisma.service.count({
+      where: {
+        company_id,
+        status: 'DELIVERED',
+        is_settled_courier: false,
+        delivery_date: { gte: from, lte: to },
+      },
+    });
+  }
+
   /**
    * Returns favorite customer report for the given company and optional date range.
    * Only includes customers with is_favorite = true.
