@@ -66,6 +66,7 @@ export class CambiarEstadoUseCase {
     this.cache.delete(`bff:dashboard:active:${company_id}`);
     this.cache.delete(`bff:active-orders:active:${company_id}`);
     this.cache.deleteByPrefix(`reporte:financiero:${company_id}`);
+    this.cache.deleteByPrefix(`bff:weekly-stats:${company_id}`);
 
     const updatedService = await this.servicioRepo.findById(service_id, company_id);
 
