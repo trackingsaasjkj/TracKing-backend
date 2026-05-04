@@ -12,7 +12,31 @@ export class ConsultarLiquidacionesUseCase {
   async findCourierSettlementById(id: string, company_id: string) {
     const settlement = await this.liquidacionRepo.findCourierSettlementById(id, company_id);
     if (!settlement) throw new NotFoundException('Liquidación no encontrada');
-    return settlement;
+    
+    // Formatear los datos para serialización JSON
+    return {
+      ...settlement,
+      total_collected: typeof settlement.total_collected === 'object' 
+        ? Number(settlement.total_collected.toString()) 
+        : settlement.total_collected,
+      company_commission: typeof settlement.company_commission === 'object' 
+        ? Number(settlement.company_commission.toString()) 
+        : settlement.company_commission,
+      courier_payment: typeof settlement.courier_payment === 'object' 
+        ? Number(settlement.courier_payment.toString()) 
+        : settlement.courier_payment,
+      services: settlement.services.map(ss => ({
+        id: ss.service.id,
+        delivery_price: typeof ss.service.delivery_price === 'object'
+          ? Number(ss.service.delivery_price.toString())
+          : ss.service.delivery_price,
+        product_price: typeof ss.service.product_price === 'object'
+          ? Number(ss.service.product_price.toString())
+          : ss.service.product_price,
+        delivery_date: ss.service.delivery_date,
+        customer: ss.service.customer,
+      }))
+    };
   }
 
   async findCustomerSettlements(company_id: string, customer_id?: string) {

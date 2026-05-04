@@ -131,6 +131,7 @@ model Service {
   courier                      Courier?               @relation(fields: [courier_id], references: [id])
   customer                     Customer               @relation(fields: [customer_id], references: [id])
   statusHistory                ServiceStatusHistory[]
+  settlements                  SettlementService[]
 
   @@index([company_id, status])
   @@index([company_id, courier_id])
@@ -200,23 +201,37 @@ model SettlementRule {
 }
 
 model CourierSettlement {
-  id                  String           @id @default(uuid())
+  id                  String                 @id @default(uuid())
   company_id          String
   courier_id          String
-  start_date          DateTime         @db.Date
-  end_date            DateTime         @db.Date
+  start_date          DateTime               @db.Date
+  end_date            DateTime               @db.Date
   total_services      Int
-  total_collected     Decimal          @default(0) @db.Decimal(12, 2)
-  company_commission  Decimal          @default(0) @db.Decimal(12, 2)
-  courier_payment     Decimal          @default(0) @db.Decimal(12, 2)
-  status              SettlementStatus @default(UNSETTLED)
-  generation_date     DateTime         @default(now())
-  company             Company          @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  courier             Courier          @relation(fields: [courier_id], references: [id])
+  total_collected     Decimal                @default(0) @db.Decimal(12, 2)
+  company_commission  Decimal                @default(0) @db.Decimal(12, 2)
+  courier_payment     Decimal                @default(0) @db.Decimal(12, 2)
+  status              SettlementStatus       @default(UNSETTLED)
+  generation_date     DateTime               @default(now())
+  company             Company                @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  courier             Courier                @relation(fields: [courier_id], references: [id])
+  services            SettlementService[]
 
   @@index([company_id, courier_id])
   @@index([company_id, generation_date(sort: Desc)])
   @@map("courier_settlement")
+}
+
+model SettlementService {
+  id                  String             @id @default(uuid())
+  settlement_id       String
+  service_id          String
+  settlement          CourierSettlement  @relation(fields: [settlement_id], references: [id], onDelete: Cascade)
+  service             Service            @relation(fields: [service_id], references: [id], onDelete: Cascade)
+
+  @@unique([settlement_id, service_id])
+  @@index([settlement_id])
+  @@index([service_id])
+  @@map("settlement_service")
 }
 
 model CustomerSettlement {

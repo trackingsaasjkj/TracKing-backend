@@ -74,6 +74,7 @@ export class LiquidacionRepository {
     company_commission: number;
     courier_payment: number;
     status?: 'SETTLED' | 'UNSETTLED';
+    service_ids?: string[];
   }) {
     return this.prisma.courierSettlement.create({ 
       data: { 
@@ -85,7 +86,10 @@ export class LiquidacionRepository {
         total_collected: data.total_collected,
         company_commission: data.company_commission,
         courier_payment: data.courier_payment,
-        status: data.status ?? 'SETTLED'
+        status: data.status ?? 'SETTLED',
+        services: data.service_ids ? {
+          create: data.service_ids.map(service_id => ({ service_id }))
+        } : undefined
       } 
     });
   }
@@ -101,7 +105,22 @@ export class LiquidacionRepository {
   async findCourierSettlementById(id: string, company_id: string) {
     return this.prisma.courierSettlement.findFirst({
       where: { id, company_id },
-      include: { courier: { include: { user: { select: { name: true, email: true } } } } },
+      include: { 
+        courier: { include: { user: { select: { name: true, email: true } } } },
+        services: {
+          include: {
+            service: {
+              select: {
+                id: true,
+                delivery_price: true,
+                product_price: true,
+                delivery_date: true,
+                customer: { select: { id: true, name: true } }
+              }
+            }
+          }
+        }
+      },
     });
   }
 

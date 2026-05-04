@@ -55,6 +55,7 @@ export class GenerarLiquidacionCourierUseCase {
       company_commission: companyCommission,
       courier_payment: courierPayment,
       status: 'SETTLED',
+      service_ids: servicios.map(s => s.id),
     });
 
     // Marcar servicios como liquidados (courier)
