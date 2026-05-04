@@ -216,6 +216,7 @@ async function bootstrap() {
       'http://localhost:3001',
       'http://localhost:8081',
       'https://tracking-xi-seven.vercel.app',
+      'https://tracking-frontend-ten.vercel.app',
       'https://tracking-backend-g4mq.onrender.com',
     ],
     credentials: true,
