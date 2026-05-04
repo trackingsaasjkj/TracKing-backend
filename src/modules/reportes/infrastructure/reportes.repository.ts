@@ -216,7 +216,7 @@ export class ReportesRepository {
       where: {
         company_id,
         status: 'DELIVERED',
-        delivery_date: { gte: from, lte: to },
+        created_at: { gte: from, lte: to },
       },
       _sum: { delivery_price: true },
       _count: { id: true },
@@ -231,7 +231,7 @@ export class ReportesRepository {
       where: {
         company_id,
         status: 'DELIVERED',
-        delivery_date: { gte: from, lte: to },
+        created_at: { gte: from, lte: to },
       },
       _sum: { delivery_price: true },
       _count: { id: true },
@@ -258,7 +258,7 @@ export class ReportesRepository {
         company_id,
         status: 'DELIVERED',
         is_settled_courier: false,
-        delivery_date: { gte: from, lte: to },
+        created_at: { gte: from, lte: to },
       },
     });
   }
