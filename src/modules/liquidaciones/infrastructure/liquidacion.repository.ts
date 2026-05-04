@@ -191,19 +191,20 @@ export class LiquidacionRepository {
   }
 
   async markServicesAsPaid(service_ids: string[], company_id: string) {
+    // Solo marcar como liquidados los servicios que NO estén cancelados
     await this.prisma.service.updateMany({
-      where: { id: { in: service_ids }, company_id },
+      where: { id: { in: service_ids }, company_id, status: { not: 'CANCELLED' } },
       data: { is_settled_customer: true },
     });
     await this.prisma.service.updateMany({
-      where: { id: { in: service_ids }, company_id, payment_status: 'UNPAID' },
+      where: { id: { in: service_ids }, company_id, payment_status: 'UNPAID', status: { not: 'CANCELLED' } },
       data: { payment_status: 'PAID' },
     });
   }
 
   async findServicesByIds(service_ids: string[], company_id: string) {
     return this.prisma.service.findMany({
-      where: { id: { in: service_ids }, company_id },
+      where: { id: { in: service_ids }, company_id, status: { not: 'CANCELLED' } },
       select: { id: true, customer_id: true, delivery_price: true, payment_status: true, is_settled_customer: true },
     });
   }
@@ -260,10 +261,10 @@ export class LiquidacionRepository {
   }
 
   async findCustomersWithUnpaid(company_id: string) {
-    // Customers with at least one service not yet settled (is_settled_customer = false)
+    // Customers with at least one DELIVERED service not yet settled (excludes CANCELLED)
     const result = await this.prisma.service.groupBy({
       by: ['customer_id'],
-      where: { company_id, is_settled_customer: false },
+      where: { company_id, is_settled_customer: false, status: { not: 'CANCELLED' } },
       _count: { id: true },
     });
 
@@ -287,12 +288,13 @@ export class LiquidacionRepository {
     from?: Date,
     to?: Date,
   ) {
-    // All unsettled services for the customer (is_settled_customer = false)
+    // All unsettled DELIVERED services for the customer (excludes CANCELLED)
     const services = await this.prisma.service.findMany({
       where: {
         company_id,
         customer_id,
         is_settled_customer: false,
+        status: { not: 'CANCELLED' },
         ...(from || to
           ? {
               delivery_date: {
