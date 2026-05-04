@@ -52,7 +52,7 @@ export class BffWeeklyStatsUseCase {
         const to = toDate.toISOString();
         return this.reporteFinanciero
           .execute({ from, to }, company_id)
-          .then(r => r.revenue.total_price)
+          .then(r => r.revenue.total_delivery)
           .catch(() => 0);
       }),
     );
