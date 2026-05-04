@@ -67,7 +67,7 @@ export class BffWeeklyStatsUseCase {
           where: {
             company_id,
             status: 'DELIVERED',
-            created_at: { gte: from, lte: to },
+            delivery_date: { gte: from, lte: to },
           },
           _sum: { delivery_price: true },
         });
