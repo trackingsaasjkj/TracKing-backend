@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ServiciosController } from './servicios.controller';
 import { CrearServicioUseCase } from './application/use-cases/crear-servicio.use-case';
 import { AsignarServicioUseCase } from './application/use-cases/asignar-servicio.use-case';
+import { AutoAsignarServicioUseCase } from './application/use-cases/auto-asignar-servicio.use-case';
 import { CambiarEstadoUseCase } from './application/use-cases/cambiar-estado.use-case';
 import { CambiarPagoUseCase } from './application/use-cases/cambiar-pago.use-case';
 import { CancelarServicioUseCase } from './application/use-cases/cancelar-servicio.use-case';
@@ -33,6 +34,7 @@ import { DashboardUpdatesGateway } from './dashboard-updates.gateway';
   providers: [
     CrearServicioUseCase,
     AsignarServicioUseCase,
+    AutoAsignarServicioUseCase,
     CambiarEstadoUseCase,
     CambiarPagoUseCase,
     CancelarServicioUseCase,

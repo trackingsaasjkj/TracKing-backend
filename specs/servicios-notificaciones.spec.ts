@@ -72,7 +72,7 @@ describe('Caso 1 — AsignarServicioUseCase: notifica al mensajero asignado', ()
     historialRepo = makeHistorialRepo();
     notifications = makeNotifications();
     cache = makeCache();
-    useCase = new AsignarServicioUseCase(servicioRepo, courierRepo, historialRepo, notifications, cache);
+    useCase = new AsignarServicioUseCase(servicioRepo, courierRepo, historialRepo, notifications, cache, null as any, null as any);
   });
 
   it('llama notifyNewService con courierId, serviceId y companyId correctos', async () => {

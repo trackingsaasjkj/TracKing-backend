@@ -5,6 +5,7 @@ import { validarPrecio } from '../../domain/rules/validar-precio.rule';
 import { calcularPaymentStatusInicial } from '../../domain/rules/validar-pago.rule';
 import { CrearServicioDto } from '../dto/crear-servicio.dto';
 import { DashboardUpdatesGateway } from '../../dashboard-updates.gateway';
+import { AutoAsignarServicioUseCase } from './auto-asignar-servicio.use-case';
 
 @Injectable()
 export class CrearServicioUseCase {
@@ -12,6 +13,7 @@ export class CrearServicioUseCase {
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
     @Optional() private readonly dashboardGateway: DashboardUpdatesGateway,
+    @Optional() private readonly autoAsignar: AutoAsignarServicioUseCase,
   ) {}
 
   async execute(dto: CrearServicioDto, company_id: string, user_id: string) {
@@ -41,7 +43,7 @@ export class CrearServicioUseCase {
 
     const payment_status = calcularPaymentStatusInicial(dto.payment_method);
 
-    const { customer_name, customer_address, customer_phone, customer_email, ...serviceData } = dto;
+    const { customer_name, customer_address, customer_phone, customer_email, auto_assign, ...serviceData } = dto;
 
     const [servicio] = await this.prisma.$transaction(async (tx) => {
       const created = await tx.service.create({
@@ -60,6 +62,11 @@ export class CrearServicioUseCase {
     if (this.dashboardGateway) {
       this.dashboardGateway.emitServiceUpdated(company_id, servicio as Record<string, unknown>);
       this.dashboardGateway.emitDashboardRefresh(company_id);
+    }
+
+    // Auto-assign if requested and the use case is available
+    if (dto.auto_assign && this.autoAsignar) {
+      await this.autoAsignar.tryAutoAssign(servicio.id, company_id, user_id);
     }
 
     return servicio;

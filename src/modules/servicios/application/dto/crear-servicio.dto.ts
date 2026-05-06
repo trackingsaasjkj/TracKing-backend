@@ -99,6 +99,11 @@ export class CrearServicioDto {
   @IsBoolean()
   settle_immediately?: boolean;
 
+  @ApiPropertyOptional({ example: false, description: 'Si true, el servicio se autoasignará al mensajero según el modo configurado en la empresa.' })
+  @IsOptional()
+  @IsBoolean()
+  auto_assign?: boolean;
+
   // ─── Geocoding fields (optional) ─────────────────────────────────────────
 
   @ApiPropertyOptional({ example: 4.710989, description: 'Latitud del punto de recogida' })
