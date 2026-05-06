@@ -123,7 +123,7 @@ describe('GenerarLiquidacionCourierUseCase — servicios ya liquidados', () => {
     liquidacionRepo = makeLiquidacionRepo();
     mensajeroRepo = makeMensajeroRepo();
     const mockCache = { get: jest.fn().mockReturnValue(null), set: jest.fn(), deleteByPrefix: jest.fn() };
-    useCase = new GenerarLiquidacionCourierUseCase(liquidacionRepo, mensajeroRepo, mockCache as any);
+    useCase = new GenerarLiquidacionCourierUseCase(liquidacionRepo, mensajeroRepo, mockCache as any, null as any);
     liquidacionRepo.markCourierServicesAsSettled = jest.fn().mockResolvedValue(undefined);
   });
 

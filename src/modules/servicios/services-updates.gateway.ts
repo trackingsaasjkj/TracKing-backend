@@ -37,6 +37,7 @@ export class ServiceUpdatesGateway implements OnGatewayConnection, OnGatewayDisc
     try {
       const token =
         (client.handshake.auth?.token as string) ||
+        (client.handshake.query?.token as string) ||
         (client.handshake.headers?.authorization as string);
 
       if (!token) {
@@ -99,6 +100,11 @@ export class ServiceUpdatesGateway implements OnGatewayConnection, OnGatewayDisc
   /** Emits a newly assigned service to the target courier */
   emitServiceAssigned(courierId: string, service: Record<string, unknown>): void {
     this.server.to(`courier:${courierId}`).emit('service:assigned', service);
+  }
+
+  /** Emits a settlement:created event to the target courier */
+  emitSettlementCreated(courierId: string, settlement: Record<string, unknown>): void {
+    this.server.to(`courier:${courierId}`).emit('settlement:created', settlement);
   }
 
   /** Returns the number of active connections for a courier */

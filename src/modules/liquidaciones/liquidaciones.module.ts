@@ -8,9 +8,10 @@ import { LiquidacionRepository } from './infrastructure/liquidacion.repository';
 import { MensajerosModule } from '../mensajeros/mensajeros.module';
 import { PrismaModule } from '../../infrastructure/database/prisma.module';
 import { CacheModule } from '../../infrastructure/cache/cache.module';
+import { ServiciosModule } from '../servicios/servicios.module';
 
 @Module({
-  imports: [PrismaModule, MensajerosModule, CacheModule],
+  imports: [PrismaModule, MensajerosModule, CacheModule, ServiciosModule],
   controllers: [LiquidacionesController],
   providers: [
     GenerarLiquidacionCourierUseCase,

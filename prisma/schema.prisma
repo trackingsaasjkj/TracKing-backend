@@ -16,6 +16,7 @@ model Company {
   telefono             String?                @db.VarChar(20)
   direccion            String?
   status               Boolean                @default(true)
+  auto_assign_mode     AutoAssignMode?
   created_at           DateTime               @default(now())
   couriers             Courier[]
   courierLocations     CourierLocation[]
@@ -383,6 +384,10 @@ enum SubscriptionStatus {
 enum TokenType {
   ACCESS
   REFRESH
+}
+
+enum AutoAssignMode {
+  LEAST_SERVICES_TODAY
 }
 
 enum PaymentMethod {

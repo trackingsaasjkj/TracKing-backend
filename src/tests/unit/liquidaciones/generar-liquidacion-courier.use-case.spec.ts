@@ -22,7 +22,7 @@ describe('GenerarLiquidacionCourierUseCase', () => {
   let useCase: GenerarLiquidacionCourierUseCase;
 
   beforeEach(() => {
-    useCase = new GenerarLiquidacionCourierUseCase(mockLiquidacionRepo as any, mockMensajeroRepo as any, mockCache as any);
+    useCase = new GenerarLiquidacionCourierUseCase(mockLiquidacionRepo as any, mockMensajeroRepo as any, mockCache as any, null as any);
     jest.clearAllMocks();
     mockLiquidacionRepo.createCourierSettlement.mockResolvedValue({ id: 'liq-1' });
   });

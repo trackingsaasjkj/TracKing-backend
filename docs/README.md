@@ -26,6 +26,7 @@ Para autenticarse en Swagger:
 | 6 — Liquidaciones | ✅ Completada | [fase-6-liquidaciones.md](./fase-6-liquidaciones.md) |
 | 7 — Reportes | 🔜 Pendiente | [fase-7-reportes.md](./fase-7-reportes.md) |
 | 8 — Notificaciones Push (FCM) | ✅ Completada | [fase-notificaciones.md](./fase-notificaciones.md) |
+| WebSocket — Tiempo Real | ✅ Documentado | [websocket.md](./websocket.md) |
 
 ## Stack
 

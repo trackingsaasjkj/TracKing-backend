@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { ServicioRepository } from '../../infrastructure/repositories/servicio.repository';
 import { CourierRepository } from '../../infrastructure/repositories/courier.repository';
 import { HistorialRepository } from '../../infrastructure/repositories/historial.repository';
@@ -7,6 +7,8 @@ import { validarTransicion } from '../../domain/rules/validar-transicion.rule';
 import { AsignarServicioDto } from '../dto/asignar-servicio.dto';
 import { NotificationsUseCases } from '../../../notifications/application/use-cases/notifications.use-cases';
 import { CacheService } from '../../../../infrastructure/cache/cache.service';
+import { ServiceUpdatesGateway } from '../../services-updates.gateway';
+import { DashboardUpdatesGateway } from '../../dashboard-updates.gateway';
 
 @Injectable()
 export class AsignarServicioUseCase {
@@ -16,6 +18,8 @@ export class AsignarServicioUseCase {
     private readonly historialRepo: HistorialRepository,
     private readonly notifications: NotificationsUseCases,
     private readonly cache: CacheService,
+    @Optional() private readonly gateway: ServiceUpdatesGateway,
+    @Optional() private readonly dashboardGateway: DashboardUpdatesGateway,
   ) {}
 
   async execute(service_id: string, dto: AsignarServicioDto, company_id: string, user_id: string) {
@@ -67,9 +71,22 @@ export class AsignarServicioUseCase {
     this.cache.delete(`bff:dashboard:active:${company_id}`);
     this.cache.delete(`bff:active-orders:active:${company_id}`);
 
-    // Notificar al nuevo mensajero
+    const updatedService = await this.servicioRepo.findById(service_id, company_id);
+
+    // Emit WS event to the courier (foreground real-time update)
+    if (this.gateway && updatedService) {
+      this.gateway.emitServiceAssigned(dto.courier_id, updatedService as Record<string, unknown>);
+    }
+
+    // Emit dashboard refresh to ADMIN/AUX
+    if (this.dashboardGateway && updatedService) {
+      this.dashboardGateway.emitServiceUpdated(company_id, updatedService as Record<string, unknown>);
+      this.dashboardGateway.emitDashboardRefresh(company_id);
+    }
+
+    // FCM push for background/killed state (fire-and-forget)
     await this.notifications.notifyNewService(dto.courier_id, service_id, company_id);
 
-    return this.servicioRepo.findById(service_id, company_id);
+    return updatedService;
   }
 }

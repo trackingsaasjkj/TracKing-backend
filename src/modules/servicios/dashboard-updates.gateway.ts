@@ -25,6 +25,7 @@ export class DashboardUpdatesGateway implements OnGatewayConnection, OnGatewayDi
     try {
       const token =
         (client.handshake.auth?.token as string) ||
+        (client.handshake.query?.token as string) ||
         (client.handshake.headers?.authorization as string);
 
       if (!token) { client.disconnect(); return; }

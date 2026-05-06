@@ -99,7 +99,7 @@ describe('CrearServicioUseCase', () => {
 
   beforeEach(() => {
     mockPrisma = makePrisma();
-    useCase = new CrearServicioUseCase(mockPrisma, makeCache(), null as any);
+    useCase = new CrearServicioUseCase(mockPrisma, makeCache(), null as any, null as any);
   });
 
   // 5.3 Unit test: crear servicio → total_price = delivery_price + product_price
@@ -158,7 +158,7 @@ describe('AsignarServicioUseCase', () => {
     servicioRepo = makeServicioRepo();
     courierRepo = makeCourierRepo();
     historialRepo = makeHistorialRepo();
-    useCase = new AsignarServicioUseCase(servicioRepo, courierRepo, historialRepo, { notifyNewService: jest.fn().mockResolvedValue(undefined) } as any, makeCache());
+    useCase = new AsignarServicioUseCase(servicioRepo, courierRepo, historialRepo, { notifyNewService: jest.fn().mockResolvedValue(undefined) } as any, makeCache(), null as any, null as any);
   });
 
   // 5.4 Unit test: transición PENDING→ASSIGNED con mensajero AVAILABLE → OK
