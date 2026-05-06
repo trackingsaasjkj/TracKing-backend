@@ -62,6 +62,16 @@ export class CustomersRepository {
     return this.prisma.customer.findFirst({ where: { id, company_id } });
   }
 
+  findByName(name: string, company_id: string) {
+    return this.prisma.customer.findFirst({
+      where: {
+        company_id,
+        status: true,
+        name: { equals: name, mode: 'insensitive' },
+      },
+    });
+  }
+
   create(data: { company_id: string; name: string; address: string; phone?: string; email?: string }) {
     return this.prisma.customer.create({ data });
   }

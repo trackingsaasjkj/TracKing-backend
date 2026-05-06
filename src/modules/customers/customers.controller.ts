@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CustomersUseCases } from './application/use-cases/customers.use-cases';
 import { CreateCustomerDto } from './application/dto/create-customer.dto';
@@ -37,6 +37,19 @@ export class CustomersController {
           : undefined,
       ),
     );
+  }
+
+  @Get('search')
+  @Roles(Role.ADMIN, Role.AUX)
+  @ApiOperation({ summary: 'Buscar cliente por nombre exacto (insensible a mayúsculas)' })
+  @ApiQuery({ name: 'name', required: true, type: String, description: 'Nombre exacto del cliente' })
+  @ApiResponse({ status: 200, description: 'Cliente encontrado o null' })
+  @ApiResponse({ status: 400, description: 'Parámetro name requerido' })
+  async findByName(@Query('name') name: string, @CurrentUser() user: JwtPayload) {
+    if (!name || !name.trim()) {
+      throw new BadRequestException("El parámetro 'name' es requerido");
+    }
+    return ok(await this.useCases.findByName(name.trim(), user.company_id!));
   }
 
   @Get(':id')

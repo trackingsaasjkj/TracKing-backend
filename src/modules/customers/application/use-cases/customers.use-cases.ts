@@ -20,6 +20,10 @@ export class CustomersUseCases {
     return customer;
   }
 
+  findByName(name: string, company_id: string) {
+    return this.repo.findByName(name, company_id);
+  }
+
   create(dto: CreateCustomerDto, company_id: string) {
     return this.repo.create({ ...dto, company_id });
   }
