@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ReporteServiciosUseCase } from '../../../reportes/application/use-cases/reporte-servicios.use-case';
-import { ReporteFinancieroUseCase } from '../../../reportes/application/use-cases/reporte-financiero.use-case';
+import { ReporteFinancieroHibridoUseCase } from '../../../reportes/application/use-cases/reporte-financiero-hibrido.use-case';
 import { ReporteFavoritosUseCase } from '../../../reportes/application/use-cases/reporte-favoritos.use-case';
 import { BffReportsQueryDto } from '../dto/bff-query.dto';
 import { AppException } from '../../../../core/errors/app.exception';
@@ -9,7 +9,7 @@ import { AppException } from '../../../../core/errors/app.exception';
 export class BffReportsUseCase {
   constructor(
     private readonly reporteServicios: ReporteServiciosUseCase,
-    private readonly reporteFinanciero: ReporteFinancieroUseCase,
+    private readonly reporteFinanciero: ReporteFinancieroHibridoUseCase,
     private readonly reporteFavoritos: ReporteFavoritosUseCase,
   ) {}
 

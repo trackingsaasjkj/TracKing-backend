@@ -23,7 +23,7 @@ import { SuperAdminModule } from './modules/super-admin/super-admin.module';
 import { PlanesModule } from './modules/planes/planes.module';
 import { SuscripcionesModule } from './modules/suscripciones/suscripciones.module';
 import { BffWebModule } from './modules/bff-web/bff-web.module';
-import { GeocodingModule } from './modules/geocoding/geocoding.module';
+import { SearchModule } from './modules/search/search.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
@@ -54,7 +54,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     PlanesModule,
     SuscripcionesModule,
     BffWebModule,
-    GeocodingModule,
+    SearchModule,
     NotificationsModule,
   ],
   providers: [

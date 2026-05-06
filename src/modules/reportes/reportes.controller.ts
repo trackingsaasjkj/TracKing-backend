@@ -3,7 +3,9 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@ne
 import { ReporteServiciosUseCase } from './application/use-cases/reporte-servicios.use-case';
 import { ReporteFinancieroUseCase } from './application/use-cases/reporte-financiero.use-case';
 import { ReporteFavoritosUseCase } from './application/use-cases/reporte-favoritos.use-case';
+import { ReporteFinancieroHibridoUseCase } from './application/use-cases/reporte-financiero-hibrido.use-case';
 import { ReporteServiciosQueryDto, ReporteFinancieroQueryDto, ReporteFavoritosQueryDto } from './application/dto/reporte-query.dto';
+import { ReporteFinancieroHibridoQueryDto } from './application/dto/reporte-financiero-hibrido.dto';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { RolesGuard } from '../../core/guards/roles.guard';
@@ -20,6 +22,7 @@ export class ReportesController {
     private readonly serviciosReport: ReporteServiciosUseCase,
     private readonly financieroReport: ReporteFinancieroUseCase,
     private readonly favoritosReport: ReporteFavoritosUseCase,
+    private readonly financieroHibridoReport: ReporteFinancieroHibridoUseCase,
   ) {}
 
   @Get('services')
@@ -67,5 +70,16 @@ export class ReportesController {
   @ApiResponse({ status: 200, description: 'Lista de clientes favoritos con métricas de servicios y cobro' })
   async favoriteCustomers(@Query() query: ReporteFavoritosQueryDto, @CurrentUser() user: JwtPayload) {
     return ok(await this.favoritosReport.execute(query, user.company_id!));
+  }
+
+  @Get('financial/hybrid')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Reporte financiero híbrido (liquidaciones + pendientes)' })
+  @ApiQuery({ name: 'from', required: true, example: '2025-01-01' })
+  @ApiQuery({ name: 'to', required: true, example: '2025-01-31' })
+  @ApiResponse({ status: 200, description: 'Reporte híbrido con secciones settled, pending, total y summary' })
+  @ApiResponse({ status: 400, description: 'Rango de fechas inválido o faltante' })
+  async financialHybrid(@Query() query: ReporteFinancieroHibridoQueryDto, @CurrentUser() user: JwtPayload) {
+    return ok(await this.financieroHibridoReport.execute(query, user.company_id!));
   }
 }
