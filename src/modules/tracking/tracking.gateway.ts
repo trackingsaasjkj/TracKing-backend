@@ -40,6 +40,7 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
     try {
       const token =
         (client.handshake.auth?.token as string) ||
+        (client.handshake.query?.token as string) ||
         (client.handshake.headers?.authorization as string);
 
       if (!token) {
