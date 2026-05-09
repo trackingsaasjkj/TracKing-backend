@@ -344,4 +344,35 @@ export class LiquidacionRepository {
       select: { id: true, name: true, is_favorite: true },
     });
   }
+
+  async findCouriersWithPendingToday(company_id: string) {
+    // Get all couriers with pending services today
+    const result = await this.prisma.service.groupBy({
+      by: ['courier_id'],
+      where: {
+        company_id,
+        status: 'DELIVERED',
+        is_settled_courier: false,
+        courier_id: { not: null },
+      },
+      _count: { id: true },
+    });
+
+    if (result.length === 0) return [];
+
+    const courierIds = result.map(r => r.courier_id).filter(Boolean) as string[];
+    const couriers = await this.prisma.courier.findMany({
+      where: { id: { in: courierIds }, company_id },
+      include: { user: { select: { name: true } } },
+    });
+
+    return couriers.map(c => ({
+      id: c.id,
+      user: c.user,
+      operational_status: c.operational_status,
+      document_id: c.document_id,
+      phone: c.phone,
+      pending_count: result.find(r => r.courier_id === c.id)?._count.id ?? 0,
+    }));
+  }
 }
