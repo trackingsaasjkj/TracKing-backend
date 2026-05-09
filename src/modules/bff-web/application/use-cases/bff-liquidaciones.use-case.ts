@@ -13,7 +13,7 @@ export class BffLiquidacionesUseCase {
 
   async execute(company_id: string) {
     const [mensajeros, reglaActiva, pendientesHoy] = await Promise.all([
-      this.consultarMensajeros.findAll(company_id),
+      this.liquidacionRepo.findCouriersWithPendingToday(company_id),
       this.gestionarReglas.findActive(company_id),
       this.liquidacionRepo.countCouriersWithPendingToday(company_id),
     ]);
