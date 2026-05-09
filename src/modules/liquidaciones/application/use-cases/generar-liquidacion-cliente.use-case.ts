@@ -37,6 +37,13 @@ export class GenerarLiquidacionClienteUseCase {
     }
 
     const customer_id = customerIds[0];
+
+    // Validate that customer is a favorite
+    const customer = await this.liquidacionRepo.findCustomerById(customer_id, company_id);
+    if (!customer || !customer.is_favorite) {
+      throw new AppException('Solo se pueden liquidar clientes marcados como favoritos', 400);
+    }
+
     const totalServices = servicios.length;
 
     // Usar Decimal para precisión monetaria

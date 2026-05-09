@@ -126,10 +126,6 @@ export class LiquidacionRepository {
 
   // ── Customer Settlement ─────────────────────────────────────
 
-  async findCustomerById(customer_id: string, company_id: string) {
-    return this.prisma.customer.findFirst({ where: { id: customer_id, company_id } });
-  }
-
   async findDeliveredServicesByCustomer(company_id: string, customer_id: string, startDate: Date, endDate: Date) {
     const services = await this.prisma.service.findMany({
       where: {
@@ -262,6 +258,7 @@ export class LiquidacionRepository {
 
   async findCustomersWithUnpaid(company_id: string) {
     // Customers with at least one DELIVERED service not yet settled (excludes CANCELLED)
+    // Only favorite customers
     const result = await this.prisma.service.groupBy({
       by: ['customer_id'],
       where: { company_id, is_settled_customer: false, status: { not: 'CANCELLED' } },
@@ -272,7 +269,7 @@ export class LiquidacionRepository {
 
     const customerIds = result.map(r => r.customer_id);
     const customers = await this.prisma.customer.findMany({
-      where: { id: { in: customerIds }, company_id },
+      where: { id: { in: customerIds }, company_id, is_favorite: true },
       select: { id: true, name: true },
     });
 
@@ -339,5 +336,12 @@ export class LiquidacionRepository {
     });
 
     return result.length;
+  }
+
+  async findCustomerById(customer_id: string, company_id: string) {
+    return this.prisma.customer.findFirst({
+      where: { id: customer_id, company_id },
+      select: { id: true, name: true, is_favorite: true },
+    });
   }
 }

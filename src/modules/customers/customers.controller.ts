@@ -52,6 +52,16 @@ export class CustomersController {
     return ok(await this.useCases.findByName(name.trim(), user.company_id!));
   }
 
+  @Get('by-phone/:phone')
+  @Roles(Role.ADMIN, Role.AUX)
+  @ApiOperation({ summary: 'Buscar cliente por teléfono', description: 'Busca un cliente por su número de teléfono. Normaliza automáticamente el formato.' })
+  @ApiParam({ name: 'phone', description: 'Teléfono del cliente (con o sin formato)' })
+  @ApiResponse({ status: 200, description: 'Cliente encontrado o null' })
+  @ApiResponse({ status: 400, description: 'Teléfono inválido' })
+  async findByPhone(@Param('phone') phone: string, @CurrentUser() user: JwtPayload) {
+    return ok(await this.useCases.findByPhone(phone, user.company_id!));
+  }
+
   @Get(':id')
   @Roles(Role.ADMIN, Role.AUX)
   @ApiOperation({ summary: 'Obtener cliente por UUID' })

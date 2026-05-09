@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CustomersRepository } from '../../infrastructure/customers.repository';
 import { CreateCustomerDto } from '../dto/create-customer.dto';
 import { UpdateCustomerDto } from '../dto/update-customer.dto';
@@ -22,6 +22,17 @@ export class CustomersUseCases {
 
   findByName(name: string, company_id: string) {
     return this.repo.findByName(name, company_id);
+  }
+
+  async findByPhone(phone: string, company_id: string) {
+    // Validar que el teléfono tenga al menos 7 dígitos
+    const normalized = phone.replace(/\D/g, '');
+    if (normalized.length < 7) {
+      throw new BadRequestException('Teléfono inválido: debe tener al menos 7 dígitos');
+    }
+
+    const customer = await this.repo.findByPhone(phone, company_id);
+    return customer ?? null;
   }
 
   create(dto: CreateCustomerDto, company_id: string) {

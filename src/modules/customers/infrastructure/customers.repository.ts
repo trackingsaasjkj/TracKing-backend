@@ -72,6 +72,19 @@ export class CustomersRepository {
     });
   }
 
+  findByPhone(phone: string, company_id: string) {
+    // Normalizar teléfono: remover todo excepto dígitos
+    const normalized = phone.replace(/\D/g, '');
+
+    return this.prisma.customer.findFirst({
+      where: {
+        company_id,
+        status: true,
+        phone: { contains: normalized },
+      },
+    });
+  }
+
   create(data: { company_id: string; name: string; address: string; phone?: string; email?: string }) {
     return this.prisma.customer.create({ data });
   }

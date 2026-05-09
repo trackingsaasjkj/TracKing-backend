@@ -25,9 +25,6 @@ export class RefreshTokenUseCase {
 
     if (!stored) throw new UnauthorizedException('Refresh token no válido o ya utilizado');
 
-    // Single-use: mark as used immediately
-    await this.authRepo.markTokenUsed(stored.id);
-
     const user = await this.authRepo.findUserById(payload.sub, payload.company_id);
     if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('Usuario inactivo');
 
@@ -42,6 +39,8 @@ export class RefreshTokenUseCase {
     const newRefreshToken = this.tokenService.generateRefreshToken(newPayload);
     const newRefreshHash = await this.tokenService.hashToken(newRefreshToken);
 
+    // FIX: Guardar nuevo token ANTES de marcar el viejo como usado
+    // Esto evita race conditions donde el token se marca como usado pero no hay nuevo token disponible
     await this.authRepo.saveToken({
       user_id: user.id,
       company_id: user.company_id,
@@ -49,6 +48,9 @@ export class RefreshTokenUseCase {
       token_hash: newRefreshHash,
       expiration: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
+
+    // Single-use: mark as used AFTER new token is saved
+    await this.authRepo.markTokenUsed(stored.id);
 
     return { accessToken, refreshToken: newRefreshToken };
   }

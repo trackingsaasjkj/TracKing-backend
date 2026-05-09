@@ -51,3 +51,73 @@ test(liquidaciones): agregar tests unitarios para calcular-liquidacion
 ## Ejecutar el proyecto localmente
 
 Ver [README.md](./README.md) para instrucciones de instalación y configuración.
+
+
+## Búsqueda de Clientes
+
+### Endpoints Disponibles
+
+#### Buscar por nombre
+```
+GET /api/customers/search?name=Juan
+```
+
+Retorna cliente exacto (case-insensitive).
+
+#### Buscar por teléfono (NUEVO)
+```
+GET /api/customers/by-phone/3105567788
+```
+
+Busca cliente por teléfono normalizado. Acepta formatos:
+- `3105567788` (sin formato)
+- `310 556 7788` (con espacios)
+- `310-556-7788` (con guiones)
+- `+57 310 556 7788` (con código país)
+
+Retorna cliente o `null` si no existe.
+
+### Implementación
+
+**Normalización de teléfono**:
+```typescript
+const normalized = phone.replace(/\D/g, '');  // Remover todo excepto dígitos
+```
+
+**Validación**:
+- Mínimo 7 dígitos
+- Lanza `BadRequestException` si es inválido
+
+**Búsqueda**:
+- Usa `contains` para flexibilidad
+- Filtra por `company_id` (scoping)
+- Solo clientes activos (`status: true`)
+
+### Casos de Uso
+
+**Caso 1: Crear servicio desde mensaje de WhatsApp**
+1. Parser extrae teléfono del mensaje
+2. Llamar `GET /api/customers/by-phone/{phone}`
+3. Si existe: usar cliente existente
+4. Si no existe: crear cliente nuevo
+
+**Caso 2: Evitar duplicados**
+- Antes de crear cliente, verificar si existe por teléfono
+- Reutilizar cliente existente si se encuentra
+
+### Testing
+
+```typescript
+// Buscar cliente existente
+const customer = await api.get('/customers/by-phone/3105567788');
+expect(customer.data.name).toBe('Juan Pérez');
+
+// Cliente no existe
+const notFound = await api.get('/customers/by-phone/9999999999');
+expect(notFound.data).toBeNull();
+
+// Teléfono inválido
+const invalid = await api.get('/customers/by-phone/123');
+expect(invalid.status).toBe(400);
+```
+
