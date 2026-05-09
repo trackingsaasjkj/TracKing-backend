@@ -39,10 +39,17 @@ export class CambiarEstadoUseCase {
     }
 
     const updateData: any = { status: nuevoEstado };
-    if (nuevoEstado === 'DELIVERED') updateData.delivery_date = new Date();
-    // Auto-settle customer if service has settle_immediately = true
-    if (nuevoEstado === 'DELIVERED' && (servicio as any).settle_immediately) {
-      updateData.is_settled_customer = true;
+    if (nuevoEstado === 'DELIVERED') {
+      updateData.delivery_date = new Date();
+      // Mark is_settled_customer based on customer.is_favorite
+      // If customer is favorite: is_settled_customer = false (pending manual settlement)
+      // If customer is NOT favorite: is_settled_customer = true (auto-settled)
+      const customer = (servicio as any).customer;
+      if (customer && customer.is_favorite === false) {
+        updateData.is_settled_customer = true;
+      } else if (customer && customer.is_favorite === true) {
+        updateData.is_settled_customer = false;
+      }
     }
 
     await this.servicioRepo.update(service_id, company_id, updateData);

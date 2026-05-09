@@ -94,11 +94,6 @@ export class CrearServicioDto {
   @IsString()
   notes_observations?: string;
 
-  @ApiPropertyOptional({ example: false, description: 'Si true, el servicio se liquidará automáticamente al ser entregado (is_settled_courier y is_settled_customer = true).' })
-  @IsOptional()
-  @IsBoolean()
-  settle_immediately?: boolean;
-
   @ApiPropertyOptional({ example: false, description: 'Si true, el servicio se autoasignará al mensajero según el modo configurado en la empresa.' })
   @IsOptional()
   @IsBoolean()

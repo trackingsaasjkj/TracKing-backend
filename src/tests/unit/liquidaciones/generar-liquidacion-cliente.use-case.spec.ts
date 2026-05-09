@@ -12,6 +12,7 @@ const makeServices = (count: number, delivery_price = 10000, payment_status = 'U
 
 const mockLiquidacionRepo = {
   findServicesByIds: jest.fn(),
+  findCustomerById: jest.fn(),
   createCustomerSettlement: jest.fn(),
   markServicesAsPaid: jest.fn().mockResolvedValue(undefined),
 };
@@ -28,6 +29,12 @@ describe('GenerarLiquidacionClienteUseCase', () => {
     mockLiquidacionRepo.createCustomerSettlement.mockResolvedValue({
       id: 'cs-1',
       total_invoiced: 30000,
+    });
+    // Mock findCustomerById to return a favorite customer
+    mockLiquidacionRepo.findCustomerById.mockResolvedValue({
+      id: 'cust-1',
+      name: 'Test Customer',
+      is_favorite: true,
     });
   });
 
@@ -59,6 +66,18 @@ describe('GenerarLiquidacionClienteUseCase', () => {
     mockLiquidacionRepo.findServicesByIds.mockResolvedValue(
       makeServices(2, 10000, 'UNPAID').map(s => ({ ...s, is_settled_customer: true })),
     );
+    await expect(
+      useCase.execute({ service_ids: ['s-0', 's-1'] } as any, 'co-1'),
+    ).rejects.toThrow(AppException);
+  });
+
+  it('throws AppException when customer is not a favorite', async () => {
+    mockLiquidacionRepo.findServicesByIds.mockResolvedValue(makeServices(2, 10000));
+    mockLiquidacionRepo.findCustomerById.mockResolvedValue({
+      id: 'cust-1',
+      name: 'Test Customer',
+      is_favorite: false,
+    });
     await expect(
       useCase.execute({ service_ids: ['s-0', 's-1'] } as any, 'co-1'),
     ).rejects.toThrow(AppException);
