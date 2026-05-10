@@ -6,10 +6,13 @@ import { UpdateAutoAssignDto } from './application/dto/update-auto-assign.dto';
 import { CreateCompanyWithAdminUseCase } from './application/use-cases/create-company-with-admin.use-case';
 import { Public } from '../../core/decorators/public.decorator';
 import { Roles } from '../../core/decorators/roles.decorator';
+import { RequirePermissions } from '../../core/decorators/permissions.decorator';
 import { Role } from '../../core/constants/roles.enum';
+import { Permission } from '../../core/constants/permissions.enum';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { JwtPayload } from '../../core/types/jwt-payload.type';
 import { ok } from '../../core/utils/response.util';
+import { PrismaService } from '../../infrastructure/database/prisma.service';
 
 @ApiTags('Companies')
 @Controller('api/companies')
@@ -17,6 +20,7 @@ export class CompanyController {
   constructor(
     private readonly companyRepo: CompanyRepository,
     private readonly createCompanyWithAdmin: CreateCompanyWithAdminUseCase,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Public()
@@ -40,23 +44,40 @@ export class CompanyController {
 
   @Get('settings/auto-assign')
   @ApiBearerAuth('access-token')
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Obtener configuración de autoasignación de la empresa' })
+  @Roles(Role.ADMIN, Role.AUX)
+  @RequirePermissions(Permission.SETTINGS_VIEW)
+  @ApiOperation({ summary: 'Obtener configuración de autoasignación. AUX: su config personal (o empresa si no tiene).' })
   @ApiResponse({ status: 200, description: 'Configuración de autoasignación' })
   async getAutoAssign(@CurrentUser() user: JwtPayload) {
+    if (user.role === Role.AUX) {
+      const auxUser = await this.prisma.user.findUnique({
+        where: { id: user.sub },
+        select: { auto_assign_mode: true },
+      });
+      // If AUX has personal config, return it; otherwise fall back to company config
+      if (auxUser?.auto_assign_mode !== undefined && auxUser.auto_assign_mode !== null) {
+        return ok({ auto_assign_mode: auxUser.auto_assign_mode });
+      }
+    }
     const result = await this.companyRepo.getAutoAssignMode(user.company_id!);
     return ok({ auto_assign_mode: result?.auto_assign_mode ?? null });
   }
 
   @Patch('settings/auto-assign')
   @ApiBearerAuth('access-token')
-  @Roles(Role.ADMIN)
-  @ApiOperation({
-    summary: 'Actualizar modo de autoasignación',
-    description: 'Enviar auto_assign_mode: null para desactivar la autoasignación.',
-  })
+  @Roles(Role.ADMIN, Role.AUX)
+  @RequirePermissions(Permission.SETTINGS_VIEW)
+  @ApiOperation({ summary: 'Actualizar autoasignación. ADMIN: empresa. AUX: personal.' })
   @ApiResponse({ status: 200, description: 'Configuración actualizada' })
   async updateAutoAssign(@Body() dto: UpdateAutoAssignDto, @CurrentUser() user: JwtPayload) {
+    if (user.role === Role.AUX) {
+      const updated = await this.prisma.user.update({
+        where: { id: user.sub },
+        data: { auto_assign_mode: dto.auto_assign_mode ?? null },
+        select: { id: true, auto_assign_mode: true },
+      });
+      return ok({ auto_assign_mode: updated.auto_assign_mode });
+    }
     const result = await this.companyRepo.updateAutoAssignMode(
       user.company_id!,
       dto.auto_assign_mode ?? null,

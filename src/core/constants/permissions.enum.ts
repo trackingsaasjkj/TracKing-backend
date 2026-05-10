@@ -9,4 +9,6 @@ export enum Permission {
   REPORTS_VIEW          = 'reports:view',
   USERS_READ            = 'users:read',
   USERS_CREATE          = 'users:create',
+  SETTINGS_VIEW         = 'settings:view',
+  SETTINGS_CONFIGURE    = 'settings:configure',
 }

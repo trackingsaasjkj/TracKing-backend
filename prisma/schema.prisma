@@ -47,9 +47,11 @@ model User {
   failed_attempts      Int                    @default(0)
   locked_until         DateTime?
   permissions          String[]               @default([])
+  auto_assign_mode     AutoAssignMode?
   auditLogs            AuditLog[]             @relation("SuperAdminAuditLogs")
   courier              Courier?
   serviceStatusHistory ServiceStatusHistory[]
+  settlementRules      SettlementRule[]
   tokens               Token[]
   company              Company?               @relation(fields: [company_id], references: [id], onDelete: Cascade)
 
@@ -192,13 +194,16 @@ model CourierLocation {
 model SettlementRule {
   id         String             @id @default(uuid())
   company_id String
+  user_id    String?
   type       SettlementRuleType
   value      Decimal            @db.Decimal(10, 2)
   active     Boolean            @default(true)
   created_at DateTime           @default(now())
   company    Company            @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  user       User?              @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([company_id])
+  @@index([user_id])
   @@map("settlement_rule")
 }
 

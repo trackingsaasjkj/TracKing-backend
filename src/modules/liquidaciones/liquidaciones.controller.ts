@@ -9,8 +9,11 @@ import { GenerarLiquidacionClienteDto } from './application/dto/generar-liquidac
 import { CreateRuleDto } from './application/dto/create-rule.dto';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { Roles } from '../../core/decorators/roles.decorator';
+import { RequirePermissions } from '../../core/decorators/permissions.decorator';
 import { RolesGuard } from '../../core/guards/roles.guard';
+import { PermissionsGuard } from '../../core/guards/permissions.guard';
 import { Role } from '../../core/constants/roles.enum';
+import { Permission } from '../../core/constants/permissions.enum';
 import { JwtPayload } from '../../core/types/jwt-payload.type';
 import { ok } from '../../core/utils/response.util';
 import { LiquidacionRepository } from './infrastructure/liquidacion.repository';
@@ -19,8 +22,8 @@ import { AppException } from '../../core/errors/app.exception';
 @ApiTags('Liquidaciones')
 @ApiBearerAuth('access-token')
 @Controller('api/liquidations')
-@UseGuards(RolesGuard)
-@Roles(Role.ADMIN)
+@UseGuards(RolesGuard, PermissionsGuard)
+@Roles(Role.ADMIN, Role.AUX)
 export class LiquidacionesController {
   constructor(
     private readonly generarCourierUseCase: GenerarLiquidacionCourierUseCase,
@@ -33,29 +36,36 @@ export class LiquidacionesController {
   // ── Settlement Rules ────────────────────────────────────────
 
   @Post('rules')
-  @ApiOperation({ summary: 'Crear regla de liquidación', description: 'Desactiva la regla anterior y crea una nueva activa. Solo ADMIN.' })
+  @RequirePermissions(Permission.SETTLEMENTS_CREATE)
+  @ApiOperation({ summary: 'Crear regla de liquidación. ADMIN: regla de empresa. AUX con settings:configure: regla personal.' })
   @ApiResponse({ status: 201, description: 'Regla creada' })
   async createRule(@Body() dto: CreateRuleDto, @CurrentUser() user: JwtPayload) {
-    return ok(await this.reglasUseCase.create(dto, user.company_id!));
+    const user_id = user.role === Role.AUX ? user.sub : undefined;
+    return ok(await this.reglasUseCase.create(dto, user.company_id!, user_id));
   }
 
   @Get('rules')
-  @ApiOperation({ summary: 'Listar reglas de liquidación' })
+  @RequirePermissions(Permission.SETTLEMENTS_VIEW)
+  @ApiOperation({ summary: 'Listar reglas. AUX: sus propias reglas. ADMIN: reglas de empresa.' })
   @ApiResponse({ status: 200, description: 'Lista de reglas' })
   async findRules(@CurrentUser() user: JwtPayload) {
-    return ok(await this.reglasUseCase.findAll(user.company_id!));
+    const user_id = user.role === Role.AUX ? user.sub : undefined;
+    return ok(await this.reglasUseCase.findAll(user.company_id!, user_id));
   }
 
   @Get('rules/active')
-  @ApiOperation({ summary: 'Regla activa actual' })
+  @RequirePermissions(Permission.SETTLEMENTS_VIEW)
+  @ApiOperation({ summary: 'Regla activa. AUX: su regla personal (o empresa si no tiene). ADMIN: regla de empresa.' })
   @ApiResponse({ status: 200, description: 'Regla activa' })
   async findActiveRule(@CurrentUser() user: JwtPayload) {
-    return ok(await this.reglasUseCase.findActive(user.company_id!));
+    const user_id = user.role === Role.AUX ? user.sub : undefined;
+    return ok(await this.reglasUseCase.findActive(user.company_id!, user_id));
   }
 
   // ── Generate Settlements ────────────────────────────────────
 
   @Post('generate/courier')
+  @RequirePermissions(Permission.SETTLEMENTS_CREATE)
   @ApiOperation({
     summary: 'Generar liquidación de mensajero',
     description: 'Calcula el pago al mensajero por servicios DELIVERED en el rango. Requiere regla activa.',
@@ -64,10 +74,13 @@ export class LiquidacionesController {
   @ApiResponse({ status: 400, description: 'Sin servicios en el rango, total inválido o sin regla activa' })
   @ApiResponse({ status: 404, description: 'Mensajero no encontrado' })
   async generateCourier(@Body() dto: GenerarLiquidacionCourierDto, @CurrentUser() user: JwtPayload) {
+    // Inject user_id for AUX so the use case can resolve their personal rule
+    if (user.role === Role.AUX) dto.user_id = user.sub;
     return ok(await this.generarCourierUseCase.execute(dto, user.company_id!));
   }
 
   @Post('generate/customer')
+  @RequirePermissions(Permission.SETTLEMENTS_CREATE)
   @ApiOperation({
     summary: 'Generar liquidación de cliente (facturación)',
     description: 'Suma total_price de todos los servicios DELIVERED en el rango.',
@@ -81,6 +94,7 @@ export class LiquidacionesController {
   // ── Query Settlements ───────────────────────────────────────
 
   @Get()
+  @RequirePermissions(Permission.SETTLEMENTS_VIEW)
   @ApiOperation({ summary: 'Listar liquidaciones de mensajeros' })
   @ApiQuery({ name: 'courier_id', required: false, description: 'Filtrar por mensajero' })
   @ApiResponse({ status: 200, description: 'Lista de liquidaciones' })
@@ -89,6 +103,7 @@ export class LiquidacionesController {
   }
 
   @Get('customer')
+  @RequirePermissions(Permission.SETTLEMENTS_VIEW)
   @ApiOperation({ summary: 'Listar liquidaciones de clientes (facturación)' })
   @ApiQuery({ name: 'customer_id', required: false, description: 'Filtrar por cliente' })
   @ApiResponse({ status: 200, description: 'Lista de liquidaciones de clientes' })
@@ -97,6 +112,7 @@ export class LiquidacionesController {
   }
 
   @Get('earnings')
+  @RequirePermissions(Permission.SETTLEMENTS_VIEW)
   @ApiOperation({ summary: 'Resumen de ganancias', description: 'Totales acumulados de liquidaciones. Filtrable por courier_id.' })
   @ApiQuery({ name: 'courier_id', required: false })
   @ApiResponse({ status: 200, description: 'Resumen de ganancias' })
@@ -144,6 +160,7 @@ export class LiquidacionesController {
   }
 
   @Get(':id')
+  @RequirePermissions(Permission.SETTLEMENTS_VIEW)
   @ApiOperation({ summary: 'Detalle de liquidación de mensajero' })
   @ApiParam({ name: 'id', description: 'UUID de la liquidación' })
   @ApiResponse({ status: 200, description: 'Liquidación encontrada' })

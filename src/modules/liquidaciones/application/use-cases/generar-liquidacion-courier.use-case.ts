@@ -29,7 +29,8 @@ export class GenerarLiquidacionCourierUseCase {
     if (!courier) throw new NotFoundException('Mensajero no encontrado en esta empresa');
 
     // Spec: debeExistirReglaActiva
-    const reglaDB = await this.liquidacionRepo.findActiveRule(company_id);
+    // Si el usuario es AUX, buscar su regla personal primero; si no tiene, usar la de empresa
+    const reglaDB = await this.liquidacionRepo.findActiveRule(company_id, dto.user_id);
 
     // Si el frontend envía un override de regla, usarlo; si no, usar la regla activa de BD
     let regla: { type: 'PERCENTAGE' | 'FIXED'; value: number } | null = null;

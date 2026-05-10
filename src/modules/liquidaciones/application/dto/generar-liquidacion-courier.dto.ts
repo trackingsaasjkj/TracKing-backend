@@ -17,7 +17,7 @@ export class GenerarLiquidacionCourierDto {
   @ApiPropertyOptional({
     enum: ['PERCENTAGE', 'FIXED'],
     example: 'PERCENTAGE',
-    description: 'Override del tipo de regla. Si se omite, usa la regla activa de la empresa.',
+    description: 'Override del tipo de regla. Si se omite, usa la regla activa del usuario/empresa.',
   })
   @IsOptional()
   @IsEnum(['PERCENTAGE', 'FIXED'])
@@ -31,4 +31,7 @@ export class GenerarLiquidacionCourierDto {
   @IsNumber()
   @Min(0)
   rule_value?: number;
+
+  /** Inyectado internamente por el controlador — no viene del body */
+  user_id?: string;
 }

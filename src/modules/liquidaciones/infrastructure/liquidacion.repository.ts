@@ -8,20 +8,34 @@ export class LiquidacionRepository {
 
   // ── Settlement Rules ────────────────────────────────────────
 
-  async findActiveRule(company_id: string) {
+  async findActiveRule(company_id: string, user_id?: string) {
+    // If user_id provided, prefer user-specific rule; fallback to company rule
+    if (user_id) {
+      const userRule = await this.prisma.settlementRule.findFirst({
+        where: { company_id, user_id, active: true },
+        orderBy: { created_at: 'desc' },
+      });
+      if (userRule) return userRule;
+    }
     return this.prisma.settlementRule.findFirst({
-      where: { company_id, active: true },
+      where: { company_id, user_id: null, active: true },
       orderBy: { created_at: 'desc' },
     });
   }
 
-  async findAllRules(company_id: string) {
-    return this.prisma.settlementRule.findMany({ where: { company_id }, orderBy: { created_at: 'desc' } });
+  async findAllRules(company_id: string, user_id?: string) {
+    return this.prisma.settlementRule.findMany({
+      where: { company_id, user_id: user_id ?? null },
+      orderBy: { created_at: 'desc' },
+    });
   }
 
-  async createRule(data: { company_id: string; type: 'PERCENTAGE' | 'FIXED'; value: number }) {
-    // Deactivate existing rules before creating new active one
-    await this.prisma.settlementRule.updateMany({ where: { company_id: data.company_id, active: true }, data: { active: false } });
+  async createRule(data: { company_id: string; user_id?: string; type: 'PERCENTAGE' | 'FIXED'; value: number }) {
+    // Deactivate existing rules for the same scope (company or user)
+    await this.prisma.settlementRule.updateMany({
+      where: { company_id: data.company_id, user_id: data.user_id ?? null, active: true },
+      data: { active: false },
+    });
     return this.prisma.settlementRule.create({ data: { ...data, active: true } });
   }
 

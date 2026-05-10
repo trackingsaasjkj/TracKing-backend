@@ -3,17 +3,53 @@ import { UsersRepository } from '../../infrastructure/users.repository';
 import { TokenService } from '../../../auth/domain/token.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
+import { UpdateMeDto } from '../dto/update-me.dto';
 import { Role } from '../../../../core/constants/roles.enum';
+import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 
 @Injectable()
 export class UsersUseCases {
   constructor(
     private readonly usersRepo: UsersRepository,
     private readonly tokenService: TokenService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async findAll(company_id: string) {
     return this.usersRepo.findAll(company_id);
+  }
+
+  async getMe(user_id: string, company_id: string) {
+    const user = await this.usersRepo.findById(user_id, company_id);
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+
+    const company = await this.prisma.company.findUnique({
+      where: { id: company_id },
+      select: {
+        id: true,
+        name: true,
+        nit: true,
+        email_corporativo: true,
+        telefono: true,
+        direccion: true,
+      },
+    });
+
+    return { ...user, company };
+  }
+
+  async updateMe(user_id: string, company_id: string, dto: UpdateMeDto) {
+    const user = await this.usersRepo.findById(user_id, company_id);
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+
+    const data: any = {};
+    if (dto.name) data.name = dto.name;
+    if (dto.phone !== undefined) data.phone = dto.phone;
+    if (dto.password) {
+      data.password_hash = await this.tokenService.hashPassword(dto.password);
+    }
+
+    return this.usersRepo.update(user_id, company_id, data);
   }
 
   async findById(id: string, company_id: string) {
