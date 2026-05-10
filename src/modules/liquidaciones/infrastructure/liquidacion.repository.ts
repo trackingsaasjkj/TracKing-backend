@@ -241,6 +241,7 @@ export class LiquidacionRepository {
       },
       select: {
         id: true,
+        tracking_number: true,
         delivery_date: true,
         payment_method: true,
         delivery_price: true,
@@ -303,6 +304,7 @@ export class LiquidacionRepository {
       },
       select: {
         id: true,
+        tracking_number: true,
         delivery_date: true,
         payment_method: true,
         delivery_price: true,

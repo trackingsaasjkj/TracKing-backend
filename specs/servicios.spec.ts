@@ -113,7 +113,10 @@ describe('CrearServicioUseCase', () => {
     mockPrisma.customer.findFirst.mockResolvedValue({ id: 'cust-1', company_id: 'co-1' });
     mockPrisma.$transaction.mockImplementation(async (fn: any) => {
       const tx = {
-        service: { create: jest.fn().mockResolvedValue(createdService) },
+        service: {
+          create: jest.fn().mockResolvedValue(createdService),
+          findFirst: jest.fn().mockResolvedValue(null), // no previous tracking number
+        },
         serviceStatusHistory: { create: jest.fn().mockResolvedValue({}) },
       };
       return fn(tx);

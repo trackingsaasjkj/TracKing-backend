@@ -27,7 +27,7 @@ function makeConsultarServicios() {
 }
 
 function makeConsultarMensajeros() {
-  return { findActivos: jest.fn(), findAvailableAndInService: jest.fn() } as any;
+  return { findActivos: jest.fn(), findAvailableAndInService: jest.fn(), findAll: jest.fn() } as any;
 }
 
 function makeReporteFinanciero() {
@@ -97,9 +97,13 @@ describe('BffDashboardUseCase — Property 1: dashboard result shape', () => {
 
     consultarServicios.findAll.mockResolvedValue(stubServices);
     consultarMensajeros.findAvailableAndInService.mockResolvedValue(stubCouriers);
+    consultarMensajeros.findAll.mockResolvedValue(stubCouriers);
     reporteFinanciero.execute.mockResolvedValue(stubFinancial);
 
-    useCase = new BffDashboardUseCase(consultarServicios, consultarMensajeros, reporteFinanciero, makeCache());
+    useCase = new BffDashboardUseCase(consultarServicios, consultarMensajeros, reporteFinanciero, makeCache(), {
+      courierSettlement: { aggregate: async () => ({ _sum: { company_commission: 0 } }) },
+      courier: { findMany: async () => [] },
+    } as any);
   });
 
   // Validates: Requirements 3.1, 3.2
@@ -386,9 +390,13 @@ describe('BffDashboardUseCase — Property 8: exceptions propagate without suppr
           const error = new Error(errorMessage);
           consultarServicios.findAll.mockRejectedValue(error);
           consultarMensajeros.findAvailableAndInService.mockResolvedValue(stubCouriers);
+          consultarMensajeros.findAll.mockResolvedValue(stubCouriers);
           reporteFinanciero.execute.mockResolvedValue(stubFinancial);
 
-          const useCase = new BffDashboardUseCase(consultarServicios, consultarMensajeros, reporteFinanciero, makeCache());
+          const useCase = new BffDashboardUseCase(consultarServicios, consultarMensajeros, reporteFinanciero, makeCache(), {
+            courierSettlement: { aggregate: async () => ({ _sum: { company_commission: 0 } }) },
+            courier: { findMany: async () => [] },
+          } as any);
 
           await expect(useCase.execute(companyId)).rejects.toThrow(error);
         },

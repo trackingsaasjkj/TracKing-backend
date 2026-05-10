@@ -320,7 +320,7 @@ describe('Bug 2b — GenerarLiquidacionCourierUseCase: emite settlement:created 
       id: 'stl-1',
       courier_id: 'courier-1',
       total_services: 2,
-      courier_payment: 240,
+      courier_payment: 270,  // total 300 - comisión fija 30 = 270
     });
   });
 

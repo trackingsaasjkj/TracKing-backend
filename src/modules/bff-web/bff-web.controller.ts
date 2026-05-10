@@ -1,5 +1,5 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { RolesGuard } from '../../core/guards/roles.guard';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
@@ -12,6 +12,7 @@ import { BffReportsUseCase } from './application/use-cases/bff-reports.use-case'
 import { BffSettlementsUseCase } from './application/use-cases/bff-settlements.use-case';
 import { BffLiquidacionesUseCase } from './application/use-cases/bff-liquidaciones.use-case';
 import { BffWeeklyStatsUseCase } from './application/use-cases/bff-weekly-stats.use-case';
+import { BffRevenueChartUseCase, type RevenueChartRange, type RevenueChartMode } from './application/use-cases/bff-revenue-chart.use-case';
 import { BffReportsQueryDto, BffSettlementsQueryDto } from './application/dto/bff-query.dto';
 
 @ApiTags('BFF Web')
@@ -26,6 +27,7 @@ export class BffWebController {
     private readonly bffSettlements: BffSettlementsUseCase,
     private readonly bffLiquidaciones: BffLiquidacionesUseCase,
     private readonly bffWeeklyStats: BffWeeklyStatsUseCase,
+    private readonly bffRevenueChart: BffRevenueChartUseCase,
   ) {}
 
   @Get('dashboard')
@@ -93,5 +95,28 @@ export class BffWebController {
   @ApiResponse({ status: 200, description: 'Weekly stats data' })
   async getWeeklyStats(@CurrentUser() user: JwtPayload) {
     return ok(await this.bffWeeklyStats.execute(user.company_id!));
+  }
+
+  @Get('revenue-chart')
+  @Roles(Role.ADMIN, Role.AUX)
+  @ApiOperation({
+    summary: 'Datos de la gráfica de ingresos',
+    description: 'Retorna datos para la gráfica de ingresos con soporte de rangos (1D, 7D, 1M) y modos (total, commission).',
+  })
+  @ApiQuery({ name: 'range', required: false, enum: ['1D', '7D', '1M'], description: 'Rango de tiempo (default: 7D)' })
+  @ApiQuery({ name: 'mode', required: false, enum: ['total', 'commission'], description: 'Modo de ingresos (default: total)' })
+  @ApiResponse({ status: 200, description: 'Revenue chart data' })
+  async getRevenueChart(
+    @CurrentUser() user: JwtPayload,
+    @Query('range') range?: string,
+    @Query('mode') mode?: string,
+  ) {
+    const validRange = (['1D', '7D', '1M'] as RevenueChartRange[]).includes(range as RevenueChartRange)
+      ? (range as RevenueChartRange)
+      : '7D';
+    const validMode = (['total', 'commission'] as RevenueChartMode[]).includes(mode as RevenueChartMode)
+      ? (mode as RevenueChartMode)
+      : 'total';
+    return ok(await this.bffRevenueChart.execute(user.company_id!, validRange, validMode));
   }
 }

@@ -6,6 +6,7 @@ import { calcularPaymentStatusInicial } from '../../domain/rules/validar-pago.ru
 import { CrearServicioDto } from '../dto/crear-servicio.dto';
 import { DashboardUpdatesGateway } from '../../dashboard-updates.gateway';
 import { AutoAsignarServicioUseCase } from './auto-asignar-servicio.use-case';
+import { nextTrackingNumber } from '../../../../core/utils/tracking-number.util';
 
 @Injectable()
 export class CrearServicioUseCase {
@@ -46,8 +47,16 @@ export class CrearServicioUseCase {
     const { customer_name, customer_address, customer_phone, customer_email, auto_assign, ...serviceData } = dto;
 
     const [servicio] = await this.prisma.$transaction(async (tx) => {
+      // Get the last tracking number to generate the next one
+      const lastService = await tx.service.findFirst({
+        where: { tracking_number: { not: null } },
+        orderBy: { created_at: 'desc' },
+        select: { tracking_number: true },
+      });
+      const tracking_number = nextTrackingNumber(lastService?.tracking_number);
+
       const created = await tx.service.create({
-        data: { ...serviceData, customer_id, company_id, total_price, status: 'PENDING', payment_status },
+        data: { ...serviceData, customer_id, company_id, total_price, status: 'PENDING', payment_status, tracking_number },
       });
       await tx.serviceStatusHistory.create({
         data: { company_id, service_id: created.id, previous_status: null, new_status: 'PENDING', user_id },

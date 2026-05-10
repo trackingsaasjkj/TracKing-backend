@@ -148,7 +148,7 @@ describe('GenerarLiquidacionCourierUseCase — servicios ya liquidados', () => {
     liquidacionRepo.createCourierSettlement.mockResolvedValue({
       id: 'settlement-1',
       total_services: 2,
-      total_earned: 60,
+      total_earned: 30,
     });
 
     const result = await useCase.execute(makeDto(), 'co-1');
@@ -156,9 +156,9 @@ describe('GenerarLiquidacionCourierUseCase — servicios ya liquidados', () => {
     expect(liquidacionRepo.createCourierSettlement).toHaveBeenCalledWith(
       expect.objectContaining({ 
         total_services: 2, 
-        company_commission: 60,
+        company_commission: 30,    // monto fijo al total
         total_collected: 300,
-        courier_payment: 240
+        courier_payment: 270       // 300 - 30
       }),
     );
     expect(result.total_services).toBe(2);
@@ -245,7 +245,10 @@ describe('P-1: BffLiquidacionesUseCase retorna forma correcta (PBT)', () => {
       fc.asyncProperty(fc.uuid(), async (companyId) => {
         const mockConsultarMensajeros = { findAll: jest.fn().mockResolvedValue([]) };
         const mockGestionarReglas = { findActive: jest.fn().mockResolvedValue(null) };
-        const mockLiquidacionRepo = { countCouriersWithPendingToday: jest.fn().mockResolvedValue(0) };
+        const mockLiquidacionRepo = {
+          findCouriersWithPendingToday: jest.fn().mockResolvedValue([]),
+          countCouriersWithPendingToday: jest.fn().mockResolvedValue(0),
+        };
 
         const { BffLiquidacionesUseCase } = await import('../src/modules/bff-web/application/use-cases/bff-liquidaciones.use-case');
         const useCase = new BffLiquidacionesUseCase(
@@ -443,7 +446,10 @@ describe('P-1: BffLiquidacionesUseCase retorna forma correcta (PBT)', () => {
       fc.asyncProperty(fc.uuid(), async (companyId) => {
         const mockConsultarMensajeros = { findAll: jest.fn().mockResolvedValue([]) };
         const mockGestionarReglas = { findActive: jest.fn().mockResolvedValue(null) };
-        const mockLiquidacionRepo = { countCouriersWithPendingToday: jest.fn().mockResolvedValue(0) };
+        const mockLiquidacionRepo = {
+          findCouriersWithPendingToday: jest.fn().mockResolvedValue([]),
+          countCouriersWithPendingToday: jest.fn().mockResolvedValue(0),
+        };
 
         const { BffLiquidacionesUseCase } = await import('../src/modules/bff-web/application/use-cases/bff-liquidaciones.use-case');
         const useCase = new BffLiquidacionesUseCase(
