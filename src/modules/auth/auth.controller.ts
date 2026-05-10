@@ -41,9 +41,22 @@ export class AuthController {
   @ApiResponse({ status: 429, description: 'Cuenta bloqueada por múltiples intentos fallidos' })
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.loginUseCase.execute(dto);
+    console.log('[Login] Result from useCase:', {
+      hasAccessToken: !!result.accessToken,
+      hasRefreshToken: !!result.refreshToken,
+      accessTokenLength: result.accessToken?.length ?? 0,
+      refreshTokenLength: result.refreshToken?.length ?? 0,
+    });
     res.cookie('access_token', result.accessToken, COOKIE_OPTIONS);
     res.cookie('refresh_token', result.refreshToken, { ...COOKIE_OPTIONS, maxAge: 7 * 24 * 60 * 60 * 1000 });
-    return ok({ ...result.user, accessToken: result.accessToken });
+    const response = { ...result.user, accessToken: result.accessToken, refreshToken: result.refreshToken };
+    console.log('[Login] Response to client:', {
+      hasAccessToken: !!response.accessToken,
+      hasRefreshToken: !!response.refreshToken,
+      accessTokenLength: response.accessToken?.length ?? 0,
+      refreshTokenLength: response.refreshToken?.length ?? 0,
+    });
+    return ok(response);
   }
 
   @Public()
@@ -55,7 +68,7 @@ export class AuthController {
     const result = await this.registerUseCase.execute(dto);
     res.cookie('access_token', result.accessToken, COOKIE_OPTIONS);
     res.cookie('refresh_token', result.refreshToken, { ...COOKIE_OPTIONS, maxAge: 7 * 24 * 60 * 60 * 1000 });
-    return ok({ ...result.user, accessToken: result.accessToken });
+    return ok({ ...result.user, accessToken: result.accessToken, refreshToken: result.refreshToken });
   }
 
   @Post('logout')
@@ -75,13 +88,26 @@ export class AuthController {
   @ApiOperation({ summary: 'Renovar tokens', description: 'Usa el refresh_token de la cookie para emitir nuevos tokens. El refresh token es de un solo uso.' })
   @ApiResponse({ status: 200, description: 'Tokens renovados' })
   @ApiResponse({ status: 401, description: 'Refresh token inválido o ya utilizado' })
-  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    // Accept refresh token from cookie (same-origin) or Authorization header (cross-origin)
+  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response, @Body() body?: { refreshToken?: string }) {
+    // Accept refresh token from:
+    // 1. Cookie (same-origin)
+    // 2. Authorization header (cross-origin)
+    // 3. Body (mobile)
     const token =
       req.cookies?.refresh_token ||
       (req.headers.authorization?.startsWith('Bearer ')
         ? req.headers.authorization.slice(7)
-        : undefined)
+        : undefined) ||
+      body?.refreshToken;
+    
+    console.log('[Refresh] Endpoint called, token source:', {
+      fromCookie: !!req.cookies?.refresh_token,
+      fromHeader: !!req.headers.authorization?.startsWith('Bearer '),
+      fromBody: !!body?.refreshToken,
+      tokenLength: token?.length ?? 0,
+      tokenStart: token?.substring(0, 20) ?? 'null'
+    });
+    
     const result = await this.refreshTokenUseCase.execute(token);
     res.cookie('access_token', result.accessToken, COOKIE_OPTIONS);
     res.cookie('refresh_token', result.refreshToken, { ...COOKIE_OPTIONS, maxAge: 7 * 24 * 60 * 60 * 1000 });

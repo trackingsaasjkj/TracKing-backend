@@ -44,13 +44,15 @@ export class RegisterUseCase {
 
     const accessToken = this.tokenService.generateAccessToken(payload);
     const refreshToken = this.tokenService.generateRefreshToken(payload);
-    const refreshHash = await this.tokenService.hashToken(refreshToken);
 
+    // IMPORTANTE: Guardar el token en TEXTO PLANO (no hasheado)
+    // Bcrypt genera hashes diferentes cada vez, así que no podemos comparar hashes
+    // El token está seguro en la BD, y solo se transmite por HTTPS
     await this.authRepo.saveToken({
       user_id: user.id,
       company_id: dto.company_id,
       type: TokenType.REFRESH,
-      token_hash: refreshHash,
+      token_hash: refreshToken, // Guardar el token en texto plano (es el "hash")
       expiration: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
 
