@@ -77,7 +77,7 @@ describe('P3: Round-trip de permisos — create(AUX, P) → repo.create recibe P
         async (permissions) => {
           const repo = makeUsersRepo();
           const tokenService = makeTokenService();
-          const useCase = new UsersUseCases(repo, tokenService);
+          const useCase = new UsersUseCases(repo, tokenService, { company: { findUnique: jest.fn() } } as any);
 
           // No existing user (no conflict)
           repo.findByEmail.mockResolvedValue(null);
@@ -111,7 +111,7 @@ describe('P3: Round-trip de permisos — create(AUX, P) → repo.create recibe P
         async (permissions) => {
           const repo = makeUsersRepo();
           const tokenService = makeTokenService();
-          const useCase = new UsersUseCases(repo, tokenService);
+          const useCase = new UsersUseCases(repo, tokenService, { company: { findUnique: jest.fn() } } as any);
 
           repo.findByEmail.mockResolvedValue(null);
 
@@ -157,7 +157,7 @@ describe('P4: Idempotencia de update — update(P) dos veces produce el mismo es
         async (permissions) => {
           const repo = makeUsersRepo();
           const tokenService = makeTokenService();
-          const useCase = new UsersUseCases(repo, tokenService);
+          const useCase = new UsersUseCases(repo, tokenService, { company: { findUnique: jest.fn() } } as any);
 
           const existingUser = makeBaseUser({ permissions: [] });
           repo.findById.mockResolvedValue(existingUser);
@@ -204,7 +204,7 @@ describe('P5: Aislamiento de roles no-AUX — create/update persisten permission
         async (role, permissions) => {
           const repo = makeUsersRepo();
           const tokenService = makeTokenService();
-          const useCase = new UsersUseCases(repo, tokenService);
+          const useCase = new UsersUseCases(repo, tokenService, { company: { findUnique: jest.fn() } } as any);
 
           repo.findByEmail.mockResolvedValue(null);
           repo.create.mockResolvedValue(makeBaseUser({ role, permissions: [] }));
@@ -236,7 +236,7 @@ describe('P5: Aislamiento de roles no-AUX — create/update persisten permission
         async (role, permissions) => {
           const repo = makeUsersRepo();
           const tokenService = makeTokenService();
-          const useCase = new UsersUseCases(repo, tokenService);
+          const useCase = new UsersUseCases(repo, tokenService, { company: { findUnique: jest.fn() } } as any);
 
           const existingUser = makeBaseUser({ role });
           repo.findById.mockResolvedValue(existingUser);
@@ -262,7 +262,7 @@ describe('P5: Aislamiento de roles no-AUX — create/update persisten permission
         async (role, permissions) => {
           const repo = makeUsersRepo();
           const tokenService = makeTokenService();
-          const useCase = new UsersUseCases(repo, tokenService);
+          const useCase = new UsersUseCases(repo, tokenService, { company: { findUnique: jest.fn() } } as any);
 
           // Existing user already has a non-AUX role
           const existingUser = makeBaseUser({ role });
