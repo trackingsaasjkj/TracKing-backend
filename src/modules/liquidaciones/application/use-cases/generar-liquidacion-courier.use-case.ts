@@ -29,8 +29,16 @@ export class GenerarLiquidacionCourierUseCase {
     if (!courier) throw new NotFoundException('Mensajero no encontrado en esta empresa');
 
     // Spec: debeExistirReglaActiva
-    const regla = await this.liquidacionRepo.findActiveRule(company_id);
-    validarReglaActiva(regla);
+    const reglaDB = await this.liquidacionRepo.findActiveRule(company_id);
+
+    // Si el frontend envía un override de regla, usarlo; si no, usar la regla activa de BD
+    let regla: { type: 'PERCENTAGE' | 'FIXED'; value: number } | null = null;
+    if (dto.rule_type !== undefined && dto.rule_value !== undefined) {
+      regla = { type: dto.rule_type, value: dto.rule_value };
+    } else {
+      validarReglaActiva(reglaDB);
+      regla = { type: reglaDB!.type as 'PERCENTAGE' | 'FIXED', value: Number(reglaDB!.value) };
+    }
 
     // Spec: soloServiciosEntregados
     const servicios = await this.liquidacionRepo.findDeliveredServices(
@@ -40,7 +48,7 @@ export class GenerarLiquidacionCourierUseCase {
     const totalServices = servicios.length;
     const companyCommission = calcularTotalLiquidacion(
       servicios.map(s => ({ delivery_price: Number(s.delivery_price) })),
-      { type: regla!.type as any, value: Number(regla!.value) },
+      { type: regla.type as any, value: regla.value },
     );
     const totalCollected = servicios.reduce((sum, s) => sum + Number(s.delivery_price), 0);
     const courierPayment = totalCollected - companyCommission;

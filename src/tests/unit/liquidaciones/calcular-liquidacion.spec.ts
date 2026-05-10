@@ -29,11 +29,11 @@ describe('calcularTotalLiquidacion', () => {
     expect(calcularTotalLiquidacion(servicios, { type: 'PERCENTAGE', value: 15 })).toBe(4500);
   });
 
-  it('FIXED 3000: total = 3 * 3000 = 9000', () => {
-    expect(calcularTotalLiquidacion(servicios, { type: 'FIXED', value: 3000 })).toBe(9000);
+  it('FIXED 3000: total = 3000 (monto fijo al total, sin importar cantidad de servicios)', () => {
+    expect(calcularTotalLiquidacion(servicios, { type: 'FIXED', value: 3000 })).toBe(3000);
   });
 
-  it('returns 0 for empty service list', () => {
-    expect(calcularTotalLiquidacion([], { type: 'FIXED', value: 3000 })).toBe(0);
+  it('FIXED: lista vacía también retorna el monto fijo', () => {
+    expect(calcularTotalLiquidacion([], { type: 'FIXED', value: 3000 })).toBe(3000);
   });
 });

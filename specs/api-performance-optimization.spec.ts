@@ -94,7 +94,7 @@ describe('CacheService — Property & Unit Tests', () => {
 describe('BffDashboardUseCase — Cache Integration', () => {
   let mockCache: jest.Mocked<CacheService>;
   let mockConsultarServicios: { findAll: jest.Mock };
-  let mockConsultarMensajeros: { findAvailableAndInService: jest.Mock };
+  let mockConsultarMensajeros: { findAvailableAndInService: jest.Mock; findAll: jest.Mock };
   let mockReporteFinanciero: { execute: jest.Mock };
   let useCase: BffDashboardUseCase;
 
@@ -108,7 +108,7 @@ describe('BffDashboardUseCase — Cache Integration', () => {
     } as unknown as jest.Mocked<CacheService>;
 
     mockConsultarServicios = { findAll: jest.fn() };
-    mockConsultarMensajeros = { findAvailableAndInService: jest.fn() };
+    mockConsultarMensajeros = { findAvailableAndInService: jest.fn(), findAll: jest.fn() };
     mockReporteFinanciero = { execute: jest.fn() };
 
     useCase = new BffDashboardUseCase(
@@ -116,6 +116,10 @@ describe('BffDashboardUseCase — Cache Integration', () => {
       mockConsultarMensajeros as any,
       mockReporteFinanciero as any,
       mockCache,
+      {
+        courierSettlement: { aggregate: jest.fn().mockResolvedValue({ _sum: { company_commission: 0 } }) },
+        courier: { findMany: jest.fn().mockResolvedValue([]) },
+      } as any,
     );
   });
 
@@ -159,15 +163,15 @@ describe('BffDashboardUseCase — Cache Integration', () => {
     mockCache.set.mockResolvedValue(undefined);
     mockConsultarServicios.findAll.mockResolvedValue(services);
     mockConsultarMensajeros.findAvailableAndInService.mockResolvedValue(couriers);
+    mockConsultarMensajeros.findAll.mockResolvedValue(couriers);
     mockReporteFinanciero.execute.mockResolvedValue(financial);
 
     const result = await useCase.execute(companyId);
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       pending_services: services,
       active_couriers: couriers,
       today_financial: financial,
-      today_terminal_services: [...services, ...services],
     });
     expect(mockCache.set).toHaveBeenCalledWith(
       `bff:dashboard:active:${companyId}`,

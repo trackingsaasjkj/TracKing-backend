@@ -54,9 +54,9 @@ describe('GenerarLiquidacionCourierUseCase', () => {
     expect(mockLiquidacionRepo.createCourierSettlement).toHaveBeenCalledWith(
       expect.objectContaining({ 
         total_services: 2, 
-        company_commission: 6000,
+        company_commission: 3000,   // monto fijo al total, no por servicio
         total_collected: 20000,
-        courier_payment: 14000
+        courier_payment: 17000
       }),
     );
   });

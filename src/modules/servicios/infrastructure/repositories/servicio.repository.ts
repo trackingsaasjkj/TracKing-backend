@@ -17,6 +17,7 @@ function mapService<T extends ServiceRow>(s: T) {
 
 const SERVICE_TABLE_SELECT = {
   id: true,
+  tracking_number: true,
   company_id: true,
   customer_id: true,
   courier_id: true,

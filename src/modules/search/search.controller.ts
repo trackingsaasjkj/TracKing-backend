@@ -1,6 +1,7 @@
-import { Body, Controller, Post, UseGuards, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Body, Controller, Post, Get, UseGuards, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { SearchService } from './search.service';
+import { GlobalSearchUseCase } from './application/use-cases/global-search.use-case';
 import { SearchDto } from './application/dto/search.dto';
 import { ReverseSearchDto } from './application/dto/reverse-search.dto';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
@@ -15,7 +16,23 @@ import { ok } from '../../core/utils/response.util';
 @Controller('api/search')
 @UseGuards(RolesGuard)
 export class SearchController {
-  constructor(private readonly searchService: SearchService) {}
+  constructor(
+    private readonly searchService: SearchService,
+    private readonly globalSearchUseCase: GlobalSearchUseCase,
+  ) {}
+
+  @Get('global')
+  @Roles(Role.ADMIN, Role.AUX)
+  @ApiOperation({
+    summary: 'Búsqueda global',
+    description: 'Busca en clientes, mensajeros, usuarios y servicios de la empresa. Mínimo 2 caracteres.',
+  })
+  @ApiQuery({ name: 'q', required: true, type: String, description: 'Texto a buscar (mín. 2 caracteres)' })
+  @ApiResponse({ status: 200, description: 'Resultados agrupados por entidad' })
+  async globalSearch(@Query('q') q: string, @CurrentUser() user: JwtPayload) {
+    if (!q || q.trim().length < 2) return ok({ customers: [], couriers: [], users: [], services: [] });
+    return ok(await this.globalSearchUseCase.execute(q, user.company_id!));
+  }
 
   @Post('forward')
   @Roles(Role.ADMIN, Role.AUX)
