@@ -7,6 +7,22 @@ import { PaginatedResponse } from '../../../core/types/paginated-response.type';
 export class MensajeroRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  private getTodayRange() {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    return { todayStart, todayEnd };
+  }
+
+  private withServicesCountToday<T extends { _count?: { services?: number } }>(courier: T) {
+    const { _count, ...rest } = courier;
+    return {
+      ...rest,
+      services_count_today: _count?.services ?? 0,
+    };
+  }
+
   async findById(id: string, company_id: string) {
     return this.prisma.courier.findFirst({
       where: { id, company_id },
@@ -22,24 +38,66 @@ export class MensajeroRepository {
   }
 
   async findAllActive(company_id: string) {
+    const { todayStart, todayEnd } = this.getTodayRange();
     return this.prisma.courier.findMany({
       where: { company_id, operational_status: 'AVAILABLE' },
-      include: { user: { select: { id: true, name: true, email: true } } },
-    });
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        _count: {
+          select: {
+            services: {
+              where: {
+                company_id,
+                created_at: { gte: todayStart, lte: todayEnd },
+                status: { not: 'CANCELLED' },
+              },
+            },
+          },
+        },
+      },
+    }).then(rows => rows.map(row => this.withServicesCountToday(row)));
   }
 
   async findAvailableAndInService(company_id: string) {
+    const { todayStart, todayEnd } = this.getTodayRange();
     return this.prisma.courier.findMany({
       where: { company_id, operational_status: { in: ['AVAILABLE', 'IN_SERVICE'] } },
-      include: { user: { select: { id: true, name: true, email: true } } },
-    });
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        _count: {
+          select: {
+            services: {
+              where: {
+                company_id,
+                created_at: { gte: todayStart, lte: todayEnd },
+                status: { not: 'CANCELLED' },
+              },
+            },
+          },
+        },
+      },
+    }).then(rows => rows.map(row => this.withServicesCountToday(row)));
   }
 
   async findAll(company_id: string) {
+    const { todayStart, todayEnd } = this.getTodayRange();
     return this.prisma.courier.findMany({
       where: { company_id },
-      include: { user: { select: { id: true, name: true, email: true, status: true } } },
-    });
+      include: {
+        user: { select: { id: true, name: true, email: true, status: true } },
+        _count: {
+          select: {
+            services: {
+              where: {
+                company_id,
+                created_at: { gte: todayStart, lte: todayEnd },
+                status: { not: 'CANCELLED' },
+              },
+            },
+          },
+        },
+      },
+    }).then(rows => rows.map(row => this.withServicesCountToday(row)));
   }
 
   async findAllPaginated(
@@ -48,18 +106,32 @@ export class MensajeroRepository {
   ): Promise<PaginatedResponse<Awaited<ReturnType<typeof this.prisma.courier.findFirst>>>> {
     const { page, limit } = pagination;
     const skip = (page - 1) * limit;
+    const { todayStart, todayEnd } = this.getTodayRange();
 
     const [data, total] = await Promise.all([
       this.prisma.courier.findMany({
         where: { company_id },
-        include: { user: { select: { id: true, name: true, email: true, status: true } } },
+        include: {
+          user: { select: { id: true, name: true, email: true, status: true } },
+          _count: {
+            select: {
+              services: {
+                where: {
+                  company_id,
+                  created_at: { gte: todayStart, lte: todayEnd },
+                  status: { not: 'CANCELLED' },
+                },
+              },
+            },
+          },
+        },
         skip,
         take: limit,
       }),
       this.prisma.courier.count({ where: { company_id } }),
     ]);
 
-    return { data, total, page, limit };
+    return { data: data.map(row => this.withServicesCountToday(row)), total, page, limit };
   }
 
   async create(data: {
