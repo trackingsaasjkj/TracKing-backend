@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Post, Get, Req, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
@@ -12,6 +12,8 @@ import { Public } from '../../core/decorators/public.decorator';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { JwtPayload } from '../../core/types/jwt-payload.type';
 import { ok } from '../../core/utils/response.util';
+import { AuthRepository } from './infrastructure/auth.repository';
+import { TokenService } from './domain/token.service';
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
@@ -30,6 +32,8 @@ export class AuthController {
     private readonly registerUseCase: RegisterUseCase,
     private readonly logoutUseCase: LogoutUseCase,
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
+    private readonly authRepo: AuthRepository,
+    private readonly tokenService: TokenService,
   ) {}
 
   @Public()
@@ -79,6 +83,44 @@ export class AuthController {
     res.clearCookie('access_token');
     res.clearCookie('refresh_token');
     return ok(null);
+  }
+
+  @Get('me')
+  @ApiOperation({ summary: 'Obtener datos del usuario actual', description: 'Retorna los datos del usuario autenticado y sus tokens en memoria.' })
+  @ApiResponse({ status: 200, description: 'Datos del usuario' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async me(@CurrentUser() user: JwtPayload) {
+    // Este endpoint es usado por el frontend para restaurar la sesión después de un F5
+    // Retorna los datos del usuario y los tokens en memoria
+    // Los tokens se obtienen del store en memoria del frontend (no del backend)
+    // El backend solo valida que el JWT sea válido
+    
+    const userData = await this.authRepo.findUserById(user.sub, user.company_id!);
+    
+    if (!userData) {
+      throw new Error('User not found');
+    }
+    
+    // Generar nuevos tokens para asegurar que estén frescos
+    const newPayload: JwtPayload = {
+      sub: user.sub,
+      email: user.email,
+      role: user.role,
+      company_id: user.company_id,
+    };
+    
+    const accessToken = this.tokenService.generateAccessToken(newPayload);
+    const refreshToken = this.tokenService.generateRefreshToken(newPayload);
+    
+    return ok({
+      id: userData.id,
+      name: userData.name,
+      email: userData.email,
+      role: userData.role,
+      company_id: userData.company_id,
+      accessToken,
+      refreshToken,
+    });
   }
 
   @Public()
