@@ -3,6 +3,7 @@ import { UsersRepository } from '../../infrastructure/users.repository';
 import { TokenService } from '../../../auth/domain/token.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
+import { UpdateMeDto } from '../dto/update-me.dto';
 import { Role } from '../../../../core/constants/roles.enum';
 
 @Injectable()
@@ -26,6 +27,36 @@ export class UsersUseCases {
     const user = await this.usersRepo.findByEmail(email, company_id);
     if (!user) throw new NotFoundException('Usuario no encontrado');
     return user;
+  }
+
+  /** Perfil del usuario actual (teléfono, empresa, etc.) — usado por el frontend web. */
+  async getMe(userId: string, company_id: string | null) {
+    const profile = await this.usersRepo.findProfileForMe(userId, company_id);
+    if (!profile) throw new NotFoundException('Usuario no encontrado');
+    return profile;
+  }
+
+  async updateMe(userId: string, company_id: string | null, dto: UpdateMeDto) {
+    const existing = await this.usersRepo.findProfileForMe(userId, company_id);
+    if (!existing) throw new NotFoundException('Usuario no encontrado');
+
+    const data: {
+      name?: string;
+      phone?: string | null;
+      password_hash?: string;
+    } = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.phone !== undefined) data.phone = dto.phone.trim() === '' ? null : dto.phone;
+    if (dto.password) data.password_hash = await this.tokenService.hashPassword(dto.password);
+
+    if (Object.keys(data).length === 0) {
+      return existing;
+    }
+
+    await this.usersRepo.update(userId, company_id ?? '', data);
+    const updated = await this.usersRepo.findProfileForMe(userId, company_id);
+    if (!updated) throw new NotFoundException('Usuario no encontrado');
+    return updated;
   }
 
   async create(dto: CreateUserDto, company_id: string) {

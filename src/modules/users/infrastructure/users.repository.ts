@@ -14,6 +14,21 @@ const userSelect = {
   permissions: true,
 } as const;
 
+const companyProfileSelect = {
+  id: true,
+  name: true,
+  nit: true,
+  email_corporativo: true,
+  telefono: true,
+  direccion: true,
+} as const;
+
+const profileSelect = {
+  ...userSelect,
+  company_id: true,
+  company: { select: companyProfileSelect },
+} as const;
+
 @Injectable()
 export class UsersRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -39,6 +54,17 @@ export class UsersRepository {
     });
   }
 
+  /** Perfil del usuario autenticado (incluye empresa si existe). */
+  findProfileForMe(userId: string, company_id: string | null) {
+    return this.prisma.user.findFirst({
+      where:
+        company_id !== null
+          ? { id: userId, company_id }
+          : { id: userId, company_id: null },
+      select: profileSelect,
+    });
+  }
+
   create(data: {
     company_id: string;
     name: string;
@@ -54,7 +80,19 @@ export class UsersRepository {
     });
   }
 
-  update(id: string, company_id: string, data: { name?: string; email?: string; phone?: string; role?: Role; status?: UserStatus; password_hash?: string; permissions?: string[] }) {
+  update(
+    id: string,
+    company_id: string,
+    data: {
+      name?: string;
+      email?: string;
+      phone?: string | null;
+      role?: Role;
+      status?: UserStatus;
+      password_hash?: string;
+      permissions?: string[];
+    },
+  ) {
     return this.prisma.user.update({
       where: { id },
       data,

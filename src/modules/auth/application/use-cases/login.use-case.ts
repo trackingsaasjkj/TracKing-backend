@@ -80,6 +80,7 @@ export class LoginUseCase {
         id: user.id,
         name: user.name,
         email: user.email,
+        phone: user.phone ?? undefined,
         role: user.role,
         company_id: user.company_id,
         ...(user.role === Role.AUX && { permissions: user.permissions ?? [] }),

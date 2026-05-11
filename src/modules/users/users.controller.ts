@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { UsersUseCases } from './application/use-cases/users.use-cases';
 import { CreateUserDto } from './application/dto/create-user.dto';
 import { UpdateUserDto } from './application/dto/update-user.dto';
+import { UpdateMeDto } from './application/dto/update-me.dto';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { Roles } from '../../core/decorators/roles.decorator';
 import { RequirePermissions } from '../../core/decorators/permissions.decorator';
@@ -37,6 +38,20 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'No encontrado' })
   async findByEmail(@Param('email') email: string, @CurrentUser() user: JwtPayload) {
     return ok(await this.usersUseCases.findByEmail(email, user.company_id!));
+  }
+
+  @Get('me')
+  @ApiOperation({ summary: 'Mi perfil', description: 'Datos del usuario autenticado y de su empresa (si aplica).' })
+  @ApiResponse({ status: 200, description: 'Perfil' })
+  async getMe(@CurrentUser() user: JwtPayload) {
+    return ok(await this.usersUseCases.getMe(user.sub, user.company_id));
+  }
+
+  @Patch('me')
+  @ApiOperation({ summary: 'Actualizar mi perfil', description: 'Nombre, teléfono y/o contraseña del usuario autenticado.' })
+  @ApiResponse({ status: 200, description: 'Perfil actualizado' })
+  async updateMe(@Body() dto: UpdateMeDto, @CurrentUser() user: JwtPayload) {
+    return ok(await this.usersUseCases.updateMe(user.sub, user.company_id, dto));
   }
 
   @Get(':uuid')

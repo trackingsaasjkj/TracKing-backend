@@ -116,6 +116,7 @@ export class AuthController {
       id: userData.id,
       name: userData.name,
       email: userData.email,
+      phone: userData.phone ?? undefined,
       role: userData.role,
       company_id: userData.company_id,
       accessToken,
