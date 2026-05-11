@@ -6,6 +6,7 @@ export interface UserWithCompany {
   id: string;
   name: string;
   email: string;
+  phone: string | null;
   role: string;
   status: string;
   company_id: string | null;
@@ -34,6 +35,7 @@ export class AuthRepository {
         id: true,
         name: true,
         email: true,
+        phone: true,
         role: true,
         status: true,
         company_id: true,
