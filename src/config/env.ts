@@ -18,6 +18,13 @@ class EnvVars {
   @IsOptional() @IsString() SUPABASE_STORAGE_BUCKET?: string;
   @IsOptional() @IsString() OPENAI_API_KEY?: string;
 
+  @IsOptional() @IsString() SEARCH_PROVIDER?: string;  // default: 'google' (or 'mapbox')
+
+  @IsOptional() @IsString() GOOGLE_MAPS_API_KEY?: string;
+  @IsOptional() @IsString() GOOGLE_MAPS_COUNTRY?: string;        // default: 'co'
+  @IsOptional() @IsString() GOOGLE_MAPS_PROXIMITY_LNG?: string;  // default: -73.122742 (Bucaramanga)
+  @IsOptional() @IsString() GOOGLE_MAPS_PROXIMITY_LAT?: string;  // default: 7.119349  (Bucaramanga)
+
   @IsOptional() @IsString() MAPBOX_ACCESS_TOKEN?: string;
   @IsOptional() @IsString() MAPBOX_COUNTRY?: string;        // default: 'co'
   @IsOptional() @IsString() MAPBOX_PROXIMITY_LNG?: string;  // default: -73.122742 (Bucaramanga)
