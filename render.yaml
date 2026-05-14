@@ -5,8 +5,8 @@ services:
     plan: standard
     region: oregon
     
-    buildCommand: npm install && rm -rf node_modules/.prisma && npx prisma generate && NODE_OPTIONS="--max-old-space-size=400" npm run build
-    startCommand: npx prisma migrate deploy && npm run start:prod
+    buildCommand: pnpm install --frozen-lockfile && pnpm prisma:generate && NODE_OPTIONS="--max-old-space-size=400" pnpm build
+    startCommand: pnpm prisma:migrate && pnpm start:prod
     
     healthCheckPath: /api/health
     healthCheckInterval: 30

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MaxLength, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, MaxLength, IsOptional, IsUUID } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class SearchDto {
@@ -13,4 +13,9 @@ export class SearchDto {
   @IsOptional()
   @MaxLength(100)
   city?: string;
+
+  @ApiProperty({ example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479', description: 'Token de sesión para optimizar búsquedas (opcional)', required: false })
+  @IsUUID()
+  @IsOptional()
+  sessionToken?: string;
 }

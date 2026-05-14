@@ -24,6 +24,7 @@ export interface LocationPayload {
       'http://localhost:5173',
       'http://localhost:3001',
       'https://tracking-xi-seven.vercel.app',
+      'https://tracking-frontend-ten.vercel.app'
     ],
     credentials: true,
   },

@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { UsersRepository } from '../../infrastructure/users.repository';
 import { TokenService } from '../../../auth/domain/token.service';
 import { CreateUserDto } from '../dto/create-user.dto';
@@ -47,7 +47,17 @@ export class UsersUseCases {
     } = {};
     if (dto.name !== undefined) data.name = dto.name;
     if (dto.phone !== undefined) data.phone = dto.phone.trim() === '' ? null : dto.phone;
-    if (dto.password) data.password_hash = await this.tokenService.hashPassword(dto.password);
+
+    if (dto.password) {
+      if (!dto.currentPassword) {
+        throw new BadRequestException('Debes ingresar tu contraseña actual para cambiarla');
+      }
+      const user = await this.usersRepo.findByIdWithPassword(userId);
+      if (!user) throw new NotFoundException('Usuario no encontrado');
+      const valid = await this.tokenService.comparePassword(dto.currentPassword, user.password_hash);
+      if (!valid) throw new UnauthorizedException('La contraseña actual es incorrecta');
+      data.password_hash = await this.tokenService.hashPassword(dto.password);
+    }
 
     if (Object.keys(data).length === 0) {
       return existing;

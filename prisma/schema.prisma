@@ -401,3 +401,43 @@ enum PaymentStatus {
   PAID
   UNPAID
 }
+
+model GooglePlacesCache {
+  id                String   @id @default(uuid())
+  company_id        String
+  normalized_query  String   @db.VarChar(500)
+  place_id          String   @db.VarChar(255)
+  address           String
+  lat               Decimal  @db.Decimal(10, 8)
+  lng               Decimal  @db.Decimal(10, 8)
+  main_text         String?  @db.VarChar(255)
+  secondary_text    String?  @db.VarChar(255)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  @@unique([company_id, normalized_query, place_id])
+  @@index([company_id, normalized_query])
+  @@index([created_at(sort: Desc)])
+  @@map("google_places_cache")
+}
+
+model UserAddressHistory {
+  id                String   @id @default(uuid())
+  user_id           String
+  company_id        String
+  address           String
+  place_id          String?  @db.VarChar(255)
+  lat               Decimal? @db.Decimal(10, 8)
+  lng               Decimal? @db.Decimal(10, 8)
+  main_text         String?  @db.VarChar(255)
+  secondary_text    String?  @db.VarChar(255)
+  used_count        Int      @default(1)
+  last_used_at      DateTime @default(now())
+  created_at        DateTime @default(now())
+
+  @@unique([user_id, company_id, address])
+  @@index([user_id, company_id])
+  @@index([user_id, last_used_at(sort: Desc)])
+  @@index([company_id, last_used_at(sort: Desc)])
+  @@map("user_address_history")
+}
