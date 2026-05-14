@@ -1,0 +1,13 @@
+# pnpm-workspace.yaml — proyecto standalone (sin subpaquetes)
+# Este archivo existe únicamente para configurar allowBuilds.
+# Lista blanca de scripts de build/postinstall.
+# Cualquier paquete comprometido que no esté aquí queda bloqueado automáticamente.
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  prisma: true
+  bcrypt: true
+  '@nestjs/core': true
+  '@firebase/util': true
+  protobufjs: true
+  '@scarf/scarf': false

@@ -1,6 +1,10 @@
 {
   "name": "mensajeria-backend",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=10.0.0"
+  },
   "scripts": {
     "build": "prisma generate && nest build",
     "start": "node --max-old-space-size=256 dist/main",
@@ -46,15 +50,19 @@
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
     "socket.io": "^4.8.3",
-    "swagger-ui-express": "^5.0.0"
+    "swagger-ui-express": "^5.0.0",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
     "@types/bcrypt": "^5.0.0",
     "@types/cookie-parser": "^1.4.3",
+    "@types/express": "^5.0.6",
     "@types/jest": "^29.0.0",
+    "@types/node": "^20.19.41",
     "@types/passport-jwt": "^3.0.8",
+    "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.1",

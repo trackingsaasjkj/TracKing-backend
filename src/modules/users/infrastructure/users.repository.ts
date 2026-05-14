@@ -65,6 +65,14 @@ export class UsersRepository {
     });
   }
 
+  /** Solo para verificar contraseña actual — no exponer en respuestas de API. */
+  findByIdWithPassword(id: string) {
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, password_hash: true },
+    });
+  }
+
   create(data: {
     company_id: string;
     name: string;

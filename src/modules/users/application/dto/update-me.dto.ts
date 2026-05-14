@@ -14,7 +14,13 @@ export class UpdateMeDto {
   @MaxLength(20)
   phone?: string;
 
-  @ApiPropertyOptional({ example: 'nuevaClaveSegura1', minLength: 6 })
+  @ApiPropertyOptional({ example: 'claveActual123', minLength: 6, description: 'Contraseña actual — requerida si se quiere cambiar la contraseña.' })
+  @IsOptional()
+  @IsString()
+  @MinLength(6)
+  currentPassword?: string;
+
+  @ApiPropertyOptional({ example: 'nuevaClaveSegura1', minLength: 6, description: 'Nueva contraseña. Requiere enviar currentPassword.' })
   @IsOptional()
   @IsString()
   @MinLength(6)
